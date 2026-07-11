@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KF L16：固定增益估计器与传感器融合 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<link rel="stylesheet" href="assets/shiclass.css">
+</head>
+<body>
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · KF L16 · 第二部分</div>
+    <h1>固定增益估计器与传感器融合</h1>
+    <p class="subtitle">从收敛到固定增益估计器、信息形式的 Kalman Filter 推导、以及多传感器即插即用融合</p>
+    <div class="hero-meta">
+      <span>📅 2026-05-23</span>
+      <span>🎯 固定增益</span>
+      <span>🔗 传感器融合</span>
+      <span>📊 信息形式</span>
+    </div>
+  </div>
+
+  <!-- Lead Grid -->
+  <div
+</div>
+
+  <div class="lead-grid">
+    <div class="callout">
+      <h4>🎯 学完本节，你应能</h4>
+      <p>掌握固定增益估计器与信息形式的传感器融合方法</p>
+    </div>
+    <div class="callout">
+      <h4>📖 前置知识</h4>
+      <p>建议先完成前面的课程，或具备线性代数与概率论基础。</p>
+    </div>
+  </div>
+
+  <section class="section-card"
+lead-grid">
+    <div class="callout">
+      <p><strong>🎯 本讲目标</strong></p>
+      <p>在理解 \\(P_{k|k}\\) 收敛性的基础上，推导固定增益估计器、学习信息形式的 KF 表示法，并掌握多传感器融合的即插即用方法。</p>
+    </div>
+    <div class="callout">
+      <p><strong>🔑 核心思想</strong></p>
+      <p>KF 的协方差收敛后，只需要一个固定增益矩阵 \\(K^*\\) 即可；传感器融合在信息形式下天然支持模块化——每个传感器的贡献是独立的加性项。</p>
+    </div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3>📖 目录</h3>
+    <ul>
+      <li><a href="#sec1">1. 回顾：\\(P_{k|k}\\) 收敛与稳态</a></li>
+      <li><a href="#sec2">2. 固定增益估计器</a></li>
+      <li><a href="#sec3">3. 固定增益的工程实现优势</a></li>
+      <li><a href="#sec4">4. 信息形式 Kalman Filter</a></li>
+      <li><a href="#sec5">5. 传感器融合与即插即用</a></li>
+      <li><a href="#sec6">6. 从几何到概率的过渡</a></li>
+      <li><a href="#sec7">7. 本讲小结</a></li>
+      <li><a href="#quiz">📝 自测题</a></li>
+    </ul>
+  </div>
+
+  <!-- 1. 回顾 -->
+  <div id="sec1" class="section-card">
+    <h2>1. 回顾：\\(P_{k|k}\\) 收敛与稳态</h2>
+
+    <p>上节课我们得出结论：当 \\((A, C)\\) 可观且 \\((A, \\sqrt{Q})\\) 能控时，\\(P_{k|k}\\) 收敛到稳态值 \\(\\bar P\\)：</p>
+
+    <div class="formula-box">
+      \\[
+      \\lim_{k \\to \\infty} P_{k|k} = \\bar P
+      \\]
+    </div>
+
+    <p>随之而来的是 Kalman 增益的收敛：</p>
+
+    <div class="formula-box">
+      \\[
+      \\lim_{k \\to \\infty} K_k = K^* = \\bar P C' [C \\bar P C' + R]^{-1}
+      \\]
+    </div>
+
+    <div class="callout">
+      <p><strong>💡 为什么收敛？</strong></p>
+      <p>直观上，每个新测量都提供一定量的"信息"，而过程噪声又带来不确定性的增加。当信息收益 = 信息损失时，系统达到动态平衡——不确定性不再变化，增益也固定在最优值上。</p>
+    </div>
+  </div>
+
+  <!-- 2. 固定增益 -->
+  <div id="sec2" class="section-card">
+    <h2>2. 固定增益估计器</h2>
+
+    <p>收敛后，KF 变成一个线性时不变系统（LTI system）：</p>
+
+    <div class="formula-box">
+      \\[
+      \\boxed{\\hat x_{k|k} = A \\hat x_{k-1|k-1} + K^* [y_k - C A \\hat x_{k-1|k-1}]}
+      \\]
+    </div>
+
+    <p>或者等价地写为预测形式：</p>
+
+    <div class="formula-box">
+      \\[
+      \\boxed{\\hat x_{k+1|k} = A \\hat x_{k|k-1} + K^* [y_k - C \\hat x_{k|k-1}]}
+      \\]
+    </div>
+
+    <h3>固定增益的求解</h3>
+    <p>\\(K^*\\) 可以通过求解 <strong>代数 Riccati 方程（ARE）</strong>得到：</p>
+    <div class="formula-box">
+      \\[
+      \\bar P = A \\bar P A' - A \\bar P C' [C \\bar P C' + R]^{-1} C \\bar P A' + Q
+      \\]
+    </div>
+    <p>ARE 可以离线求解（例如用迭代法或直接数值解法），得到 \\(\\bar P\\) 后再计算 \\(K^* = \\bar P C' [C \\bar P C' + R]^{-1}\\)。</p>
+
+    <div class="callout">
+      <p><strong>🧠 关键认识</strong></p>
+      <p>固定增益估计器是 KF 的"稳态版本"。它牺牲了初始阶段的时变最优性，换来了极大的计算简化。对于长时间运行的系统（如卫星的轨道确定），这是一个非常划算的交换。</p>
+    </div>
+  </div>
+
+  <!-- 3. 工程优势 -->
+  <div id="sec3" class="section-card">
+    <h2>3. 固定增益的工程实现优势</h2>
+
+    <div class="grid-2">
+      <div class="mini-card" style="border-left: 4px solid #22c55e;">
+        <h4>⬇️ 计算量显著降低</h4>
+        <p>每一步只需：</p>
+        <ol>
+          <li>矩阵-向量乘法 \\(A \\hat x\\) 或 \\(C A \\hat x\\)</li>
+          <li>向量加减</li>
+          <li>常数矩阵-向量乘法 \\(K^*\\)</li>
+        </ol>
+        <p>不再需要在线矩阵求逆，乘法次数从 O(n³) 降为 O(n²)。</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #3b82f6;">
+        <h4>💾 存储空间降为 O(1)</h4>
+        <p>只需要存储：</p>
+        <ul>
+          <li>一个常数增益矩阵 \\(K^*\\)（大小 n×m）</li>
+          <li>系统矩阵 \\(A\\)（已知）</li>
+          <li>当前状态估计 \\(\\hat x\\)</li>
+        </ul>
+        <p>不需要存储整个增益序列或协方差矩阵序列。</p>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="mini-card" style="border-left: 4px solid #f59e0b;">
+        <h4>🔧 实现简单</h4>
+        <p>代码量大幅减少，调试和维护成本低。对于 FPGA 或微控制器实现特别有吸引力。</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #8b5cf6;">
+        <h4>📊 性能可预期</h4>
+        <p>一旦 \\(K^*\\) 确定，估计器的动态性能（收敛速度、稳态误差）可以通过经典的控制理论工具（极点分析等）进行分析。</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <p><strong>⚠️ 权衡</strong></p>
+      <p>固定增益估计器在系统参数不变时表现良好。但如果 \\(Q\\)、\\(R\\) 或系统模型发生显著变化，\\(K^*\\) 就不再是最优的。此时需要重新求解 ARE 或切换回时变 KF。</p>
+    </div>
+  </div>
+
+  <!-- 4. 信息形式 -->
+  <div id="sec4" class="section-card">
+    <h2>4. 信息形式 Kalman Filter</h2>
+
+    <p>标准 KF 使用协方差 \\(P\\) 和状态 \\(\\hat x\\) 进行更新。有时候用它们的<strong>逆</strong>（信息矩阵 \\(\\Omega = P^{-1}\\) 和信息向量 \\(\\xi = P^{-1} \\hat x\\)）更加方便。</p>
+
+    <h3>从标准形式到信息形式</h3>
+    <p>回顾后验协方差的更新：</p>
+    <div class="formula-box">
+      \\[
+      P_{k|k}^{-1} = P_{k|k-1}^{-1} + C' R^{-1} C
+      \\]
+    </div>
+
+    <p>以及状态更新：</p>
+    <div class="formula-box">
+      \\[
+      P_{k|k}^{-1} \\hat x_{k|k} = P_{k|k-1}^{-1} \\hat x_{k|k-1} + C' R^{-1} y_k
+      \\]
+    </div>
+
+    <p>定义信息形式的变量：</p>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>信息矩阵</h4>
+        \\[
+        \\Omega_{k|k} = P_{k|k}^{-1}
+        \\]
+        \\[
+        \\Omega_{k|k-1} = P_{k|k-1}^{-1}
+        \\]
+      </div>
+      <div class="mini-card">
+        <h4>信息向量</h4>
+        \\[
+        \\xi_{k|k} = P_{k|k}^{-1} \\hat x_{k|k}
+        \\]
+        \\[
+        \\xi_{k|k-1} = P_{k|k-1}^{-1} \\hat x_{k|k-1}
+        \\]
+      </div>
+    </div>
+
+    <h3>信息形式的更新规则</h3>
+    <div class="formula-box">
+      \\[
+      \\boxed{\\Omega_{k|k} = \\Omega_{k|k-1} + C' R^{-1} C}
+      \\]
+      \\[
+      \\boxed{\\xi_{k|k} = \\xi_{k|k-1} + C' R^{-1} y_k}
+      \\]
+    </div>
+
+    <div class="callout">
+      <p><strong>💡 解读</strong></p>
+      <p>信息形式的测量更新就是简单的<strong>加法</strong>！每次测量到来，就把 \\(C' R^{-1} C\\)（信息贡献）加到信息矩阵上，把 \\(C' R^{-1} y_k\\)（加权测量）加到信息向量上。这种"累加"的结构非常适合多传感器融合。</p>
+    </div>
+  </div>
+
+  <!-- 5. 传感器融合 -->
+  <div id="sec5" class="section-card">
+    <h2>5. 传感器融合与即插即用</h2>
+
+    <h3>问题设定</h3>
+    <p>假设有 \\(n\\) 个传感器，第 \\(i\\) 个传感器的测量模型为：</p>
+    <div class="formula-box">
+      \\[
+      y_k^i = C_i x_k + v_k^i, \\quad v_k^i \\sim N(0, R_i)
+      \\]
+    </div>
+
+    <h3>堆叠法（标准形式）</h3>
+    <p>将所有测量堆叠成一个向量，然后套用标准 KF：</p>
+    <div class="formula-box">
+      \\[
+      y_k = \\begin{bmatrix} y_k^1 \\\\ y_k^2 \\\\ \\vdots \\\\ y_k^n \\end{bmatrix}
+      = C x_k + v_k, \\quad
+      C = \\begin{bmatrix} C_1 \\\\ C_2 \\\\ \\vdots \\\\ C_n \\end{bmatrix},
+      \\quad v_k \\sim N(0, \\text{diag}(R_1, \\dots, R_n))
+      \\]
+    </div>
+    <p>这种方法需要每次拼装大矩阵，不够灵活。</p>
+
+    <h3>信息形式（即插即用）</h3>
+    <p>用信息形式，每个传感器的贡献独立累加：</p>
+    <div class="formula-box">
+      \\[
+      \\boxed{\\Omega_{k|k} = \\Omega_{k|k-1} + \\sum_{i=1}^{n} C_i' R_i^{-1} C_i}
+      \\]
+      \\[
+      \\boxed{\\xi_{k|k} = \\xi_{k|k-1} + \\sum_{i=1}^{n} C_i' R_i^{-1} y_k^i}
+      \\]
+    </div>
+
+    <div class="grid-3">
+      <div class="mini-card" style="border-left: 4px solid #22c55e;">
+        <h4>🧩 模块化</h4>
+        <p>每个传感器的贡献独立计算，互不干扰。新增传感器只需增加对应的 \\(C_i' R_i^{-1} C_i\\) 项。</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #3b82f6;">
+        <h4>🔌 即插即用</h4>
+        <p>某个传感器的数据来了就加进去，没来就不加。天然支持异步传感器和可变采样率。</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #f59e0b;">
+        <h4>🛡️ 容错性强</h4>
+        <p>某个传感器失效时，只需移除其贡献项。不需要重新设计整个融合逻辑。</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <p><strong>🔗 实际应用场景</strong></p>
+      <p>自动驾驶汽车有摄像头、激光雷达、IMU、GPS 等传感器，每个传感器可能以不同频率运行、随时掉线或信号延迟。信息形式的 KF 天然支持这种动态配置的融合需求——每个传感器来了就"加"进去，走了就"减"出来。</p>
+    </div>
+  </div>
+
+  <!-- 6. 过渡 -->
+  <div id="sec6" class="section-card">
+    <h2>6. 从几何到概率的过渡</h2>
+
+    <p>到目前为止，我们一直使用<strong>几何方法（投影定理 + 新息正交性）</strong>来推导 KF。这种方法有两个局限：</p>
+
+    <ol>
+      <li>我们得到的只是<strong>线性</strong>最优估计（LMMSE）——能否保证这是全局最优？</li>
+      <li>几何方法没有显式使用分布信息——能否利用高斯分布的特殊性质？</li>
+    </ol>
+
+    <div class="callout">
+      <p><strong>🤔 开放问题</strong></p>
+      <p>在线性高斯系统下，LMMSE 是否等于 MMSE（最小均方误差估计，即条件均值 \\(E[x_k | y_0, \\dots, y_k]\\)）？如果等于，则说明 KF 的线性估计实际上是最优的——没有任何非线性方法能做得更好。</p>
+    </div>
+
+    <p>要回答这个问题，我们需要从<strong>概率的角度</strong>重新审视。这就是下一讲的内容——用条件高斯分布推导 MMSE 估计，并证明在线性高斯系统中 MMSE = LMMSE。同时还会从<strong>优化法</strong>的角度，将 Kalman 增益的求解转化为二次型最小化问题。</p>
+  </div>
+
+  <!-- 7. 小结 -->
+  <div id="sec7" class="section-card">
+    <h2>7. 本讲小结</h2>
+
+    <p>本讲完成了 KF L16 的后半部分内容。总结核心要点：</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>概念</th>
+          <th>核心公式</th>
+          <th>工程意义</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>固定增益估计器</strong></td>
+          <td>\\(\\hat x_{k+1|k} = A \\hat x_{k|k-1} + K^* [y_k - C \\hat x_{k|k-1}]\\)</td>
+          <td>O(1) 存储、O(n²) 计算</td>
+        </tr>
+        <tr>
+          <td><strong>信息形式 KF</strong></td>
+          <td>\\(\\Omega_{k|k} = \\Omega_{k|k-1} + C' R^{-1} C\\)</td>
+          <td>加法更新，便于融合</td>
+        </tr>
+        <tr>
+          <td><strong>传感器融合</strong></td>
+          <td>\\(\\Omega = \\Omega_0 + \\sum C_i' R_i^{-1} C_i\\)</td>
+          <td>即插即用、模块化、容错</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 自测题 -->
+  <div id="quiz" class="section-card">
+    <h2>📝 自测题</h2>
+
+    <div class="interactive-card">
+      <h3>问题 1</h3>
+      <p>固定增益估计器相比时变 KF 有什么优势和劣势？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>优势：计算量小（O(n²) 而非 O(n³)）、存储开销小、实现简单。劣势：在初始阶段不是最优的（因为增益固定不能适应不确定性较大的初期）；系统参数变化时需要重新求解 ARE。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 2</h3>
+      <p>传感器融合中，信息形式的 KF 为什么支持即插即用？</p>
+      <div class="quiz-options">
+        <button onclick="lessonKit.answer(this, 'q2-feedback')" data-correct="yes" data-explanation="正确！每个传感器的信息贡献是独立的加性项 \\(C_i' R_i^{-1} C_i\\)，可以单独累加或移除。">因为每个传感器的贡献是独立加性的，可以逐个叠加</button>
+        <button onclick="lessonKit.answer(this, 'q2-feedback')" data-correct="no" data-explanation="再想想。信息形式的优点正是每个传感器的贡献独立累加。">因为每个传感器的 \\(C_i\\) 矩阵都相同</button>
+      </div>
+      <div id="q2-feedback" class="quiz-feedback"></div>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 3</h3>
+      <p>信息形式的测量更新与标准形式的测量更新本质上是等价的吗？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>是的。信息形式 \\(P_{k|k}^{-1} = P_{k|k-1}^{-1} + C' R^{-1} C\\) 可以通过矩阵求逆引理（SMW 公式）推导出标准形式 \\(P_{k|k} = P_{k|k-1} - P_{k|k-1} C' [C P_{k|k-1} C' + R]^{-1} C P_{k|k-1}\\)。两者是完全等价的，只是表达形式不同。</p>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="nav-links">
+    <a href="0019-KF-L16-时间更新.html" class="prev">← KF L16：时间更新与收敛性</a>
+    <a href="0021-KF-L17-条件高斯与MMSE.html" class="next">KF L17：条件高斯与 MMSE 估计 →</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+  </div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 KF L16 · 固定增益估计器与传感器融合</p>
+  </div>
+</div>
+<script src="assets/shiclass.js"></script>
+</body>
+</html>

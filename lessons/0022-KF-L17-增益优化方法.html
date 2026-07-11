@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KF L17：Kalman 增益优化——三种方法对比 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<link rel="stylesheet" href="assets/shiclass.css">
+</head>
+<body>
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · KF L17 · 第二部分</div>
+    <h1>Kalman 增益优化与三种方法对比</h1>
+    <p class="subtitle">从优化角度重新推导 Kalman 增益——将 \\(P_k\\) 写成 \\(K_k\\) 的二次型，通过 Completion of Squares 求最优解</p>
+    <div class="hero-meta">
+      <span>📅 2026-05-30</span>
+      <span>⚡ 优化方法</span>
+      <span>📐 Completion of Squares</span>
+      <span>📊 方法对比</span>
+    </div>
+  </div>
+
+  <!-- Lead Grid -->
+  <div
+</div>
+
+  <div class="lead-grid">
+    <div class="callout">
+      <h4>🎯 学完本节，你应能</h4>
+      <p>掌握Kalman增益优化的三种方法：几何、概率与优化</p>
+    </div>
+    <div class="callout">
+      <h4>📖 前置知识</h4>
+      <p>建议先完成前面的课程，或具备线性代数与概率论基础。</p>
+    </div>
+  </div>
+
+  <section class="section-card"
+lead-grid">
+    <div class="callout">
+      <p><strong>🎯 本讲目标</strong></p>
+      <p>学习第三种推导 KF 的方法——优化法：构造一个形式合理的线性估计器，将后验协方差写成 Kalman 增益的二次型，通过 Completion of Squares 求得最优增益。</p>
+    </div>
+    <div class="callout">
+      <p><strong>🔑 核心思想</strong></p>
+      <p>优化法不依赖几何直觉（正交投影）也不依赖概率假设（高斯分布），只需要"构造线性估计器 + 最小化均方误差"这一工程直觉。</p>
+    </div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3>📖 目录</h3>
+    <ul>
+      <li><a href="#sec1">1. 为什么要第三种方法？</a></li>
+      <li><a href="#sec2">2. 优化问题设定</a></li>
+      <li><a href="#sec3">3. 误差协方差的二次型表达</a></li>
+      <li><a href="#sec4">4. Completion of Squares 求解</a></li>
+      <li><a href="#sec5">5. 最优增益的全新视角</a></li>
+      <li><a href="#sec6">6. 三种方法详细对比</a></li>
+      <li><a href="#sec7">7. 总结与展望</a></li>
+      <li><a href="#quiz">📝 自测题</a></li>
+    </ul>
+  </div>
+
+  <!-- 1. 为什么 -->
+  <div id="sec1" class="section-card">
+    <h2>1. 为什么要第三种方法？</h2>
+
+    <p>我们已经学习了两种推导 KF 的方法：</p>
+
+    <div class="grid-2">
+      <div class="mini-card" style="border-left: 4px solid var(--accent);">
+        <h4>📐 几何法（投影）</h4>
+        <p>优点：直观、可视化、不需要分布假设</p>
+        <p>局限：只得到 LMMSE，需要理解内积空间</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #3b82f6;">
+        <h4>📊 概率法（条件高斯）</h4>
+        <p>优点：证明 MMSE = LMMSE</p>
+        <p>局限：需要高斯分布假设</p>
+      </div>
+    </div>
+
+    <p><strong>优化法</strong>带来了独特的价值：</p>
+    <ul>
+      <li>不依赖几何直觉（不需要理解投影空间）</li>
+      <li>不依赖概率假设（不需要高斯分布）</li>
+      <li>只需要一个简单的工程直觉：<strong>"构造一个合理的估计器，然后最小化误差"</strong></li>
+    </ul>
+
+    <div class="callout">
+      <p><strong>⚡ 优化法的独特价值</strong></p>
+      <p>优化法在推广到非线性/非高斯系统时特别有价值——你可以改变估计器的结构来适应非线性（例如用神经网络替换线性映射），然后用同样的优化框架求解。</p>
+    </div>
+  </div>
+
+  <!-- 2. 问题设定 -->
+  <div id="sec2" class="section-card">
+    <h2>2. 优化问题设定</h2>
+
+    <p>考虑如下递归线性估计器（不含测量噪声协方差先验信息）：</p>
+
+    <div class="formula-box">
+      \\[
+      \\hat x_{k+1} = A \\hat x_k + K_{k+1} (y_{k+1} - C A \\hat x_k)
+      \\]
+    </div>
+
+    <p>其中初始条件 \\(\\hat x_0 = 0\\)。这是一个"预测 + 修正"结构的线性估计器，但增益 \\(K_{k+1}\\) 尚未确定。</p>
+
+    <p>我们的目标：找到 \\(K_{k+1}\\) 使得后验误差协方差最小化。</p>
+
+    <div class="formula-box">
+      \\[
+      \\boxed{\\text{Find } K_{k+1} \\text{ s.t. } P_{k+1} = E[(x_{k+1} - \\hat x_{k+1})(x_{k+1} - \\hat x_{k+1})'] \\text{ is minimized}}
+      \\]
+    </div>
+
+    <p>这里的优化是一个<strong>矩阵优化问题</strong>——我们要找一个矩阵 \\(K\\) 使得协方差矩阵（在矩阵半正定序下）最小。</p>
+  </div>
+
+  <!-- 3. 二次型表达 -->
+  <div id="sec3" class="section-card">
+    <h2>3. 误差协方差的二次型表达</h2>
+
+    <h3>步骤 1：计算预测误差</h3>
+    <p>预测阶段：\\(\\hat x_{k+1|k} = A \\hat x_k\\)</p>
+    <div class="formula-box">
+      \\[
+      \\begin{aligned}
+      \\tilde x_{k+1|k} &= x_{k+1} - A \\hat x_k \\\\\\\\
+      &= (A x_k + w_k) - A \\hat x_k \\\\\\\\
+      &= A \\tilde x_k + w_k
+      \\end{aligned}
+      \\]
+    </div>
+    <p>预测协方差：\\(P_{k+1|k} = A P_k A' + Q\\)</p>
+
+    <h3>步骤 2：计算后验误差</h3>
+    <div class="formula-box">
+      \\[
+      \\begin{aligned}
+      \\tilde x_{k+1} &= x_{k+1} - \\hat x_{k+1} \\\\\\\\
+      &= x_{k+1} - [A \\hat x_k + K_{k+1} (y_{k+1} - C A \\hat x_k)] \\\\\\\\
+      &= \\tilde x_{k+1|k} - K_{k+1} (C \\tilde x_{k+1|k} + v_{k+1})
+      \\end{aligned}
+      \\]
+    </div>
+
+    <h3>步骤 3：写出协方差矩阵</h3>
+    <div class="formula-box">
+      \\[
+      \\begin{aligned}
+      P_{k+1}(K_{k+1}) &= E[\\tilde x_{k+1} \\tilde x_{k+1}'] \\\\\\\\
+      &= (I - K_{k+1} C) P_{k+1|k} (I - K_{k+1} C)' + K_{k+1} R K_{k+1}'
+      \\end{aligned}
+      \\]
+    </div>
+
+    <p>展开后得到：</p>
+    <div class="formula-box">
+      \\[
+      \\boxed{P_{k+1}(K) = P_{k+1|k} - K C P_{k+1|k} - P_{k+1|k} C' K' + K (C P_{k+1|k} C' + R) K'}
+      \\]
+    </div>
+
+    <p>这正是 \\(K\\) 的<strong>二次型</strong>！其中 \\(K\\) 是变量，\\(P_{k+1|k}\\)、\\(C\\)、\\(R\\) 都是已知量。</p>
+
+    <div class="callout">
+      <p><strong>💡 关键观察</strong></p>
+      <p>\\(P_{k+1}(K)\\) 是 \\(K\\) 的二次型：线性项（\\(K\\) 和 \\(K'\\)）和二次项（\\(K \\cdot R_{e} \\cdot K'\\)）。这与标量情况下对 \\(x\\) 求 \\(ax^2 + bx + c\\) 的最小值是类似的思路，只是这里是矩阵版本。</p>
+    </div>
+  </div>
+
+  <!-- 4. Completion of Squares -->
+  <div id="sec4" class="section-card">
+    <h2>4. Completion of Squares 求解</h2>
+
+    <p>在标量情况下，配方法（completing the square）将 \\(ax^2 + bx + c\\) 改写为 \\(a(x + b/(2a))^2 + (c - b^2/(4a))\\)。矩阵情况下做类似操作：</p>
+
+    <h3>步骤 1：提取公因子</h3>
+    <p>记 \\(S = C P_{k+1|k} C' + R = R_{e,k+1}\\)，有：</p>
+    <div class="formula-box">
+      \\[
+      \\begin{aligned}
+      P_{k+1}(K) &= P_{k+1|k} - K C P_{k+1|k} - P_{k+1|k} C' K' + K S K' \\\\\\\\
+      &= P_{k+1|k} - P_{k+1|k} C' S^{-1} C P_{k+1|k} \\\\\\\\
+      &\\quad + (K - P_{k+1|k} C' S^{-1}) S (K - P_{k+1|k} C' S^{-1})'
+      \\end{aligned}
+      \\]
+    </div>
+
+    <h3>步骤 2：验证配方法</h3>
+    <p>展开最后一项验证：</p>
+    <div class="formula-box">
+      \\[
+      \\begin{aligned}
+      &(K - P C' S^{-1}) S (K - P C' S^{-1})' \\\\
+      =& K S K' - K S S^{-1} C P - P C' S^{-1} S K' + P C' S^{-1} S S^{-1} C P \\\\
+      =& K S K' - K C P - P C' K' + P C' S^{-1} C P
+      \\end{aligned}
+      \\]
+    </div>
+    <p>代入原式即验证了等式。</p>
+
+    <h3>步骤 3：确定最优增益</h3>
+    <p>由于 \\(S \\succ 0\\)（正定），二次项 \\((K - \\text{opt}) S (K - \\text{opt})'\\) 永远是半正定矩阵。要最小化 \\(P_{k+1}(K)\\)，只需让这一项为零：</p>
+
+    <div class="formula-box">
+      \\[
+      \\boxed{K_{k+1}^* = P_{k+1|k} C' S^{-1} = P_{k+1|k} C' [C P_{k+1|k} C' + R]^{-1}}
+      \\]
+    </div>
+
+    <p>代入后得到最小协方差：</p>
+    <div class="formula-box">
+      \\[
+      \\boxed{P_{k+1}^* = P_{k+1|k} - P_{k+1|k} C' S^{-1} C P_{k+1|k}}
+      \\]
+    </div>
+
+    <div class="callout">
+      <p><strong>🧠 理解 Completion of Squares</strong></p>
+      <p>配方法的核心思路：把 \\(P(K)\\) 写成 \\(\\text{常数} + (K - K^*) S (K - K^*)'\\)。由于 \\(S \\succ 0\\)，右边第二项≥0，所以当 \\(K = K^*\\) 时 \\(P(K)\\) 最小。这个常数就是最小可能的协方差。</p>
+    </div>
+  </div>
+
+  <!-- 5. 新视角 -->
+  <div id="sec5" class="section-card">
+    <h2>5. 最优增益的全新视角</h2>
+
+    <p>优化法给出了一个不同于几何法和概率法的理解角度：</p>
+
+    <div class="grid-3">
+      <div class="mini-card" style="border-left: 4px solid var(--accent);">
+        <h4>📐 几何法视角</h4>
+        <p>\\(K_k\\) 是投影系数——将状态\\(x_k\\)投影到新息方向上。</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #3b82f6;">
+        <h4>📊 概率法视角</h4>
+        <p>\\(K_k\\) 是回归系数——\\(\\Sigma_{xy} \\Sigma_y^{-1}\\)的自然产物。</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #22c55e;">
+        <h4>⚡ 优化法视角</h4>
+        <p>\\(K_k\\) 是优化变量——使协方差二次型最小的唯一解。</p>
+      </div>
+    </div>
+
+    <h3>三种方法殊途同归</h3>
+    <p>三种方法得到的 Kalman 增益表达式完全一致：</p>
+    <div class="formula-box">
+      \\[
+      \\boxed{K_k = P_{k|k-1} C' [C P_{k|k-1} C' + R]^{-1}}
+      \\]
+    </div>
+
+    <p>这验证了一个深刻的事实：</p>
+    <div class="callout">
+      <p><strong>🌟 Kalman Filter 的普适性</strong></p>
+      <p>无论你从哪个角度进入——几何、概率还是优化——KF 都是在线性高斯系统下你能做到的最好估计器。这种"殊途同归"的美，正是 KF 作为经典算法的魅力所在。</p>
+    </div>
+  </div>
+
+  <!-- 6. 对比 -->
+  <div id="sec6" class="section-card">
+    <h2>6. 三种方法详细对比</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>方法</th>
+          <th>核心工具</th>
+          <th>数学基础</th>
+          <th>优势</th>
+          <th>局限</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>📐 几何法</strong></td>
+          <td>投影定理、正交原理</td>
+          <td>内积空间</td>
+          <td>直观、可视化</td>
+          <td>只得到 LMMSE</td>
+        </tr>
+        <tr>
+          <td><strong>📊 概率法</strong></td>
+          <td>条件高斯公式</td>
+          <td>概率论</td>
+          <td>证明 MMSE = LMMSE</td>
+          <td>需要高斯假设</td>
+        </tr>
+        <tr>
+          <td><strong>⚡ 优化法</strong></td>
+          <td>Completion of Squares</td>
+          <td>矩阵微积分</td>
+          <td>工程直觉强、可推广</td>
+          <td>需预设估计器结构</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>推广路径对比</h3>
+    <div class="grid-2">
+      <div class="mini-card" style="border-left: 4px solid var(--accent);">
+        <h4>➡️ 非高斯系统</h4>
+        <p>几何法仍可得到 LMMSE，但不再是 MMSE。优化法可以改变估计器结构来适应非线性和非高斯。</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #3b82f6;">
+        <h4>➡️ 非线性系统</h4>
+        <p>优化法的推广路径最自然：将线性估计器替换为非线性结构（如神经网络），仍然使用最小化 MSE 的框架。这就是 EKF、UKF、粒子滤波等方法的理论基础。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. 总结 -->
+  <div id="sec7" class="section-card">
+    <h2>7. 总结与展望</h2>
+
+    <p>到此为止，我们用了三节课（L15-L17），从三个不同角度完成了 Kalman Filter 的完整推导：</p>
+
+    <div class="section-summary" style="padding: 16px; background: var(--accent-subtle); border-radius: var(--radius);">
+      <ul style="margin-left: 20px;">
+        <li><strong>L15（第一讲）</strong>：新息过程——定义、正交性与协方差</li>
+        <li><strong>L15（第二讲）</strong>：Kalman 增益与后验协方差——几何投影法</li>
+        <li><strong>L16（第一讲）</strong>：时间更新——投影法证明与收敛性</li>
+        <li><strong>L16（第二讲）</strong>：固定增益估计器与传感器融合</li>
+        <li><strong>L17（第一讲）</strong>：条件高斯定理与 MMSE 估计</li>
+        <li><strong>L17（第二讲）</strong>：Kalman 增益优化与三种方法对比</li>
+      </ul>
+    </div>
+
+    <p>接下来，我们将进入新的主题——<strong>动态规划（Dynamic Programming）</strong>，它是 KF 在最优控制中的延伸，也是理解更广泛序贯决策问题的基础框架。</p>
+  </div>
+
+  <!-- 自测题 -->
+  <div id="quiz" class="section-card">
+    <h2>📝 自测题</h2>
+
+    <div class="interactive-card">
+      <h3>问题 1</h3>
+      <p>优化法推导 KF 的核心思路是什么？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>构造一个形式合理的线性递归估计器（预测 + 修正结构），将后验协方差 \\(P_{k+1}\\) 写成增益 \\(K_{k+1}\\) 的二次型，然后通过 Completion of Squares 找到使协方差最小化的最优增益。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 2</h3>
+      <p>Completion of Squares 推导中，为什么最优增益是 \\(K^* = P C' S^{-1}\\)？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>配方法将 \\(P(K)\\) 写成 \\(\\text{const} + (K - K^*) S (K - K^*)'\\)。由于 \\(S = C P C' + R \\succ 0\\)，第二项总是半正定矩阵，只有在 \\(K = K^*\\) 时为零，此时 \\(P(K)\\) 达到最小。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 3</h3>
+      <p>三种推导 KF 的方法（几何法、概率法、优化法）的共同点和不同点是什么？</p>
+      <div class="quiz-options">
+        <button onclick="lessonKit.answer(this, 'q3-feedback')" data-correct="yes" data-explanation="正确！三种方法使用不同的数学工具（投影、条件高斯、二次型优化），得到完全相同的增益公式。它们各自提供了不同的理解角度。">得到相同的 Kalman 增益公式，但使用不同的数学工具和视角</button>
+        <button onclick="lessonKit.answer(this, 'q3-feedback')" data-correct="no" data-explanation="再想想。三种方法的结果是一致的——殊途同归。">得到不同的 Kalman 增益公式，但数值上近似</button>
+      </div>
+      <div id="q3-feedback" class="quiz-feedback"></div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="nav-links">
+    <a href="0021-KF-L17-条件高斯与MMSE.html" class="prev">← KF L17：条件高斯与 MMSE</a>
+    <a href="0023-北理工-扩散模型基础.html" class="next">北理工：扩散模型与 Flow Matching →</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+  </div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 KF L17 · Kalman 增益优化与三种方法对比</p>
+  </div>
+</div>
+<script src="assets/shiclass.js"></script>
+</body>
+</html>

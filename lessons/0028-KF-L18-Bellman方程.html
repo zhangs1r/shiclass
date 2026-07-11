@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KF L18：策略、最优性原理与 Bellman 方程 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<link rel="stylesheet" href="assets/shiclass.css">
+</head>
+<body>
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · KF L18 · 动态规划 · 第二部分</div>
+    <h1>策略、最优性原理与 Bellman 方程</h1>
+    <p class="subtitle">策略与反馈控制律的形式化定义、Bellman 最优性原理的直观与严格表述、Bellman 方程推导与 DP 求解流程</p>
+    <div class="hero-meta">
+      <span>📅 2026-06-27</span>
+      <span>🧩 Bellman 方程</span>
+      <span>🏆 最优性原理</span>
+      <span>🔄 DP 求解</span>
+    </div>
+  </div>
+
+  <!-- Lead Grid -->
+  <div
+</div>
+
+  <div class="lead-grid">
+    <div class="callout">
+      <h4>🎯 学完本节，你应能</h4>
+      <p>掌握Bellman方程与最优性原理在DP中的应用</p>
+    </div>
+    <div class="callout">
+      <h4>📖 前置知识</h4>
+      <p>建议先完成前面的课程，或具备线性代数与概率论基础。</p>
+    </div>
+  </div>
+
+  <section class="section-card"
+lead-grid">
+    <div class="callout">
+      <p><strong>🎯 本讲目标</strong></p>
+      <p>形式化定义策略（Policy）与反馈控制律、深刻理解 Bellman 最优性原理、推导 Bellman 方程、掌握 DP 的标准求解流程。</p>
+    </div>
+    <div class="callout">
+      <p><strong>🔑 核心思想</strong></p>
+      <p>最优策略的子策略也是最优的——这就是 Bellman 最优性原理。它将多步决策问题分解为一系列单步优化，每个子问题只需基于当前状态求解。</p>
+    </div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3>📖 目录</h3>
+    <ul>
+      <li><a href="#sec1">1. 回顾：动态规划的三要素</a></li>
+      <li><a href="#sec2">2. 策略与控制律的形式化定义</a></li>
+      <li><a href="#sec3">3. Bellman 最优性原理</a></li>
+      <li><a href="#sec4">4. Bellman 方程推导</a></li>
+      <li><a href="#sec5">5. DP 的标准求解流程</a></li>
+      <li><a href="#sec6">6. 维度灾难与应对思路</a></li>
+      <li><a href="#sec7">7. 完整小结</a></li>
+      <li><a href="#quiz">📝 自测题</a></li>
+    </ul>
+  </div>
+
+  <!-- 1. 回顾 -->
+  <div id="sec1" class="section-card">
+    <h2>1. 回顾：动态规划的三要素</h2>
+
+    <p>上一讲我们学习了 DP 的三个基本要素：</p>
+
+    <div class="grid-3">
+      <div class="mini-card">
+        <h4>动态系统</h4>
+        \\[
+        x_{k+1} = f_k(x_k, u_k, w_k)
+        \\]
+      </div>
+      <div class="mini-card">
+        <h4>累加代价</h4>
+        \\[
+        J = \\mathbb{E}\\{g_N(x_N) + \\sum_{k=0}^{N-1} g_k(x_k, u_k, w_k)\\}
+        \\]
+      </div>
+      <div class="mini-card">
+        <h4>控制目标</h4>
+        \\[
+        \\min_{u_0,\\dots,u_{N-1}} J(x_0)
+        \\]
+      </div>
+    </div>
+
+    <p>我们已经知道，闭环策略（基于当前状态决策）优于开环策略。但如何找到最好的闭环策略？这就需要引入<strong>策略（Policy）</strong>的概念和<strong>Bellman 方程</strong>。</p>
+  </div>
+
+  <!-- 2. 策略 -->
+  <div id="sec2" class="section-card">
+    <h2>2. 策略与控制律的形式化定义</h2>
+
+    <p>把闭环决策规则的形式化：</p>
+
+    <div class="formula-box">
+      \\[
+      u_k = \\mu_k(x_k)
+      \\]
+      <p style="margin-top:8px;font-size:0.9rem">\\(\\mu_k\\) 称为第 \\(k\\) 步的<strong>控制律</strong>（control law）</p>
+    </div>
+
+    <p>完整的策略定义为：</p>
+    <div class="formula-box">
+      \\[
+      \\pi = \\{\\mu_0, \\mu_1, \\dots, \\mu_{N-1}\\}
+      \\]
+      <p style="margin-top:8px;font-size:0.9rem">\\(\\pi\\) 称为一个<strong>策略</strong>（policy）或控制律序列</p>
+    </div>
+
+    <p>基本问题 (P1) 最终可以表述为：</p>
+    <div class="formula-box">
+      \\[
+      \\boxed{\\min_{\\pi} J(x_0)}
+      \\]
+      <p style="margin-top:8px;font-size:0.9rem">在所有可能的策略中，找到使总期望代价最小的那个策略</p>
+    </div>
+
+    <div class="callout">
+      <p><strong>💡 理解策略</strong></p>
+      <p>策略就是"如果看到状态 \\(x_k\\)，就执行动作 \\(\\mu_k(x_k)\\)"的一系列规则。动态规划的目标是<strong>找到最优策略</strong>，而不是简单找到一组最优控制值。因为策略是状态到动作的映射，天然具备反馈能力。</p>
+    </div>
+
+    <h3>策略空间的维度</h3>
+    <p>策略空间的大小取决于状态空间和动作空间的大小。如果状态有 \\(|S|\\) 种可能，动作有 \\(|A|\\) 种可能，那么每个 \\(\\mu_k\\) 就有 \\(|A|^{|S|}\\) 种选择——组合数巨大！DP 的强大之处就在于不需要穷举所有策略。</p>
+  </div>
+
+  <!-- 3. 最优性原理 -->
+  <div id="sec3" class="section-card">
+    <h2>3. Bellman 最优性原理</h2>
+
+    <p><strong>最优性原理（Principle of Optimality）</strong> 由 Richard Bellman 于 1957 年提出，是动态规划的基石：</p>
+
+    <div class="callout" style="border-left-color: #8b5cf6;">
+      <p><strong>🏆 Bellman 最优性原理</strong></p>
+      <p>一个最优策略具有这样的性质：无论初始状态和初始决策如何，剩余的决策必须构成一个以第一个决策产生的状态为初始状态的最优策略。</p>
+    </div>
+
+    <h3>直观理解</h3>
+    <div class="flow-formula">
+      🔄 如果从 A 到 C 的最优路径经过了 B，那么从 B 到 C 的那一段也一定是最优的。
+    </div>
+
+    <p>反过来说：如果从 B 到 C 不是最优的，那你就可以用从 B 到 C 的更优路径替换它，从而得到一条从 A 到 C 的更优路径——这与原来的路径是最优的矛盾。</p>
+
+    <div class="grid-2">
+      <div class="mini-card" style="border-left: 4px solid #22c55e;">
+        <h4>✅ 为什么成立？</h4>
+        <p>因为代价函数是可加的（分离性）。未来代价只依赖于当前状态和未来决策，不依赖于历史。这是马尔可夫性质的体现。</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #f59e0b;">
+        <h4>⚠️ 什么时候不成立？</h4>
+        <p>当代价函数不可加（例如存在跨阶段的约束），或者状态不满足马尔可夫性（未来依赖于历史而非仅当前状态）时，最优性原理可能不成立。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Bellman 方程 -->
+  <div id="sec4" class="section-card">
+    <h2>4. Bellman 方程推导</h2>
+
+    <p>定义<strong>最优代价函数（value function）</strong>\\(V_k(x_k)\\) 为从状态 \\(x_k\\) 开始、执行最优策略到终点的最小期望代价：</p>
+
+    <div class="formula-box">
+      \\[
+      V_k(x_k) = \\min_{\\pi} \\mathbb{E}\\left[ g_N(x_N) + \\sum_{i=k}^{N-1} g_i(x_i, u_i, w_i) \\Big| x_k \\right]
+      \\]
+    </div>
+
+    <p>根据最优性原理，我们可以写出 \\(V_k\\) 和 \\(V_{k+1}\\) 之间的递推关系：</p>
+
+    <div class="formula-box">
+      \\[
+      \\boxed{V_k(x_k) = \\min_{u_k} \\mathbb{E}_{w_k} \\big[ g_k(x_k, u_k, w_k) + V_{k+1}(f_k(x_k, u_k, w_k)) \\big]}
+      \\]
+    </div>
+
+    <p>边界条件：</p>
+    <div class="formula-box">
+      \\[
+      \\boxed{V_N(x_N) = g_N(x_N)}
+      \\]
+    </div>
+
+    <p>这就是 <strong>Bellman 方程</strong>——DP 的核心递推公式。</p>
+
+    <h3>方程的含义</h3>
+    <p>Bellman 方程将多步优化分解为单步优化：</p>
+    <ul>
+      <li><strong>当前步</strong>：选择 \\(u_k\\) 使 \\(g_k(x_k, u_k, w_k)\\)（即时代价）+ \\(V_{k+1}(x_{k+1})\\)（未来最优代价）的期望最小</li>
+      <li><strong>未来步</strong>：\\(V_{k+1}\\) 已经假设了从 \\(k+1\\) 开始的所有决策都是最优的</li>
+      <li><strong>递归求解</strong>：从 \\(V_N\\) 开始反向递推，直到算出 \\(V_0\\)</li>
+    </ul>
+
+    <div class="callout">
+      <p><strong>🎯 Bellman 方程的魔力</strong></p>
+      <p>我们只需要在每个状态 \\(x_k\\) 上求解一个单步优化问题，而不需要考虑未来的所有可能路径！正是最优性原理保证了这种分解是全局最优的。</p>
+    </div>
+  </div>
+
+  <!-- 5. 求解流程 -->
+  <div id="sec5" class="section-card">
+    <h2>5. DP 的标准求解流程</h2>
+
+    <p>完整的 DP 求解包含四个步骤：</p>
+
+    <div class="grid-2">
+      <div class="mini-card" style="border-left: 4px solid #8b5cf6;">
+        <h4>1️⃣ 初始化</h4>
+        <p>设置终端代价函数：</p>
+        \\[
+        V_N(x_N) = g_N(x_N), \\quad \\forall x_N
+        \\]
+        <p>为每个可能的终端状态赋值。</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #3b82f6;">
+        <h4>2️⃣ 反向递推</h4>
+        <p>对 \\(k = N-1, N-2, \\dots, 0\\)：</p>
+        \\[
+        V_k(x_k) = \\min_{u_k} \\mathbb{E}[g_k + V_{k+1}]
+        \\]
+        <p>对每个可能的状态 \\(x_k\\) 求解。</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #22c55e;">
+        <h4>3️⃣ 提取策略</h4>
+        <p>保存每个状态下的最优决策：</p>
+        \\[
+        \\mu_k^*(x_k) = \\arg\\min_{u_k} \\mathbb{E}[g_k + V_{k+1}]
+        \\]
+        <p>记录最优动作。</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #f59e0b;">
+        <h4>4️⃣ 正向执行</h4>
+        <p>在实际运行时，根据当前状态查表执行最优动作：</p>
+        \\[
+        u_k = \\mu_k^*(x_k)
+        \\]
+        <p>直到达到终端状态。</p>
+      </div>
+    </div>
+
+    <h3>以库存控制为例</h3>
+    <p>假设库存 \\(x_k\\) 的取值范围是 0~100（离散化），订货量 \\(u_k\\) 的取值范围是 0~50：</p>
+    <ol>
+      <li><strong>初始化</strong>：\\(V_N(x_N) = R(x_N)\\) 对每个 \\(x_N \\in [0,100]\\)</li>
+      <li><strong>反向递推</strong>：对 \\(k=N-1\\)，对每个可能的 \\(x_k \in [0,100]\\)，计算 \\(\\min_{u_k} \\mathbb{E}[r(x_k) + c u_k - \\beta w_k + V_{k+1}(x_k + u_k - w_k)]\\)</li>
+      <li><strong>提取策略</strong>：对每个 \\(x_k\\)，记录使期望最小的 \\(u_k\\)</li>
+      <li><strong>正向执行</strong>：每天根据实际库存 \\(x_k\\)，查表得到最优订货量</li>
+    </ol>
+  </div>
+
+  <!-- 6. 维度灾难 -->
+  <div id="sec6" class="section-card">
+    <h2>6. 维度灾难与应对思路</h2>
+
+    <div class="callout" style="border-left-color: #ef4444;">
+      <p><strong>📌 维度灾难（Curse of Dimensionality）</strong></p>
+      <p>DP 理论上可以解决任何离散状态和离散控制的序贯决策问题，但状态空间的维度会导致计算量指数增长。这是 DP 在实际应用中的主要限制。</p>
+    </div>
+
+    <p>假设状态是 10 维的向量，每维离散化为 10 个值，那么状态总数就是 \\(10^{10} = 100\\) 亿——完全不可行。</p>
+
+    <h3>常用的应对方法</h3>
+    <div class="grid-2">
+      <div class="mini-card" style="border-left: 4px solid #3b82f6;">
+        <h4>📉 值函数近似</h4>
+        <p>用参数化模型（如神经网络）来近似 \\(V_k(x_k)\\)，而不是精确存储每个状态的值。这是深度强化学习的核心思路。</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #22c55e;">
+        <h4>🎯 蒙特卡洛方法</h4>
+        <p>通过采样而非穷举来估计期望值。只访问"高概率"的状态，忽略极不可能的状态。</p>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="mini-card" style="border-left: 4px solid #f59e0b;">
+        <h4>🔗 问题分解</h4>
+        <p>将高维问题分解为若干低维子问题。利用问题的特殊结构（如稀疏性、可分性）来降低复杂度。</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #8b5cf6;">
+        <h4>⚡ LQR 特例</h4>
+        <p>对于线性系统 + 二次代价 + 高斯噪声（LQG），Bellman 方程有解析解——Riccati 方程。这正是 KF 和 LQR 的联系。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. 小结 -->
+  <div id="sec7" class="section-card">
+    <h2>7. 完整小结</h2>
+
+    <p>本讲是 KF L18 动态规划入门系列的第二部分。总结核心要点：</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>概念</th>
+          <th>数学表达</th>
+          <th>核心含义</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>策略</strong></td>
+          <td>\\(\\pi = \\{\\mu_0, \\dots, \\mu_{N-1}\\}\\)</td>
+          <td>从状态到动作的映射序列</td>
+        </tr>
+        <tr>
+          <td><strong>最优性原理</strong></td>
+          <td>最优策略的子策略也最优</td>
+          <td>DP 可行性的理论基础</td>
+        </tr>
+        <tr>
+          <td><strong>Bellman 方程</strong></td>
+          <td>\\(V_k = \\min_{u_k} \\mathbb{E}[g_k + V_{k+1}]\\)</td>
+          <td>分解多步为单步优化</td>
+        </tr>
+        <tr>
+          <td><strong>DP 流程</strong></td>
+          <td>初始化 → 反向递推 → 提取策略 → 正向执行</td>
+          <td>从终点倒推求解</td>
+        </tr>
+        <tr>
+          <td><strong>维度灾难</strong></td>
+          <td>状态空间指数增长</td>
+          <td>需借助近似方法</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <p><strong>🔗 与 KF 的联系</strong></p>
+      <p>Kalman Filter 可以看作是 DP/Bellman 方程在线性高斯系统下的一个应用。KF 的协方差更新方程（Riccati 方程）与 LQR 的 Riccati 方程互为对偶。这也是为什么我们把 DP 放在 KF 系列的最后一讲——它们是同一个理论框架的不同侧面。</p>
+    </div>
+  </div>
+
+  <!-- 自测题 -->
+  <div id="quiz" class="section-card">
+    <h2>📝 自测题</h2>
+
+    <div class="interactive-card">
+      <h3>问题 1</h3>
+      <p>Bellman 最优性原理的核心含义是什么？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>一个最优策略的子策略也是最优的。或者说，如果从 A 到 C 的最优路径经过了 B，那么从 B 到 C 的那一段也是最优的。这保证了多步决策问题可以分解为一系列单步优化。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 2</h3>
+      <p>Bellman 方程 \\(V_k(x_k) = \\min_{u_k} \\mathbb{E}[g_k + V_{k+1}(f_k)]\\) 的每一项代表什么？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>\\(g_k(x_k, u_k, w_k)\\) 是当前步的即时代价，\\(V_{k+1}(f_k(x_k, u_k, w_k))\\) 是从下一步状态开始的最优未来代价。期望 \\(\\mathbb{E}\\) 对随机扰动 \\(w_k\\) 取。\\(\\min_{u_k}\\) 选择当前步的最优控制。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 3</h3>
+      <p>什么是"维度灾难"？有哪些常用的应对方法？</p>
+      <div class="quiz-options">
+        <button onclick="lessonKit.answer(this, 'q3-feedback')" data-correct="yes" data-explanation="正确！状态空间随维度指数增长使 DP 不可行，常用应对方法包括值函数近似（如神经网络）、蒙特卡洛方法和问题分解。">状态空间随维度指数增长；值函数近似、蒙特卡洛方法、问题分解</button>
+        <button onclick="lessonKit.answer(this, 'q3-feedback')" data-correct="no" data-explanation="再想想。维度灾难的核心是状态空间维度指数增长，而非计算时间呈线性增长。">计算时间随维度线性增长；使用更快的 CPU 即可解决</button>
+      </div>
+      <div id="q3-feedback" class="quiz-feedback"></div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="nav-links">
+    <a href="0027-KF-L18-动态规划基础.html" class="prev">← KF L18：动态规划基础</a>
+    <a href="../index.html" class="next">🏠 返回课程馆</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+  </div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 KF L18 · 策略、最优性原理与 Bellman 方程</p>
+  </div>
+</div>
+<script src="assets/shiclass.js"></script>
+</body>
+</html>
