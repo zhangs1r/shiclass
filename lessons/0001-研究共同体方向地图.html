@@ -3,14 +3,112 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>研究共同体与方向地图 · 研讨会系列1</title>
+<title>研究共同体与方向地图 · 施老师大课堂</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/shiclass.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\\(', '\\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']]
+  },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="page">
 
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · 第1期</div>
+    <h1>研究共同体与方向地图</h1>
+    <p class="subtitle">如何构建高效的研究共同体？绘制领域方向地图，找到自己的研究定位</p>
+    <div class="hero-meta">
+      <span>📅 2025-11-01</span>
+      <span>🧩 研究规范</span>
+      <span>🎯 学术入门</span>
+      <span>👤 施凌</span>
+    </div>
+  </div>
 
+  <main>
+    
+  <section class="section-card">
+    <h2>课程概览</h2>
+    <p>以下内容基于课堂实录整理：</p><blockquote style='background:var(--bg-subtle);padding:1rem;border-left:3px solid var(--accent);'>hello 师姐
+早上好我上来了
+我来笑一下 screen
+Okay
+好那我们差不多开始了
+对我还是差不多 9.50
+得要得要测还有好点其他的事情做
+啥子事说
+行那上节课我们就讲到了这个 list square
+然后讲到了这个 inter product space
+对
+然后我们也提出了对 inner product space 进行了一个定义
+然然后也看到了一些具体的例子
+比如说在 vector space inner product 可以是什么样子的
+然后一个 functional space 它的 inner product 是什么样子的</blockquote>
+  </section>
 
+  <section class="section-card">
+    <h2>01 研讨会系列1：研究共同体与方向地图</h2>
+    <p><br>![[Pasted image 20260515200829.png]]</p>
+  </section>
 
+  <section class="section-card">
+    <h2>本讲目标</h2>
+    <p><br>这一讲不是公式课，而是整套课的开场。你需要学会三件事：</p><p>1. 看懂不同研究方向之间的联系。<br>2. 明白为什么“状态估计”会同时出现在机器人、SLAM、隐私安全、外骨骼、海关检测等方向里。<br>3. 建立一个学习后续 Kalman Filter 的动机。<br></p>
+  </section>
+
+  <section class="section-card">
+    <h2>通俗故事：为什么研究不是一个人闷头做</h2>
+    <p><br>想象你进入一个实验室。每个人都在做不同项目：有人做机器人抓取，有人做视觉 SLAM，有人做物理系统安全，有人做大模型文本抽取。表面看这些方向很散，但它们都在回答同一种问题：</p><p>&gt; 世界里有些重要东西我看不全、看不准、看得有噪声，我该怎样推断真实情况？</p><p>这就是 estimation 的核心。<br></p>
+  </section>
+
+  <section class="section-card">
+    <h2>1. 研究方向一：文本分析和海关检测</h2>
+    <p></p>
+  </section>
+
+  <section class="section-card">
+    <h2>问题背景</h2>
+    <p><br>有些境外商品会宣传“减肥”“兴奋”“增强体力”等功效。问题是：这些功效背后可能添加了某些在国内不合法的成分。</p><p>传统检测方式是化学实验：</p><p>- 有一个很长的违禁物质清单；<br>- 海关逐项排查；<br>- 每项检测都可能花 1 到 2 天；<br>- 如果清单太长，成本非常高。<br></p>
+  </section>
+
+  <section class="section-card">
+    <h2>研究思路</h2>
+    <p><br>用自然语言处理和大模型做前置筛查：</p><p>1. 从网页、数据库、文献中收集“某功效对应哪些物质”的信息。<br>2. 抽取物质名、功效、来源、证据。<br>3. 形成候选物质库。<br>4. 帮海关缩小检测范围。<br></p>
+  </section>
+
+  <section class="section-card">
+    <h2>练习与思考</h2>
+    
+        <div class="exercise-box">
+          <ol>
+            <li><details class="exercise-answer"><summary>回顾本节课的核心概念，你能用自己的话复述吗？</summary><div>尝试关闭视频，凭记忆把本节课讲的主要思路写下来。</div></details></li>
+            <li><details class="exercise-answer"><summary>板书中的关键公式，你能独立推导一遍吗？</summary><div>建议手推一遍，不要直接看板书。</div></details></li>
+          </ol>
+        </div>
+        
+  </section>
+
+  </main>
+
+  <footer class="section-card" style="margin-top:2rem;text-align:center;">
+    <div class="nav-links">
+      <a href="../index.html">← 返回课程馆</a>
+      
+    </div>
+    <p class="foot-note" style="margin-top:1.5rem;color:var(--text-light);font-size:0.85rem;">
+      内容基于施凌老师课堂录制整理，结合 SRT 字幕与板书笔记生成。
+    </p>
+  </footer>
+
+</div>
 </body>
 </html>

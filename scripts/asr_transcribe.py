@@ -61,19 +61,22 @@ def extract_audio(video_path, output_mp3=None):
     return output_mp3
 
 
-def split_audio_by_size(audio_path, target_size_mb=6):
+def split_audio_by_size(audio_path, target_size_mb=6, max_duration_s=120):
     """
-    把音频切成多段，使每段 base64 后不超过 target_size_mb。
+    把音频切成多段，使每段 base64 后不超过 target_size_mb
+    且时长不超过 max_duration_s（MiMo 模型上下文限制 8192 tokens，约 1310 秒音频）。
     先获取总时长和总文件大小，按比例估算切割时长。
     """
     total_dur = get_audio_duration(audio_path)
     total_bytes = os.path.getsize(audio_path)
     bytes_per_sec = total_bytes / total_dur if total_dur > 0 else 0
 
-    # base64 会膨胀约 4/3，预留余量
-    # 目标：每段 base64 后 ≤ target_size_mb × 0.85
-    safe_bytes = target_size_mb * 1024 * 1024 * 0.7  # 原始音频字节数上限
-    chunk_dur = safe_bytes / bytes_per_sec if bytes_per_sec > 0 else 120
+    # 按大小限制计算每段时长
+    safe_bytes = target_size_mb * 1024 * 1024 * 0.7
+    chunk_dur_by_size = safe_bytes / bytes_per_sec if bytes_per_sec > 0 else 120
+    
+    # 取小值：既要满足大小限制也要满足时长限制
+    chunk_dur = min(chunk_dur_by_size, max_duration_s)
     chunk_dur = max(30, min(chunk_dur, 600))  # 30s~10min
 
     stem = audio_path.rsplit('.', 1)[0]
@@ -105,34 +108,45 @@ def split_audio_by_size(audio_path, target_size_mb=6):
 
 # ── ASR 调用 ──────────────────────────────────────
 
-def transcribe_segment(audio_path):
+def transcribe_segment(audio_path, max_retries=5):
     """
     用 MiMo-V2.5-ASR 转写一段音频。
+    遇到 429 限流自动重试（指数退避 10s → 20s → 40s → 80s → 160s）。
     返回 (完整文本, 原始API响应JSON)
     """
+    import time
     with open(audio_path, "rb") as f:
         audio_bytes = f.read()
     b64 = base64.b64encode(audio_bytes).decode("utf-8")
     data_url = f"data:audio/mpeg;base64,{b64}"
 
-    try:
-        resp = client.chat.completions.create(
-            model=ASR_MODEL,
-            messages=[{
-                "role": "user",
-                "content": [{
-                    "type": "input_audio",
-                    "input_audio": {"data": data_url}
-                }]
-            }],
-            extra_body={"asr_options": {"language": "zh"}}
-        )
-        text = (resp.choices[0].message.content or "").strip()
-        return text, resp
+    for attempt in range(max_retries):
+        try:
+            resp = client.chat.completions.create(
+                model=ASR_MODEL,
+                messages=[{
+                    "role": "user",
+                    "content": [{
+                        "type": "input_audio",
+                        "input_audio": {"data": data_url}
+                    }]
+                }],
+                extra_body={"asr_options": {"language": "zh"}}
+            )
+            text = (resp.choices[0].message.content or "").strip()
+            return text, resp
 
-    except Exception as e:
-        print(f"  [ERROR] ASR 调用失败: {e}", file=sys.stderr)
-        return "", None
+        except Exception as e:
+            err_str = str(e)
+            if "429" in err_str or "Too many requests" in err_str:
+                if attempt < max_retries - 1:
+                    wait = 10 * (2 ** attempt)  # 10s, 20s, 40s, 80s, 160s
+                    print(f"  [429 限流] 等待 {wait}s 后重试 ({attempt+1}/{max_retries})...", file=sys.stderr)
+                    time.sleep(wait)
+                    continue
+            print(f"  [ERROR] ASR 调用失败: {e}", file=sys.stderr)
+            return "", None
+    return "", None
 
 
 # ── SRT 生成 ──────────────────────────────────────
@@ -235,11 +249,25 @@ def main():
     total_mb = os.path.getsize(audio_path) / (1024 * 1024)
     print(f"   音频大小: {total_mb:.1f} MB")
 
-    # Step 2: 如果音频太大，切分成多段
+    # Step 2: 如果音频太大或太长，切分成多段
     segment_files = []
-    if total_mb > MAX_B64_SIZE_MB:
-        print(f"✂️ 音频超过 {MAX_B64_SIZE_MB}MB 限制，自动切分...")
-        chunks = split_audio_by_size(audio_path, target_size_mb=6)
+    total_duration = get_audio_duration(audio_path)
+    # MiMo 模型总上下文 8192 tokens，其中需预留 2048 给 completion
+    # 音频输入可用 ~6144 tokens，约 6.25 tokens/秒 → ~16 分钟
+    max_context = 8192
+    reserve_completion = 2048
+    max_input_tokens = max_context - reserve_completion - 64  # 留 64 token 余量
+    tokens_per_sec = 6.25  # MiMo 音频 token 计算公式
+    max_duration_by_tokens = max_input_tokens / tokens_per_sec  # ~16 分钟
+    
+    if total_mb > MAX_B64_SIZE_MB or total_duration > max_duration_by_tokens:
+        if total_mb > MAX_B64_SIZE_MB:
+            print(f"✂️ 音频超过 {MAX_B64_SIZE_MB}MB 限制，自动切分...")
+        else:
+            print(f"✂️ 音频时长 {total_duration:.0f}s 超过模型上下文限制 ({max_duration_by_tokens:.0f}s)，自动切分...")
+        # 尽量少切：按模型 token 限制（~16min/段）而不是按大小限制切
+        chunk_max_s = int(min(max_duration_by_tokens, 900))  # 最多 15 分钟一段
+        chunks = split_audio_by_size(audio_path, target_size_mb=6, max_duration_s=chunk_max_s)
         print(f"   切成 {len(chunks)} 段")
         segment_files = chunks
     else:
@@ -261,6 +289,11 @@ def main():
         # 清理临时文件
         if seg_path != audio_path:
             os.remove(seg_path)
+
+        # 段间休息 5 秒避免限流
+        if i < len(segment_files) - 1:
+            import time
+            time.sleep(5)
 
     # Step 4: 生成 SRT
     all_text = "\n".join(t for _, _, t in chunk_texts if t.strip())

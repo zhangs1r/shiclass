@@ -3,14 +3,88 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KF L1：矩阵特征值、SVD与正定性 · 研讨会系列4</title>
+<title>KF L1：矩阵特征值、SVD与正定性 · 施老师大课堂</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/shiclass.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\\(', '\\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']]
+  },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="page">
 
+  <div class="hero">
+    <div class="eyebrow">KF 系列 · L1</div>
+    <h1>KF L1：矩阵特征值、SVD与正定性</h1>
+    <p class="subtitle">Kalman Filter 的数学基础：特征值分解、奇异值分解、正定矩阵</p>
+    <div class="hero-meta">
+      <span>📅 2025-11-22</span>
+      <span>🧩 矩阵理论</span>
+      <span>📐 SVD</span>
+      <span>🎯 KF基础</span>
+      <span>👤 施凌</span>
+    </div>
+  </div>
 
+  <main>
+    
+  <section class="section-card">
+    <h2>课程概览</h2>
+    <p>以下内容基于课堂实录整理：</p><blockquote style='background:var(--bg-subtle);padding:1rem;border-left:3px solid var(--accent);'>是雷总
+师傅 hello
+师姐
+你们稍等我一下
+我要用因为我用这个另外一部电脑去手写
+我看另外一部电脑里面有没有
+有没有那个腾讯会议
+不一定有可能还临时得安装一下
+好的师傅
+我们正好顺便等一下其他的同学们
+快来了 22 个
+23 个人了
+那我这个也没有
+觉得没有我下载一下
+马上</blockquote>
+  </section>
 
+  <section class="section-card">
+    <h2>核心内容</h2>
+    <p>1. Dynamic Programming 动态规划</p><p>(A tool / an algorithm to solve a class of problems)</p><p>The basic problem (P1):</p><p>① An underlying discrete-time dynamic system. e.g., $x_{k+1} = A x_k + B u_k + w_k$ .</p><p>$$<br>x _ {k + 1} = f _ {k} (x _ {k}, u _ {k}, w _ {k}), k = 0, 1, \dots , N - 1.<br>$$</p><p>② A cost function is additive over time</p><p>$$<br>J = E \left\{g _ {N} (x _ {N}) + \sum_ {k = 0} ^ {N - 1} g _ {k} (x _ {k}, u _ {k}, w _ {k}) \right\}.<br>$$</p><p>$$<br>J = E \left\{\prod_ {k = 0} ^ {N} g _ {k} (\cdot) \right\}<br>$$</p><p>Goal: minimize J by choosing $u_{0}, \cdots, u_{N-1}$ .</p><p>Solution: use dynamic programming!</p><p>2. Example. You are the owner of a 7-11 store. Consider a very simple scenario. You only sell one product (e.g., cocoa).</p><p>$x_{k}$ : no. of cans available at the beginning of the k-th day.</p><p>Uk: no. of cans ordered</p><p>Wk: no. of cans sold on the k-th day</p><p>${x}_{k + 1} = {x}_{k} + {u}_{k} - {w}_{k}$ .</p><p>$r(x_k): penalty. (e.g., r(x_k) = |x_k|^2)$</p><p>Cuk : purchasing cost. βwk : profit.</p><p>$R(x_{N})$ : terminal cost.</p><p>② $J = E \left\{ R(x_{N}) + \sum_{k=0}^{N-1} \left( r(x_{k}) + c u_{k} - \beta w_{k} \right) \right\}.$</p><p>Goal: choose $U_0, \cdots U_{N-1}$ to minimize $J$</p><p>3. closed-loop vs open-loop minimization.</p><p>Example: (case 11) let $u_k = 100 \forall k$ .</p><p>(2) let $u_k = \begin{cases} 200, &amp; 春天 \text{ or 秋天} \\ 500, &amp; 夏天 \\ 50, &amp; 冬天 \end{cases}$ off line strategy.<br>离线 (open-loop)</p><p>focus.</p><p>(3) $U_{k}$ depends on $x_{k}$ ( $x_{k-1}, \ldots, x_{0}$ ).</p><p>$u_{k}=\mu_{k}(x_{k})$ . 关于 $x_{k}$ 的一个函数.</p><p>$\pi : \left\{ {{\mu }_{0},{\mu }_{1},\cdots {\mu }_{n - 1}}\right\}$ is called a policy / control law.</p><p>Basic Problem $P_{1}$ : $\min_{\pi} J(x_{0})$</p>
+  </section>
 
+  <section class="section-card">
+    <h2>练习与思考</h2>
+    
+        <div class="exercise-box">
+          <ol>
+            <li><details class="exercise-answer"><summary>回顾本节课的核心概念，你能用自己的话复述吗？</summary><div>尝试关闭视频，凭记忆把本节课讲的主要思路写下来。</div></details></li>
+            <li><details class="exercise-answer"><summary>板书中的关键公式，你能独立推导一遍吗？</summary><div>建议手推一遍，不要直接看板书。</div></details></li>
+          </ol>
+        </div>
+        
+  </section>
+
+  </main>
+
+  <footer class="section-card" style="margin-top:2rem;text-align:center;">
+    <div class="nav-links">
+      <a href="../index.html">← 返回课程馆</a>
+      
+    </div>
+    <p class="foot-note" style="margin-top:1.5rem;color:var(--text-light);font-size:0.85rem;">
+      内容基于施凌老师课堂录制整理，结合 SRT 字幕与板书笔记生成。
+    </p>
+  </footer>
+
+</div>
 </body>
 </html>
