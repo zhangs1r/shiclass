@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KF L14：Kalman Filter 模型、假设与测量更新 (1/2) · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<link rel="stylesheet" href="assets/shiclass.css">
+</head>
+<body>
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · KF L14 (1/2)</div>
+    <h1>Kalman Filter 模型、假设与符号体系</h1>
+    <p class="subtitle">正式进入 Kalman Filter —— 系统模型、基本假设、估计符号与递归结构全景</p>
+    <div class="hero-meta">
+      <span>📅 2026-05-10</span>
+      <span>🧩 KF 模型</span>
+      <span>📐 假设体系</span>
+      <span>🔄 递归结构</span>
+    </div>
+  </div>
+
+  <!-- Lead Grid -->
+  <div class="lead-grid">
+    <div class="callout">
+      <p><strong>🎯 本讲目标（第一部分）</strong></p>
+      <p>写出标准线性系统模型、理解 KF 的基本假设、看懂估计符号（预测/更新/误差/协方差）、理解递归结构的两个环节。</p>
+    </div>
+    <div class="callout">
+      <p><strong>🔑 核心思想</strong></p>
+      <p>Kalman Filter 的"舞台搭建"：先把系统模型和假设写清楚，再定义记号，最后拆成 time update + measurement update 两个递归环节。</p>
+    </div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3>📖 目录</h3>
+    <ul>
+      <li><a href="#sec1">1. Kalman Filter 解决什么问题</a></li>
+      <li><a href="#sec2">2. 系统模型</a></li>
+      <li><a href="#sec3">3. KF 基本假设</a></li>
+      <li><a href="#sec4">4. 为什么 \(R>0\) 而 \(Q\ge 0\)？</a></li>
+      <li><a href="#sec5">5. 为什么假设高斯噪声</a></li>
+      <li><a href="#sec6">6. 估计符号体系</a></li>
+      <li><a href="#sec7">7. 初始化</a></li>
+      <li><a href="#sec8">8. 递归结构：两大环节</a></li>
+      <li><a href="#sec9">9. 从 LMMSE 到递归的动机</a></li>
+      <li><a href="#quiz">📝 自测题</a></li>
+    </ul>
+  </div>
+
+  <!-- 1. KF 解决什么问题 -->
+  <div id="sec1" class="section-card">
+    <h2>1. Kalman Filter 解决什么问题</h2>
+    <p>真实状态 \(x_k\) 看不见或看不准。我们只有带噪声测量：</p>
+    <div class="formula-box">
+      \[
+      y_k = C x_k + v_k
+      \]
+    </div>
+    <p>同时我们知道系统大致如何演化：</p>
+    <div class="formula-box">
+      \[
+      x_{k+1} = A x_k + w_k
+      \]
+    </div>
+    <div class="callout">
+      <p><strong>🎯 目标</strong></p>
+      <p>用过去和当前测量，<strong>递归</strong>估计当前状态 —— 每来一个新测量只需常数时间，不依赖历史长度。</p>
+    </div>
+  </div>
+
+  <!-- 2. 系统模型 -->
+  <div id="sec2" class="section-card">
+    <h2>2. 系统模型</h2>
+    <div class="grid-2">
+      <div class="mini-card" style="border-left: 4px solid var(--accent);">
+        <h4>状态方程</h4>
+        \[
+        x_{k+1} = A x_k + w_k
+        \]
+        <p style="font-size:0.85rem">若有控制输入：</p>
+        \[
+        x_{k+1} = A x_k + B u_k + w_k
+        \]
+      </div>
+      <div class="mini-card" style="border-left: 4px solid var(--accent);">
+        <h4>测量方程</h4>
+        \[
+        y_k = C x_k + v_k
+        \]
+      </div>
+    </div>
+    <p>其中：</p>
+    <ul>
+      <li>\(x_k \in \mathbb{R}^n\)：系统状态（随机变量）</li>
+      <li>\(y_k \in \mathbb{R}^m\)：测量值</li>
+      <li>\(w_k \sim N(0, Q)\)：过程噪声</li>
+      <li>\(v_k \sim N(0, R)\)：测量噪声</li>
+      <li>\(A \in \mathbb{R}^{n\times n}\)：系统动态矩阵</li>
+      <li>\(C \in \mathbb{R}^{m\times n}\)：观测矩阵</li>
+    </ul>
+  </div>
+
+  <!-- 3. KF 基本假设 -->
+  <div id="sec3" class="section-card">
+    <h2>3. KF 基本假设</h2>
+    <p>课堂板书列出的核心假设：</p>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>① 初始状态</h4>
+        \[
+        x_0 \sim N(0, \Pi_0),\quad \Pi_0 \ge 0
+        \]
+      </div>
+      <div class="mini-card">
+        <h4>② 过程噪声</h4>
+        \[
+        w_k \sim N(0, Q),\quad Q \ge 0
+        \]
+      </div>
+      <div class="mini-card">
+        <h4>③ 测量噪声</h4>
+        \[
+        v_k \sim N(0, R),\quad R > 0
+        \]
+      </div>
+      <div class="mini-card">
+        <h4>④ 互不相关</h4>
+        <p>\(x_0, w_k, v_k\) 彼此不相关</p>
+      </div>
+    </div>
+    <p>还要求：</p>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>⑤ 可观性</h4>
+        \[
+        (A, C)\ \text{observable}
+        \]
+      </div>
+      <div class="mini-card">
+        <h4>⑥ 能控性</h4>
+        \[
+        (A, \sqrt{Q})\ \text{controllable}
+        \]
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. R>0 vs Q>=0 -->
+  <div id="sec4" class="section-card">
+    <h2>4. 为什么 \(R>0\) 而 \(Q\ge 0\)？</h2>
+    <p>这是一个很好的问题。课堂中同学提问：为什么前面很多地方是"半正定"，到了测量噪声协方差 \(R\) 这里却要求正定？</p>
+
+    <h3>为什么 \(R \succ 0\)</h3>
+    <div class="callout">
+      <p><strong>🎯 核心观点</strong></p>
+      <p>\(R\) 对应测量噪声。如果某个方向上的测量噪声等于零，那等于说你在那个方向上拿到了完美测量（perfect measurement）。这在真实世界里几乎不成立，因为测量设备本身是人造装置，天然带误差。</p>
+    </div>
+    <p>所以对 measurement noise 来说，要求 \(R\) 正定，体现的是一种<strong>"现实测量不可能完美"</strong>的建模立场。</p>
+
+    <h3>为什么 \(Q \succeq 0\)</h3>
+    <p>过程噪声可以半正定的原因：</p>
+    <ol>
+      <li><strong>某些维度可能被物理约束住了</strong> —— 比如系统只能沿某个方向运动，另一些方向没有状态变化。</li>
+      <li><strong>某些维度你可能根本不关心</strong> —— 比如电机控制中有时只关心速度，不关心绝对位置。</li>
+    </ol>
+    <p>所以对 process noise 来说，允许某些方向上的噪声"没有被建模进去"是合理的。</p>
+    <div class="callout">
+      <p><strong>📌 要点</strong></p>
+      <p>Kalman Filter 里的矩阵条件不是死规定，而是和物理意义、建模范围直接绑定的。</p>
+    </div>
+  </div>
+
+  <!-- 5. 为什么假设高斯 -->
+  <div id="sec5" class="section-card">
+    <h2>5. 为什么假设高斯噪声</h2>
+
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>📐 数学原因</h4>
+        <p>在线性系统里，如果初始条件是高斯的、噪声也是高斯的，那么经过线性变换以后，状态仍然保持高斯。</p>
+        <p>这意味着：</p>
+        <ul>
+          <li>分布族封闭</li>
+          <li>可以做递归</li>
+          <li>只需跟踪均值和协方差</li>
+        </ul>
+        <p>这其实就是 Kalman Filter 可计算、可实现的关键基础之一。</p>
+      </div>
+      <div class="mini-card">
+        <h4>🔧 工程原因</h4>
+        <p>很多实际噪声确实可以近似看成高斯：</p>
+        <ul>
+          <li>有些测量误差的经验分布本身接近高斯</li>
+          <li>很多小扰动叠加后在中心极限定理意义下接近高斯</li>
+        </ul>
+        <p>当然，如果系统强非线性或噪声明显偏离高斯，就需要换工具（如 EKF、UKF、粒子滤波）。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. 估计符号体系 -->
+  <div id="sec6" class="section-card">
+    <h2>6. 估计符号体系</h2>
+    <p>这是本讲最容易绕晕但必须记住的部分。关键在于理解<strong>下标含义</strong>：</p>
+
+    <div class="formula-box">
+      \[
+      \hat x_{k|k} = \text{时刻 }k\text{ 对 }x_k\text{ 的估计（利用了截至 }k\text{ 的测量）}
+      \]
+    </div>
+    <div class="formula-box">
+      \[
+      \hat x_{k|k-1} = \text{时刻 }k\text{ 对 }x_k\text{ 的预测（只用了截至 }k-1\text{ 的测量）}
+      \]
+    </div>
+
+    <h3>误差与协方差</h3>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>估计误差</h4>
+        \[
+        \tilde x_{k|k} = x_k - \hat x_{k|k}
+        \]
+        <h4>误差协方差</h4>
+        \[
+        P_{k|k} = E[\tilde x_{k|k} \tilde x_{k|k}^T]
+        \]
+      </div>
+      <div class="mini-card">
+        <h4>预测误差</h4>
+        \[
+        \tilde x_{k|k-1} = x_k - \hat x_{k|k-1}
+        \]
+        <h4>预测误差协方差</h4>
+        \[
+        P_{k|k-1} = E[\tilde x_{k|k-1} \tilde x_{k|k-1}^T]
+        \]
+      </div>
+    </div>
+
+    <div class="callout">
+      <p><strong>💡 记忆法</strong></p>
+      <p>左边的下标 = "当前要估计哪个时刻的状态"；右边的下标 = "你手里拿到了哪个时刻为止的 measurement"。只要这个逻辑不乱，后面的递推关系就不会迷路。</p>
+    </div>
+  </div>
+
+  <!-- 7. 初始化 -->
+  <div id="sec7" class="section-card">
+    <h2>7. 初始化</h2>
+    <p>零均值假设下：</p>
+    <div class="formula-box">
+      \[
+      \hat x_{0|-1} = 0
+      \]
+    </div>
+    <div class="formula-box">
+      \[
+      P_{0|-1} = \Pi_0
+      \]
+    </div>
+    <div class="callout">
+      <p><strong>🚀 为什么初始化重要</strong></p>
+      <p>任何算法都必须给出 initialization，不然根本跑不起来。在任何测量到来前，对初始状态的最佳估计就是均值 0，不确定性就是 \(\Pi_0\)。</p>
+    </div>
+  </div>
+
+  <!-- 8. 递归结构 -->
+  <div id="sec8" class="section-card">
+    <h2>8. 递归结构：两大环节</h2>
+    <p>整个 Kalman Filter 被拆成两部分：</p>
+
+    <div class="grid-2">
+      <div class="mini-card" style="border-left: 4px solid #3b82f6;">
+        <h4>⏱ Time Update（时间更新）</h4>
+        <p>没有新 measurement 时，只能根据系统时间推进做 prediction。</p>
+        \[
+        \hat x_{k+1|k} = A \hat x_{k|k}
+        \]
+        \[
+        P_{k+1|k} = A P_{k|k} A^T + Q
+        \]
+        <p style="font-size:0.85rem;color:var(--text-secondary)">基于模型做一步预测</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid var(--accent);">
+        <h4>📏 Measurement Update（测量更新）</h4>
+        <p>新 measurement \(y_k\) 到来时，用它修正 prediction。</p>
+        \[
+        \hat x_{k|k} = \hat x_{k|k-1} + K_k e_k
+        \]
+        \[
+        P_{k|k} = P_{k|k-1} - K_k R_{e,k} K_k^T
+        \]
+        <p style="font-size:0.85rem;color:var(--text-secondary)">用新息修正估计</p>
+      </div>
+    </div>
+
+    <p>Kalman Filter 的节奏是：</p>
+    <div class="flow-formula">
+      先预测 → 再看见 → 再修正 → 再进入下一时刻
+    </div>
+
+    <p>这种结构让它天然适合在线系统——你不需要每来一个新 measurement 就把历史全部重算一遍。</p>
+  </div>
+
+  <!-- 9. 从 LMMSE 到递归 -->
+  <div id="sec9" class="section-card">
+    <h2>9. 从 LMMSE 到递归的动机</h2>
+    <p>回顾上一讲的出发点：</p>
+    <ul>
+      <li>如果 measurement 彼此正交或互不相关，计算会非常简单。</li>
+      <li>但真实动态系统里的 measurement 往往是相关的。</li>
+      <li>所以我们不能指望"原始 measurement 天然好算"，而是要通过数学手段（新息过程）把它们变成一组更适合估计的量。</li>
+    </ul>
+    <div class="callout">
+      <p><strong>🧠 关键认识</strong></p>
+      <p>估计本质上可以看成"把要估计的变量投影到某个信息空间上"。这个空间如果换成经过正交化之后得到的空间，空间本身没变，所以得到的 estimate 也不变。但新的表示方式会让递归计算成为可能。</p>
+    </div>
+  </div>
+
+  <!-- 自测题 -->
+  <div id="quiz" class="section-card">
+    <h2>📝 自测题</h2>
+
+    <div class="interactive-card">
+      <h3>问题 1</h3>
+      <p>新息 \(e_k\) 表示什么？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>新息 \(e_k = y_k - C\hat x_{k|k-1}\) 是实际测量与预测测量之差，代表当前测量中无法由过去信息解释的"纯新"部分。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 2</h3>
+      <p>为什么 \(R\) 要正定而 \(Q\) 可以半正定？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>\(R>0\) 意味着每个测量方向都有噪声——现实测量不可能完美。\(Q\ge 0\) 允许某些状态方向不被过程噪声激励——那些方向可能被物理约束或你不关心。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 3</h3>
+      <p>Kalman Filter 为什么能递归运行，而不是每步重新计算？</p>
+      <div class="quiz-options">
+        <button onclick="lessonKit.answer(this, 'quiz3-feedback')" data-correct="yes" data-explanation="正确！递归结构（预测→更新）和新息正交性使得每步只需处理当前新测量信息，计算量恒定。">因为递归结构把历史压缩成状态估计和协方差</button>
+        <button onclick="lessonKit.answer(this, 'quiz3-feedback')" data-correct="no">因为假设了高斯分布</button>
+      </div>
+      <div id="quiz3-feedback" class="quiz-feedback"></div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="nav-links">
+    <a href="0015-KF-L13-递归估计.html" class="prev">← KF L13：递归估计与新息过程</a>
+    <a href="0016-KF-L14-KalmanFilter-2.html" class="next">KF L14：测量更新详解 (2/2) →</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+</div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 KF L14 (1/2) · Kalman Filter 模型、假设与符号体系</p>
+  </div>
+</div>
+<script src="assets/shiclass.js"></script>
+</body>
+</html>

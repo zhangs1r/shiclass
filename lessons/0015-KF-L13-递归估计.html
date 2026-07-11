@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KF L13：递归估计与新息过程 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<link rel="stylesheet" href="assets/shiclass.css">
+</head>
+<body>
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · KF L13</div>
+    <h1>递归估计与新息过程</h1>
+    <p class="subtitle">Kalman Filter 为什么能递归计算？—— 新息把"所有历史测量"压缩成"旧估计 + 当前新息"</p>
+    <div class="hero-meta">
+      <span>📅 2026-05-03</span>
+      <span>🔄 递归估计</span>
+      <span>💡 新息过程</span>
+    </div>
+  </div>
+
+  <!-- Lead Grid -->
+  <div class="lead-grid">
+    <div class="callout">
+      <p><strong>🎯 本讲目标</strong></p>
+      <p>理解为什么直接使用所有历史测量会越来越贵、新息（innovation）是什么、Gram-Schmidt 如何把测量变成正交新息、以及为什么递归更新形式自然出现。</p>
+    </div>
+    <div class="callout">
+      <p><strong>🔑 核心思想</strong></p>
+      <p>新估计 = 旧估计 + 新息修正。Kalman Filter 的"妙"不在于发明了估计，而在于把"越来越复杂的多次估计"改写成了"每次只处理新增信息"的递归估计。</p>
+    </div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3>📖 目录</h3>
+    <ul>
+      <li><a href="#sec1">1. 直接 LMMSE 的计算问题</a></li>
+      <li><a href="#sec2">2. 如果测量互相独立</a></li>
+      <li><a href="#sec3">3. 新息（Innovation）的想法</a></li>
+      <li><a href="#sec4">4. Gram-Schmidt 生成新息</a></li>
+      <li><a href="#sec5">5. 为什么不丢信息</a></li>
+      <li><a href="#sec6">6. 递归估计自然出现</a></li>
+      <li><a href="#sec7">7. 补充例题：预测值和实际值</a></li>
+      <li><a href="#sec8">8. 随机变量空间为什么会增长</a></li>
+      <li><a href="#sec9">9. 新息和 Kalman Filter</a></li>
+      <li><a href="#quiz">📝 自测题</a></li>
+    </ul>
+  </div>
+
+  <!-- 1. 直接 LMMSE 的计算问题 -->
+  <div id="sec1" class="section-card">
+    <h2>1. 直接 LMMSE 的计算问题</h2>
+    <p>假设用 \(y_1,\ldots,y_t\) 估计 \(X\)。堆叠测量：</p>
+    <div class="formula-box">
+      \[
+      Y_t = \begin{bmatrix} y_1 \\ y_2 \\ \vdots \\ y_t \end{bmatrix}
+      \]
+    </div>
+    <p>LMMSE：</p>
+    <div class="formula-box">
+      \[
+      \hat X_t = K_t Y_t,\quad K_t = R_{XY_t}R_{Y_t}^{-1}
+      \]
+    </div>
+    <div class="callout" style="border-left-color: #ef4444;">
+      <p><strong>⚠️ 计算瓶颈</strong></p>
+      <p>\(t\) 越大，\(R_{Y_t}\) 越大，求逆越来越贵，计算复杂度大约 \(O(t^3)\)。这就是为什么不能简单堆叠所有历史测量。</p>
+    </div>
+  </div>
+
+  <!-- 2. 如果测量互相独立 -->
+  <div id="sec2" class="section-card">
+    <h2>2. 如果测量互相独立</h2>
+    <p>如果 \(y_1,\ldots,y_t\) 彼此不相关，\(R_{Y_t}\) 是块对角矩阵：</p>
+    <div class="formula-box">
+      \[
+      R_{Y_t} = \begin{bmatrix}
+      R_{Y_{t-1}} & 0 \\
+      0 & R_t
+      \end{bmatrix}
+      \]
+    </div>
+    <p>求逆很简单：</p>
+    <div class="formula-box">
+      \[
+      R_{Y_t}^{-1} = \begin{bmatrix}
+      R_{Y_{t-1}}^{-1} & 0 \\
+      0 & R_t^{-1}
+      \end{bmatrix}
+      \]
+    </div>
+    <p>但现实中测量往往相关，所以需要新技巧将相关测量转化为独立形式。</p>
+  </div>
+
+  <!-- 3. 新息的想法 -->
+  <div id="sec3" class="section-card">
+    <h2>3. 新息（Innovation）的想法</h2>
+    <p>如果新测量 \(y_{k+1}\) 中有一部分已经能由旧测量解释，那么这部分不是真正的新信息。</p>
+    <div class="callout">
+      <p><strong>💡 定义</strong></p>
+      <p>新息 = 新测量中，旧信息解释不了的部分。</p>
+    </div>
+    <p>公式：</p>
+    <div class="formula-box">
+      \[
+      e_{k+1} = y_{k+1} - \operatorname{Proj}_{L_k}(y_{k+1})
+      \]
+    </div>
+    <p>其中 \(L_k = \operatorname{span}\{e_1,\ldots,e_k\}\)。</p>
+  </div>
+
+  <!-- 4. Gram-Schmidt 生成新息 -->
+  <div id="sec4" class="section-card">
+    <h2>4. Gram-Schmidt 生成新息</h2>
+    <p>假设已有正交新息 \(e_1,\ldots,e_k\)，则：</p>
+    <div class="formula-box">
+      \[
+      e_{k+1} = y_{k+1} - \sum_{j=1}^k \langle y_{k+1}, e_j \rangle \|e_j\|^{-2} e_j
+      \]
+    </div>
+    <p>这样得到的 \(e_{k+1}\) 与所有旧 \(e_j\) 正交。</p>
+    <div class="callout">
+      <p><strong>📖 理解</strong></p>
+      <p>这本质上就是 Gram-Schmidt 过程在随机变量空间中的应用。每一步都从新测量中减去它在旧信息空间上的投影。</p>
+    </div>
+  </div>
+
+  <!-- 5. 为什么不丢信息 -->
+  <div id="sec5" class="section-card">
+    <h2>5. 为什么不丢信息</h2>
+    <p>Gram-Schmidt 只是换基，不改变张成空间：</p>
+    <div class="formula-box">
+      \[
+      \operatorname{span}\{y_1,\ldots,y_t\} = \operatorname{span}\{e_1,\ldots,e_t\}
+      \]
+    </div>
+    <div class="callout">
+      <p><strong>✅ 关键</strong></p>
+      <p>新息形式没有丢掉测量信息，只是把相关的测量变成更容易处理的正交信息。投影到新息空间和投影到原始测量空间得到的估计完全一样。</p>
+    </div>
+  </div>
+
+  <!-- 6. 递归估计自然出现 -->
+  <div id="sec6" class="section-card">
+    <h2>6. 递归估计自然出现</h2>
+    <p>投影到新息空间：</p>
+    <div class="formula-box">
+      \[
+      \hat X_{k+1} = \sum_{j=1}^{k+1} \langle X, e_j \rangle \|e_j\|^{-2} e_j
+      \]
+    </div>
+    <p>拆开最后一项：</p>
+    <div class="formula-box">
+      \[
+      \hat X_{k+1} = \sum_{j=1}^{k} \langle X, e_j \rangle \|e_j\|^{-2} e_j + \langle X, e_{k+1} \rangle \|e_{k+1}\|^{-2} e_{k+1}
+      \]
+    </div>
+    <p>前半部分就是旧估计 \(\hat X_k\)，所以：</p>
+    <div class="formula-box" style="border-color: var(--accent); border-style: solid;">
+      \[
+      \hat X_{k+1} = \hat X_k + \langle X, e_{k+1} \rangle \|e_{k+1}\|^{-2} e_{k+1}
+      \]
+    </div>
+    <div class="callout">
+      <p><strong>🔄 递归形式</strong></p>
+      <p>新估计 = 旧估计 + 新息修正。这是 Kalman Filter 能递归运行的根本原因。</p>
+    </div>
+  </div>
+
+  <!-- 7. 补充例题 -->
+  <div id="sec7" class="section-card">
+    <h2>7. 【补充例题】预测值和实际值</h2>
+    <p>假设你预测今天温度是 25°C，传感器测到 27°C。</p>
+    <div class="formula-box">
+      \[
+      e = 27 - 25 = 2
+      \]
+    </div>
+    <div class="callout">
+      <p><strong>🌡️ 直觉</strong></p>
+      <p>如果传感器很准，就大幅修正估计（大增益）；如果传感器很差，就小幅修正（小增益）。Kalman Filter 做的就是把"修正多少"数学化。</p>
+    </div>
+  </div>
+
+  <!-- 8. 随机变量空间增长 -->
+  <div id="sec8" class="section-card">
+    <h2>8. 随机变量空间为什么会增长</h2>
+    <p>不要把 \(y_k\) 的取值维度和随机变量空间维度混淆。即使每个 \(y_k\) 是标量，它们也是不同时间的随机变量：</p>
+    <div class="flow-formula">
+      \[
+      y_1, y_2, \ldots
+      \]
+    </div>
+    <div class="callout">
+      <p><strong>💡 通俗解释</strong></p>
+      <p>今天的温度读数和明天的温度读数都是一个数字，但它们携带的是不同时间的信息。每增加一个时间点，信息空间就增大一维。</p>
+    </div>
+  </div>
+
+  <!-- 9. 新息和 KF -->
+  <div id="sec9" class="section-card">
+    <h2>9. 新息和 Kalman Filter</h2>
+    <p>Kalman Filter 中的新息写作：</p>
+    <div class="formula-box">
+      \[
+      e_k = y_k - C\hat x_{k|k-1}
+      \]
+    </div>
+    <p>其中：</p>
+    <ul>
+      <li>\(y_k\) 是实际测量</li>
+      <li>\(C\hat x_{k|k-1}\) 是根据过去信息预测的测量</li>
+      <li>差值 \(e_k\) 是当前测量带来的<strong>新信息</strong></li>
+    </ul>
+    <p>更新形式：</p>
+    <div class="formula-box">
+      \[
+      \hat x_{k|k} = \hat x_{k|k-1} + K_k e_k
+      \]
+    </div>
+    <p>这正是"旧估计 + 新息修正"在 Kalman Filter 中的具体体现。</p>
+  </div>
+
+  <!-- 自测题 -->
+  <div id="quiz" class="section-card">
+    <h2>📝 自测题</h2>
+
+    <div class="interactive-card">
+      <h3>问题 1</h3>
+      <p>为什么直接堆叠所有历史测量会越来越慢？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>因为每次需要计算 \(R_{Y_t}^{-1}\)，矩阵大小随测量数量增长，求逆复杂度为 \(O(t^3)\)。递归方法只需常数计算量，与历史长度无关。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 2</h3>
+      <p>新息为什么与旧新息正交？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>因为新息定义为从新测量中减去它在旧信息空间上的投影。这个投影包含了所有与旧新息线性相关的部分，剩余部分自然与旧信息空间正交。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 3</h3>
+      <p>新息为 0 时，说明什么？</p>
+      <div class="quiz-options">
+        <button onclick="lessonKit.answer(this, 'quiz3-feedback')" data-correct="yes" data-explanation="新息为零意味着预测完美匹配实际测量，当前测量不包含任何新信息，估计不需要修正。">新测量没有带来新信息</button>
+        <button onclick="lessonKit.answer(this, 'quiz3-feedback')" data-correct="no">传感器坏了</button>
+      </div>
+      <div id="quiz3-feedback" class="quiz-feedback"></div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="nav-links">
+    <a href="0014-KF-L12-LMMSE例子.html" class="prev">← KF L12：LMMSE 例子</a>
+    <a href="0016-KF-L14-KalmanFilter-1.html" class="next">KF L14：Kalman Filter 模型与假设 (1/2) →</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+</div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 KF L13 · 递归估计与新息过程</p>
+  </div>
+</div>
+<script src="assets/shiclass.js"></script>
+</body>
+</html>

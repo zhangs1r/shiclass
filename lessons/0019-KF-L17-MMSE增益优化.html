@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KF L17：线性高斯下 MMSE 等价与 Kalman 增益优化 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<link rel="stylesheet" href="assets/shiclass.css">
+</head>
+<body>
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · KF L17</div>
+    <h1>线性高斯下 MMSE 等价与 Kalman 增益优化</h1>
+    <p class="subtitle">条件高斯分布推导 MMSE 估计 = LMMSE + 控制输入的融入 + 从优化角度重新推导 Kalman 增益</p>
+    <div class="hero-meta">
+      <span>📅 2026-05-30</span>
+      <span>🧩 MMSE</span>
+      <span>📐 条件高斯</span>
+      <span>⚡ 优化方法</span>
+    </div>
+  </div>
+
+  <!-- Lead Grid -->
+  <div class="lead-grid">
+    <div class="callout">
+      <p><strong>🎯 本讲目标</strong></p>
+      <p>三种方法推导 KF：(1) 概率法——用条件高斯公式证明 MMSE = LMMSE；(2) 控制输入融入——将 B u_k 加入 KF 框架；(3) 优化法——将 P_k 写成 K_k 的二次型并通过 completion of squares 求解。</p>
+    </div>
+    <div class="callout">
+      <p><strong>🔑 核心思想</strong></p>
+      <p>在线性高斯系统中，条件均值（MMSE）恰好等于投影（LMMSE）。控制输入不影响协方差传播，只影响均值。优化法则从另一个视角验证了 Kalman 增益的最优性。</p>
+    </div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3>📖 目录</h3>
+    <ul>
+      <li><a href="#sec1">1. 回顾：几何方法的局限</a></li>
+      <li><a href="#sec2">2. 系统模型与符号体系（含控制输入）</a></li>
+      <li><a href="#sec3">3. 概率方法：条件高斯定理</a></li>
+      <li><a href="#sec4">4. Time Update（概率法）</a></li>
+      <li><a href="#sec5">5. Measurement Update（概率法）</a></li>
+      <li><a href="#sec6">6. MMSE = LMMSE：线性高斯下的等价性</a></li>
+      <li><a href="#sec7">7. 优化方法：从 \\(P_k(K_k)\\) 到最优增益</a></li>
+      <li><a href="#sec8">8. 三种方法总结</a></li>
+      <li><a href="#quiz">📝 自测题</a></li>
+    </ul>
+  </div>
+
+  <!-- 1. 回顾 -->
+  <div id="sec1" class="section-card">
+    <h2>1. 回顾：几何方法的局限</h2>
+
+    <p>前两节课我们用<strong>几何方法（投影定理）</strong>推导了 KF 的五个核心等式，得到了 LMMSE（线性最小均方误差估计）。但有一个关键问题尚未回答：</p>
+
+    <div class="callout">
+      <p><strong>❓ 核心问题</strong></p>
+      <p>在线性高斯系统中，LMMSE 是否等于 MMSE（最小均方误差估计，即条件均值 \\(E[x_k | y_0, \\dots, y_k]\\)）？</p>
+    </div>
+
+    <p>如果是，那么就说明我们在 KF 框架中使用的线性估计实际上是最优的——没有任何非线性方法能做得更好。</p>
+
+    <p>本讲首先用<strong>概率方法（条件高斯分布）</strong>来回答这个问题，然后再从<strong>优化角度</strong>重新验证 Kalman 增益的最优性。</p>
+  </div>
+
+  <!-- 2. 系统模型 -->
+  <div id="sec2" class="section-card">
+    <h2>2. 系统模型与符号体系（含控制输入）</h2>
+
+    <p>现在我们将控制输入 \\(u_k\\) 加入到系统模型中：</p>
+
+    <div class="grid-2">
+      <div class="mini-card" style="border-left: 4px solid var(--accent);">
+        <h4>状态方程</h4>
+        \\[
+        x_{k+1} = A x_k + B u_k + w_k
+        \\]
+        <p style="font-size:0.85rem">\\(w_k \\sim N(0, Q)\\)</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid var(--accent);">
+        <h4>测量方程</h4>
+        \\[
+        y_k = C x_k + v_k
+        \\]
+        <p style="font-size:0.85rem">\\(v_k \\sim N(0, R)\\)</p>
+      </div>
+    </div>
+
+    <h3>符号体系</h3>
+    <p>定义信息集合：</p>
+    <div class="formula-box">
+      \\[
+      Y_k = \\{y_0, y_1, \\dots, y_k\\}, \\quad
+      U_k = \\{u_0, u_1, \\dots, u_k\\}
+      \\]
+    </div>
+
+    <p>MMSE 估计定义为条件均值：</p>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>估计</h4>
+        \\[
+        \\hat x_{k|k} = E[x_k \\mid Y_k, U_{k-1}]
+        \\]
+        \\[
+        P_{k|k} = \\langle x_k - \\hat x_{k|k},\\; x_k - \\hat x_{k|k} \\rangle
+        \\]
+      </div>
+      <div class="mini-card">
+        <h4>预测</h4>
+        \\[
+        \\hat x_{k|k-1} = E[x_k \\mid Y_{k-1}, U_{k-1}]
+        \\]
+        \\[
+        P_{k|k-1} = \\langle x_k - \\hat x_{k|k-1},\\; x_k - \\hat x_{k|k-1} \\rangle
+        \\]
+      </div>
+    </div>
+
+    <div class="callout">
+      <p><strong>💡 关于 U_{k-1} 的说明</strong></p>
+      <p>为什么是 \\(U_{k-1}\\) 而不是 \\(U_k\\)？因为 \\(u_k\\) 是在估计 \\(x_k\\) 之后才施加的控制，它影响的是 \\(x_{k+1}\\)，而不是 \\(x_k\\)。所以估计 \\(x_k\\) 时只能用过去的控制输入。</p>
+    </div>
+  </div>
+
+  <!-- 3. 条件高斯定理 -->
+  <div id="sec3" class="section-card">
+    <h2>3. 概率方法：条件高斯定理</h2>
+
+    <p>首先回顾概率论中的一个核心定理：</p>
+
+    <div class="formula-box">
+      <p><strong>定理：</strong>设 \\(X\\) 和 \\(Y\\) 联合高斯：</p>
+      \\[
+      \\begin{bmatrix} X \\\\ Y \\end{bmatrix} \\sim N\\left(
+      \\begin{bmatrix} \\bar x \\\\ \\bar y \\end{bmatrix},\\;
+      \\begin{bmatrix} \\Sigma_x & \\Sigma_{xy} \\\\ \\Sigma_{yx} & \\Sigma_y \\end{bmatrix}
+      \\right)
+      \\]
+    </div>
+
+    <p>则在给定 \\(Y = y\\) 条件下，\\(X\\) 仍然是高斯分布：</p>
+
+    <div class="formula-box">
+      \\[
+      \\boxed{\\mu_{x|y=y} = \\bar x + \\Sigma_{xy} \\Sigma_y^{-1} (y - \\bar y)}
+      \\]
+      \\[
+      \\boxed{\\Sigma_{x|y=y} = \\Sigma_x - \\Sigma_{xy} \\Sigma_y^{-1} \\Sigma_{yx}}
+      \\]
+    </div>
+
+    <h3>特例验证</h3>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>① \\(X = Y\\) 时</h4>
+        \\[
+        \\mu_{x|y=y} = y,\\quad \\Sigma_{x|y=y} = 0
+        \\]
+        <p style="font-size:0.85rem">完全确定，不确定性降为零。</p>
+      </div>
+      <div class="mini-card">
+        <h4>② \\(X \\perp Y\\) 时</h4>
+        \\[
+        \\mu_{x|y=y} = \\bar x,\\quad \\Sigma_{x|y=y} = \\Sigma_x
+        \\]
+        <p style="font-size:0.85rem">Y 不提供 X 的任何信息，条件不变。</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <p><strong>🎯 重要意义</strong></p>
+      <p>这个定理告诉我们：在线性高斯系统中，给定测量后的条件均值是测量的<strong>线性函数</strong>。而 LMMSE 恰好就是那个线性函数——所以 MMSE = LMMSE！</p>
+    </div>
+  </div>
+
+  <!-- 4. Time Update -->
+  <div id="sec4" class="section-card">
+    <h2>4. Time Update（概率法）</h2>
+
+    <p>给定 \\(\\hat x_{k-1|k-1}\\) 和 \\(P_{k-1|k-1}\\)，计算预测：</p>
+
+    <h3>预测均值</h3>
+
+    <div class="formula-box">
+      \\[
+      \\begin{aligned}
+      \\hat x_{k|k-1} &= E[x_k \\mid Y_{k-1}, U_{k-1}] \\\\
+      &= E[A x_{k-1} + B u_{k-1} + w_{k-1} \\mid Y_{k-1}, U_{k-1}] \\\\
+      &= A E[x_{k-1} \\mid Y_{k-1}, U_{k-1}] + B u_{k-1} + E[w_{k-1} \\mid Y_{k-1}, U_{k-1}] \\\\
+      &= A \\hat x_{k-1|k-1} + B u_{k-1}
+      \\end{aligned}
+      \\]
+    </div>
+
+    <p>其中 \\(E[w_{k-1} \\mid Y_{k-1}, U_{k-1}] = 0\\) 因为 \\(w_{k-1}\\) 与历史信息不相关。</p>
+
+    <h3>预测协方差</h3>
+
+    <div class="formula-box">
+      \\[
+      \\begin{aligned}
+      P_{k|k-1} &= E\\big[(x_k - \\hat x_{k|k-1})(x_k - \\hat x_{k|k-1})' \\mid Y_{k-1}, U_{k-1}\\big] \\\\
+      &= E\\big[(A \\tilde x_{k-1|k-1} + w_{k-1})(A \\tilde x_{k-1|k-1} + w_{k-1})' \\mid Y_{k-1}, U_{k-1}\\big] \\\\
+      &= A P_{k-1|k-1} A' + Q
+      \\end{aligned}
+      \\]
+    </div>
+
+    <div class="callout">
+      <p><strong>📌 关键观察</strong></p>
+      <p>控制输入 \\(B u_k\\) 只影响预测均值，不影响预测协方差。这意味着控制与估计可以<strong>分离</strong>（Separation Principle）——设计控制器时可以暂时忽略估计误差。</p>
+    </div>
+  </div>
+
+  <!-- 5. Measurement Update -->
+  <div id="sec5" class="section-card">
+    <h2>5. Measurement Update（概率法）</h2>
+
+    <p>给定 \\(\\hat x_{k|k-1}\\) 和 \\(P_{k|k-1}\\)，新的测量 \\(y_k\\) 到来。我们需要找到 \\(E[x_k \\mid Y_k, U_{k-1}]\\)。</p>
+
+    <h3>步骤 1：计算条件期望</h3>
+
+    <div class="formula-box">
+      \\[
+      E[y_k \\mid Y_{k-1}, U_{k-1}] = C \\hat x_{k|k-1}
+      \\]
+    </div>
+
+    <h3>步骤 2：计算条件协方差</h3>
+
+    <div class="formula-box">
+      \\[
+      \\begin{aligned}
+      &E\\big[(y_k - E[y_k \\mid Y_{k-1}, U_{k-1}])(\\cdot)' \\big] \\\\
+      &= E\\big[(C \\tilde x_{k|k-1} + v_k)(C \\tilde x_{k|k-1} + v_k)'\\big] \\\\
+      &= C P_{k|k-1} C' + R
+      \\end{aligned}
+      \\]
+    </div>
+
+    <h3>步骤 3：计算交叉协方差</h3>
+
+    <div class="formula-box">
+      \\[
+      E\\big[(x_k - \\hat x_{k|k-1})(y_k - C \\hat x_{k|k-1})' \\mid Y_{k-1}, U_{k-1}\\big] = P_{k|k-1} C'
+      \\]
+    </div>
+
+    <h3>步骤 4：拼装联合高斯分布</h3>
+
+    <div class="formula-box">
+      \\[
+      \\begin{bmatrix} x_k \\\\ y_k \\end{bmatrix}
+      \\Bigg| Y_{k-1}, U_{k-1}
+      \\sim N\\left(
+      \\begin{bmatrix} \\hat x_{k|k-1} \\\\ C \\hat x_{k|k-1} \\end{bmatrix},\\;
+      \\begin{bmatrix} P_{k|k-1} & P_{k|k-1} C' \\\\ C P_{k|k-1} & C P_{k|k-1} C' + R \\end{bmatrix}
+      \\right)
+      \\]
+    </div>
+
+    <h3>步骤 5：套用条件高斯公式</h3>
+
+    <div class="formula-box">
+      \\[
+      \\boxed{\\hat x_{k|k} = \\hat x_{k|k-1} + P_{k|k-1} C' [C P_{k|k-1} C' + R]^{-1} (y_k - C \\hat x_{k|k-1})}
+      \\]
+      \\[
+      \\boxed{P_{k|k} = P_{k|k-1} - P_{k|k-1} C' [C P_{k|k-1} C' + R]^{-1} C P_{k|k-1}}
+      \\]
+    </div>
+
+    <p>与几何方法得到的表达式完全一致！</p>
+  </div>
+
+  <!-- 6. MMSE = LMMSE -->
+  <div id="sec6" class="section-card">
+    <h2>6. MMSE = LMMSE：线性高斯下的等价性</h2>
+
+    <p>现在我们可以回答核心问题了：</p>
+
+    <div class="callout" style="border-left: 4px solid #22c55e;">
+      <p><strong>✅ 结论</strong></p>
+      <p>在线性高斯系统中，MMSE 估计等于 LMMSE 估计。</p>
+    </div>
+
+    <h3>为什么？</h3>
+    <p>因为：</p>
+    <ol>
+      <li><strong>MMSE 定义</strong>：\\(\\hat x_{k|k}^{\\text{MMSE}} = E[x_k \\mid Y_k, U_{k-1}]\\)，即条件均值</li>
+      <li><strong>条件高斯公式</strong>告诉我们，在线性高斯系统中，条件均值是测量的<strong>线性函数</strong></li>
+      <li><strong>LMMSE 定义</strong>：在所有的<strong>线性</strong>估计器中找均方误差最小的那个</li>
+      <li>既然 MMSE 本身（条件均值）已经是线性函数，那么它恰好就是 LMMSE 的最优解</li>
+    </ol>
+
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>📐 几何方法</h4>
+        <p>投影 → LMMSE</p>
+        <p style="font-size:0.85rem">只利用了内积空间结构</p>
+      </div>
+      <div class="mini-card">
+        <h4>📊 概率方法</h4>
+        <p>条件均值 → MMSE</p>
+        <p style="font-size:0.85rem">利用了高斯分布的性质</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <p><strong>🎯 所以</strong></p>
+      <p>在线性高斯情况下，\\(\\hat x_{k|k}^{\\text{LMMSE}} = \\hat x_{k|k}^{\\text{MMSE}}\\)。两者完美重合。这在非高斯系统中一般不成立——非高斯条件下 MMSE 通常小于 LMMSE（因为 MMSE 在所有估计器中最优，而 LMMSE 只在线性估计器中最优）。</p>
+    </div>
+  </div>
+
+  <!-- 7. 优化方法 -->
+  <div id="sec7" class="section-card">
+    <h2>7. 优化方法：从 \\(P_k(K_k)\\) 到最优增益</h2>
+
+    <p>第三种推导 KF 的方法是从<strong>优化</strong>的角度——把 \\(P_k\\) 写成 \\(K_k\\) 的函数，然后最小化。</p>
+
+    <h3>设定</h3>
+    <p>考虑如下递归线性估计器：</p>
+    <div class="formula-box">
+      \\[
+      \\hat x_k = A \\hat x_{k-1} + K_k (y_k - C A \\hat x_{k-1})
+      \\]
+    </div>
+    <p>初始条件 \\(\\hat x_0 = 0\\)。这是一个"预测 + 修正"结构的线性估计器，但增益 \\(K_k\\) 尚未确定。</p>
+
+    <h3>优化问题</h3>
+    <div class="formula-box">
+      \\[
+      \\boxed{\\text{Find } K_k \\text{ s.t. } P_k = E[(x_k - \\hat x_k)(x_k - \\hat x_k)'] \\text{ is minimized}}
+      \\]
+    </div>
+
+    <h3>推导思路（Take-home Exercise）</h3>
+    <p>基本步骤：</p>
+    <ol>
+      <li>将 \\(x_k\\) 和 \\(\\hat x_k\\) 都用系统方程展开</li>
+      <li>得到 \\(x_k - \\hat x_k\\) 的表达式（含 \\(K_k\\)）</li>
+      <li>计算 \\(P_k = E[(x_k - \\hat x_k)(x_k - \\hat x_k)']\\)</li>
+      <li>\\(P_k\\) 会成为 \\(K_k\\) 的二次型</li>
+      <li>用 <strong>Completion of Squares</strong> 方法求出最优 \\(K_k\\)</li>
+    </ol>
+
+    <div class="formula-box">
+      \\[
+      \\boxed{K_k = P_{k|k-1} C' [C P_{k|k-1} C' + R]^{-1}}
+      \\]
+    </div>
+
+    <p>得到的解与几何法、概率法完全一致！</p>
+
+    <div class="callout">
+      <p><strong>⚡ 优化法的独特价值</strong></p>
+      <p>优化法不依赖几何直觉（正交投影）也不依赖概率假设（高斯分布），只需要"构造一个形式合理的估计器 + 最小化均方误差"这一工程直觉。这在推广到非线性/非高斯系统时特别有价值（例如你可以改变估计器的结构来适应非线性）。</p>
+    </div>
+  </div>
+
+  <!-- 8. 总结 -->
+  <div id="sec8" class="section-card">
+    <h2>8. 三种方法总结</h2>
+
+    <p>到此我们学习了三种推导 KF 的方法：</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>方法</th>
+          <th>核心工具</th>
+          <th>优势</th>
+          <th>局限</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>📐 几何法</strong></td>
+          <td>投影定理、正交原理</td>
+          <td>直观、可视化</td>
+          <td>只得到 LMMSE</td>
+        </tr>
+        <tr>
+          <td><strong>📊 概率法</strong></td>
+          <td>条件高斯公式</td>
+          <td>证明 MMSE = LMMSE</td>
+          <td>需要高斯假设</td>
+        </tr>
+        <tr>
+          <td><strong>⚡ 优化法</strong></td>
+          <td>二次型最小化</td>
+          <td>工程直觉强、可推广</td>
+          <td>需预设估计器结构</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>三种方法都得到了完全相同的五个等式，这说明：</p>
+
+    <div class="callout">
+      <p><strong>🌟 Kalman Filter 的普适性</strong></p>
+      <p>无论你从哪个角度进入——几何、概率还是优化——KF 都是在线性高斯系统下你能做到的最好估计器。这种"殊途同归"的美，正是 KF 作为经典算法的魅力所在。</p>
+    </div>
+  </div>
+
+  <!-- 自测题 -->
+  <div id="quiz" class="section-card">
+    <h2>📝 自测题</h2>
+
+    <div class="interactive-card">
+      <h3>问题 1</h3>
+      <p>为什么在线性高斯系统中 MMSE = LMMSE？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>在线性高斯系统中，给定测量后的条件均值（MMSE）是测量的线性函数（由条件高斯公式保证）。而 LMMSE 是所有线性估计器中 MSE 最小的。既然 MMSE 本身也是线性的，它必然就是那个最优的线性估计器。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 2</h3>
+      <p>控制输入 \\(B u_k\\) 对 KF 的协方差 \\(P_{k|k}\\) 有影响吗？为什么？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>没有影响。控制输入 \\(B u_k\\) 在给定 \\(U_{k-1}\\) 条件下是确定量，它只影响预测均值，不影响误差和协方差。这是 Separation Principle（分离原理）的基础——控制律设计和估计器设计可以独立进行。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 3</h3>
+      <p>在非高斯系统中，MMSE 和 LMMSE 哪个更小？</p>
+      <div class="quiz-options">
+        <button onclick="lessonKit.answer(this, 'quiz3-feedback')" data-correct="no" data-explanation="不完全对。MMSE 是在所有估计器（包括非线性）中找最优的，所以它一定 ≤ LMMSE。但说它们相等只在线性高斯下成立。">MMSE = LMMSE，始终相等</button>
+        <button onclick="lessonKit.answer(this, 'quiz3-feedback')" data-correct="yes" data-explanation="正确！MMSE 是在所有（包括非线性）估计器中最小化 MSE，LMMSE 只在线性估计器中最小化。所以 MMSE ≤ LMMSE。严格不等式在非高斯系统中几乎总是成立。">MMSE ≤ LMMSE，非高斯时通常严格小于</button>
+      </div>
+      <div id="quiz3-feedback" class="quiz-feedback"></div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="nav-links">
+    <a href="0018-KF-L16-时间更新增益.html" class="prev">← KF L16：时间更新、固定增益与传感器融合</a>
+    <a href="#" class="disabled next">未完待续 →</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+</div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 KF L17 · 线性高斯下 MMSE 等价与 Kalman 增益优化</p>
+  </div>
+</div>
+<script src="assets/shiclass.js"></script>
+</body>
+</html>

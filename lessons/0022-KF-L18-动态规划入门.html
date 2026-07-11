@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KF L18：动态规划入门与库存控制例子 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<link rel="stylesheet" href="assets/shiclass.css">
+</head>
+<body>
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · KF L18 · 动态规划</div>
+    <h1>动态规划入门与库存控制例子</h1>
+    <p class="subtitle">Dynamic Programming —— 一种解决序贯决策问题的强大工具，从 7-11 便利店库存管理开始理解 DP</p>
+    <div class="hero-meta">
+      <span>📅 2026-06-27</span>
+      <span>🧩 动态规划</span>
+      <span>📦 库存控制</span>
+      <span>🔄 序贯决策</span>
+    </div>
+  </div>
+
+  <!-- Lead Grid -->
+  <div class="lead-grid">
+    <div class="callout">
+      <p><strong>🎯 本讲目标</strong></p>
+      <p>理解动态规划解决的基本问题（离散时间动态系统 + 累加代价函数），通过 7-11 便利店库存控制例子建立直觉，并区分开环与闭环策略。</p>
+    </div>
+    <div class="callout">
+      <p><strong>🔑 核心思想</strong></p>
+      <p>动态规划通过"最优性原理"将多步决策问题分解为一系列单步优化子问题，每个子问题的解只需基于当前状态，无需记忆完整历史。</p>
+    </div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3>📖 目录</h3>
+    <ul>
+      <li><a href="#sec1">1. 什么是动态规划</a></li>
+      <li><a href="#sec2">2. 基本问题 (P1) 的形式化</a></li>
+      <li><a href="#sec3">3. 例子：7-11 便利店库存控制</a></li>
+      <li><a href="#sec4">4. 开环控制 vs 闭环控制</a></li>
+      <li><a href="#sec5">5. 策略与控制律</a></li>
+      <li><a href="#sec6">6. DP 的核心：最优性原理</a></li>
+      <li><a href="#quiz">📝 自测题</a></li>
+    </ul>
+  </div>
+
+  <!-- 1. 什么是 DP -->
+  <div id="sec1" class="section-card">
+    <h2>1. 什么是动态规划</h2>
+
+    <p><strong>动态规划（Dynamic Programming, DP）</strong> 既不是单一算法，也不是某个具体公式——它是一类解决<strong>序贯决策问题</strong>的方法论。</p>
+
+    <div class="callout">
+      <p><strong>🧠 直觉</strong></p>
+      <p>当你面临一系列需要先后做出的决定，而今天的决定会影响明天的局面时，动态规划就是告诉你：<strong>"从最后一步往前想，每一步都选当前最好的"</strong>。</p>
+    </div>
+
+    <p>DP 的基本要素：</p>
+    <div class="grid-3">
+      <div class="mini-card">
+        <h4>① 动态系统</h4>
+        <p>存在一个离散时间动态系统，状态随时间演化：</p>
+        \[
+        x_{k+1} = f_k(x_k, u_k, w_k)
+        \]
+      </div>
+      <div class="mini-card">
+        <h4>② 代价函数</h4>
+        <p>代价随时间可加（或可乘）：</p>
+        \[
+        J = \mathbb{E}\left\{g_N(x_N) + \sum_{k=0}^{N-1} g_k(x_k, u_k, w_k)\right\}
+        \]
+      </div>
+      <div class="mini-card">
+        <h4>③ 最优控制</h4>
+        <p>目标：选择控制序列 \(u_0, \dots, u_{N-1}\) 最小化 \(J\)。</p>
+        \[
+        \min_{u_0, \dots, u_{N-1}} J(x_0)
+        \]
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 基本问题 -->
+  <div id="sec2" class="section-card">
+    <h2>2. 基本问题 (P1) 的形式化</h2>
+
+    <p>标准 DP 问题 (P1) 包含两个核心要素：</p>
+
+    <h3>① 离散时间动态系统</h3>
+    <div class="formula-box">
+      \[
+      x_{k+1} = f_k(x_k, u_k, w_k), \quad k = 0, 1, \dots, N-1
+      \]
+    </div>
+    <ul>
+      <li>\(x_k\)：系统状态（如库存量、位置、温度等）</li>
+      <li>\(u_k\)：控制输入（如订货量、推力、电压等）</li>
+      <li>\(w_k\)：随机扰动（如需求、风速、噪声等）</li>
+    </ul>
+
+    <h3>② 累加代价函数</h3>
+    <div class="formula-box">
+      \[
+      J = \mathbb{E}\left\{ g_N(x_N) + \sum_{k=0}^{N-1} g_k(x_k, u_k, w_k) \right\}
+      \]
+    </div>
+    <ul>
+      <li>\(g_N(x_N)\)：终端代价</li>
+      <li>\(g_k(x_k, u_k, w_k)\)：每步运行代价</li>
+      <li>期望 \(\mathbb{E}\) 对随机扰动 \(w_k\) 取</li>
+    </ul>
+
+    <p>求解方法：<strong>动态规划！</strong></p>
+
+    <div class="callout">
+      <p><strong>📌 注意</strong></p>
+      <p>DP 的理论适用范围很广——系统可以是线性的也可以是非线性的，扰动可以是高斯的也可以是非高斯的。关键在于<strong>代价的可加性</strong>和<strong>状态的马尔可夫性</strong>（未来只依赖于当前状态和当前控制）。</p>
+    </div>
+  </div>
+
+  <!-- 3. 7-11 例子 -->
+  <div id="sec3" class="section-card">
+    <h2>3. 例子：7-11 便利店库存控制</h2>
+
+    <div class="callout" style="border-left-color: #3b82f6;">
+      <p><strong>🏪 场景设定</strong></p>
+      <p>你是一家 7-11 便利店老板，只卖一种商品（比如可可粉）。每天你需要决定：<strong>今天订多少货？</strong></p>
+    </div>
+
+    <h3>变量定义</h3>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>系统模型</h4>
+        \[
+        x_{k+1} = x_k + u_k - w_k
+        \]
+        <ul>
+          <li>\(x_k\)：第 \(k\) 天开始时的库存（罐数）</li>
+          <li>\(u_k\)：当天订货量（罐数）</li>
+          <li>\(w_k\)：当天销售量（随机需求）</li>
+        </ul>
+      </div>
+      <div class="mini-card">
+        <h4>代价函数</h4>
+        \[
+        J = \mathbb{E}\left\{ R(x_N) + \sum_{k=0}^{N-1} \big[ r(x_k) + c u_k - \beta w_k \big] \right\}
+        \]
+        <ul>
+          <li>\(r(x_k)\)：库存惩罚（如 \(r(x_k) = |x_k|^2\)）</li>
+          <li>\(c u_k\)：采购成本</li>
+          <li>\(\beta w_k\)：销售收入</li>
+          <li>\(R(x_N)\)：终端成本</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>问题解读</h3>
+    <ul>
+      <li><strong>库存过多</strong>：资金占用、仓储成本（\(r(x_k)\) 惩罚大）</li>
+      <li><strong>库存过少</strong>：缺货损失（销售机会流失）</li>
+      <li><strong>订货量 \(u_k\)</strong>：需要平衡库存惩罚和采购成本</li>
+      <li><strong>随机需求 \(w_k\)</strong>：每天卖多少不确定，需要做<strong>概率性</strong>的决策</li>
+    </ul>
+
+    <div class="flow-formula">
+      目标：选择订货策略 \(u_0, u_1, \dots, u_{N-1}\) 最小化总期望成本 \(J\)
+    </div>
+  </div>
+
+  <!-- 4. 开环 vs 闭环 -->
+  <div id="sec4" class="section-card">
+    <h2>4. 开环控制 vs 闭环控制</h2>
+
+    <p>同样是"决定每天订多少货"，可以有不同的决策方式：</p>
+
+    <div class="grid-2">
+      <div class="mini-card" style="border-left: 4px solid #f59e0b;">
+        <h4>🔓 Off-line 开环策略</h4>
+        <p>提前预定好每天的订货量，不考虑实际销售情况。</p>
+        <p><strong>例 1：</strong>\(u_k = 100, \forall k\)（每天固定订 100 罐）</p>
+        <p><strong>例 2：</strong>根据季节预设</p>
+        \[
+        u_k = \begin{cases} 200, & \text{春秋} \\ 500, & \text{夏天} \\ 50, & \text{冬天} \end{cases}
+        \]
+        <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:8px">⚠️ 如果某天卖得多导致库存为负，也无能为力</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #22c55e;">
+        <h4>🔒 On-line 闭环策略</h4>
+        <p>根据当前实际库存 \(x_k\) 来决定今天订多少。</p>
+        \[
+        u_k = \mu_k(x_k)
+        \]
+        <p>例如："如果库存低于 50 就订 200，否则订 50"</p>
+        <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:8px">✅ 可以根据实际情况动态调整，更鲁棒</p>
+      </div>
+    </div>
+
+    <h3>为什么闭环更好？</h3>
+    <div class="formula-box">
+      开环：\(u_k\) 只依赖于时间 \(k\)（\(\{u_0, u_1, \dots, u_{N-1}\}\) 提前固定）
+      <br><br>
+      闭环：\(u_k\) 依赖于当前状态 \(x_k\)（\(u_k = \mu_k(x_k)\)）
+    </div>
+    <p>在存在随机扰动的情况下，闭环策略可以利用<strong>反馈信息</strong>来纠正偏离，因此通常优于开环策略。这正是控制理论的核心思想之一。</p>
+  </div>
+
+  <!-- 5. 策略与控制律 -->
+  <div id="sec5" class="section-card">
+    <h2>5. 策略与控制律</h2>
+
+    <p>把闭环决策规则的形式化：</p>
+
+    <div class="formula-box">
+      \[
+      u_k = \mu_k(x_k)
+      \]
+      <p style="margin-top:8px;font-size:0.9rem">\(\mu_k\) 称为第 \(k\) 步的<strong>控制律</strong>（control law）</p>
+    </div>
+
+    <p>完整的策略定义为：</p>
+    <div class="formula-box">
+      \[
+      \pi = \{\mu_0, \mu_1, \dots, \mu_{N-1}\}
+      \]
+      <p style="margin-top:8px;font-size:0.9rem">\(\pi\) 称为一个<strong>策略</strong>（policy）或控制律序列</p>
+    </div>
+
+    <p>基本问题 (P1) 最终可以表述为：</p>
+    <div class="formula-box">
+      \[
+      \min_{\pi} J(x_0)
+      \]
+      <p style="margin-top:8px;font-size:0.9rem">在所有可能的策略中，找到使总期望代价最小的那个策略</p>
+    </div>
+
+    <div class="callout">
+      <p><strong>💡 理解策略</strong></p>
+      <p>策略就是"如果看到状态 \(x_k\)，就执行动作 \(\mu_k(x_k)\)"的一系列规则。动态规划的目标就是<strong>找到最优策略</strong>，而不是简单找到一组最优控制值。因为策略是状态到动作的映射，天然具备反馈能力。</p>
+    </div>
+  </div>
+
+  <!-- 6. 最优性原理 -->
+  <div id="sec6" class="section-card">
+    <h2>6. DP 的核心：最优性原理</h2>
+
+    <p><strong>最优性原理（Principle of Optimality）</strong> 由 Richard Bellman 提出，是动态规划的基石：</p>
+
+    <div class="callout" style="border-left-color: #8b5cf6;">
+      <p><strong>🏆 Bellman 最优性原理</strong></p>
+      <p>一个最优策略具有这样的性质：无论初始状态和初始决策如何，剩余的决策必须构成一个以第一个决策产生的状态为初始状态的最优策略。</p>
+    </div>
+
+    <p>翻译成更直观的说法：</p>
+    <div class="flow-formula">
+      🔄 如果从 A 到 C 的最优路径经过了 B，那么从 B 到 C 的那一段也一定是最优的。
+    </div>
+
+    <h3>Bellman 方程</h3>
+    <p>定义最优代价函数（value function）\(V_k(x_k)\) 为从状态 \(x_k\) 开始、执行最优策略到终点的最小期望代价：</p>
+    <div class="formula-box">
+      \[
+      V_k(x_k) = \min_{u_k} \mathbb{E}_{w_k} \big[ g_k(x_k, u_k, w_k) + V_{k+1}(f_k(x_k, u_k, w_k)) \big]
+      \]
+    </div>
+    <p>边界条件：</p>
+    <div class="formula-box">
+      \[
+      V_N(x_N) = g_N(x_N)
+      \]
+    </div>
+
+    <h3>DP 的求解流程</h3>
+    <ol>
+      <li><strong>从后往前</strong>：从终端时刻 \(N\) 开始，反向递推</li>
+      <li><strong>逐阶段求解</strong>：对每个阶段 \(k\)，对每个可能的状态 \(x_k\)，计算 Bellman 方程中的最小值</li>
+      <li><strong>记录策略</strong>：保存每个状态下的最优决策 \(\mu_k^*(x_k)\)</li>
+      <li><strong>正向执行</strong>：在实际运行时，根据当前状态查表执行最优动作</li>
+    </ol>
+
+    <div class="callout">
+      <p><strong>📌 维度灾难（Curse of Dimensionality）</strong></p>
+      <p>DP 理论上可以解决任何离散状态和离散控制的序贯决策问题，但状态空间的维度会导致计算量指数增长。这是 DP 在实际应用中的主要限制。</p>
+    </div>
+  </div>
+
+  <!-- 自测题 -->
+  <div id="quiz" class="section-card">
+    <h2>📝 自测题</h2>
+
+    <div class="interactive-card">
+      <h3>问题 1</h3>
+      <p>动态规划解决的基本问题 (P1) 的两个核心要素是什么？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>① 一个离散时间动态系统 \(x_{k+1} = f_k(x_k, u_k, w_k)\)；② 一个累加的代价函数 \(J = \mathbb{E}\{g_N(x_N) + \sum g_k(x_k, u_k, w_k)\}\)。目标：选择控制序列最小化期望代价。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 2</h3>
+      <p>在 7-11 库存控制例子中，\(x_{k+1} = x_k + u_k - w_k\) 的含义是什么？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>\(x_k\) 是第 \(k\) 天开始时的库存量，\(u_k\) 是当天订货量，\(w_k\) 是当天销售量。今天的库存 + 订货 - 销售 = 明天的库存。这是一个经典的状态演化方程。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 3</h3>
+      <p>开环策略和闭环策略的核心区别是什么？</p>
+      <div class="quiz-options">
+        <button onclick="lessonKit.answer(this, 'q3-feedback')" data-correct="yes" data-explanation="正确！开环策略的决策只依赖时间（提前定好），不依赖当前实际状态；闭环策略的决策依赖当前状态，具有反馈能力，在随机环境下更鲁棒。">闭环策略的决策 \(u_k = \mu_k(x_k)\) 依赖当前状态，开环策略的决策固定或仅依赖时间</button>
+        <button onclick="lessonKit.answer(this, 'q3-feedback')" data-correct="no">开环策略使用神经网络，闭环策略使用 PID 控制</button>
+      </div>
+      <div id="q3-feedback" class="quiz-feedback"></div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="nav-links">
+    <a href="0021-E2Map-经验情绪地图.html" class="prev">← E2Map：经验-情绪地图</a>
+    <a href="#" class="next disabled">更多课程即将上线 →</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+</div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 KF L18 · 动态规划入门与库存控制例子</p>
+  </div>
+</div>
+<script src="assets/shiclass.js"></script>
+</body>
+</html>

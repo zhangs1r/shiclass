@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KF L6：MAP、MMSE 与假设检验 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/shiclass.css">
+<script src="assets/shiclass.js"></script>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <div class="eyebrow">研讨会系列 9 · Kalman Filter L6</div>
+    <h1>MAP、MMSE 与假设检验</h1>
+    <p class="subtitle">有了后验分布之后，如果只能输出一个数，应该输出哪个？——从分布到决策。</p>
+    <div class="hero-meta">
+      <span>📅 2026-01-04</span>
+      <span>⏱ ~90 分钟</span>
+      <span>📊 中级</span>
+      <span>🎯 估计理论</span>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <h3>📖 本讲目录</h3>
+    <ul>
+      <li><a href="#from-posterior">1. 从后验分布到点估计</a></li>
+      <li><a href="#map">2. MAP：最大后验估计</a></li>
+      <li><a href="#mmse">3. MMSE：最小均方误差估计</a></li>
+      <li><a href="#diff">4. MAP 和 MMSE 的区别</a></li>
+      <li><a href="#romeo">5. 【课堂例题】Romeo & Juliet 的 MAP 和 MMSE</a></li>
+      <li><a href="#discrete">6. 【补充例题】离散后验</a></li>
+      <li><a href="#hypothesis">7. 假设检验</a></li>
+      <li><a href="#coins">8. 【课堂例题】两枚偏硬币</a></li>
+      <li><a href="#kf-connect">9. 为什么这和 Kalman Filter 有关</a></li>
+    </ul>
+  </nav>
+
+  <section id="from-posterior" class="section-card">
+    <h2>1. 从后验分布到点估计</h2>
+    <p>观测 \(x\) 后，我们有后验分布 \(f(\theta|x)\)。但实际应用常需要输出<strong>一个数</strong>：</p>
+    <div class="formula-box">
+      \[ \hat\theta = g(x) \]
+    </div>
+    <p>这个 \(g\) 叫 <strong>estimator</strong>（估计器）。关键在于：选哪个数最能代表整个分布？</p>
+  </section>
+
+  <section id="map" class="section-card">
+    <h2>2. MAP：最大后验估计</h2>
+    <p><strong>连续情况</strong>：</p>
+    <div class="formula-box">
+      \[ \hat\theta_{\text{MAP}} = \arg\max_\theta f(\theta|x) \]
+    </div>
+    <p><strong>离散情况</strong>：</p>
+    <div class="formula-box">
+      \[ \hat\theta_{\text{MAP}} = \arg\max_\theta P(\theta|x) \]
+    </div>
+    <div class="callout">
+      <p><strong>💡 通俗解释：</strong> MAP 选择后验分布最高的那个点，也就是"最可能的参数值"。</p>
+    </div>
+    <div class="callout" style="border-left-color: #ef4444;">
+      <p><strong>⚠️ 易错点：</strong> MAP 不一定唯一。如果后验有两个同样高的峰，就有两个 MAP 解。</p>
+    </div>
+  </section>
+
+  <section id="mmse" class="section-card">
+    <h2>3. MMSE：最小均方误差估计</h2>
+    <p>估计误差：\(e = \theta - \hat\theta\)。MMSE 要最小化：</p>
+    <div class="formula-box">
+      \[ E[(\theta - \hat\theta)^2 | x] \]
+    </div>
+    <p>结论——MMSE 估计就是<strong>后验均值</strong>：</p>
+    <div class="formula-box">
+      \[ \hat\theta_{\text{MMSE}} = E[\theta|x] \]
+    </div>
+    <div class="callout">
+      <p><strong>💡 通俗解释：</strong> 如果损失函数是平方误差，那么均值是最好的代表点。</p>
+    </div>
+  </section>
+
+  <section id="diff" class="section-card">
+    <h2>4. MAP 和 MMSE 的区别</h2>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>📍 MAP</h4>
+        <p>看<strong>最高点</strong>（众数）</p>
+        <p>优化：0-1 损失</p>
+      </div>
+      <div class="mini-card">
+        <h4>🎯 MMSE</h4>
+        <p>看<strong>平均位置</strong>（均值）</p>
+        <p>优化：平方损失</p>
+      </div>
+    </div>
+    <p>如果后验分布<strong>对称且单峰</strong>（例如高斯分布）：</p>
+    <div class="formula-box">
+      \[ \hat\theta_{\text{MAP}} = \hat\theta_{\text{MMSE}} \]
+    </div>
+    <p>如果后验偏斜或多峰，两者可能不同。</p>
+  </section>
+
+  <section id="romeo" class="section-card">
+    <h2>5. 【课堂例题】Romeo & Juliet 的 MAP 和 MMSE</h2>
+    <p>上一讲得到后验分布：</p>
+    <div class="formula-box">
+      \[ f(\theta|x) = \frac{1}{\theta |\log x|},\quad x \le \theta \le 1 \]
+    </div>
+
+    <h3>MAP</h3>
+    <p>这个密度随 \(\theta\) 增大而下降，所以最大点在 \(\theta = x\)：</p>
+    <div class="formula-box">
+      \[ \hat\theta_{\text{MAP}} = x \]
+    </div>
+
+    <h3>MMSE</h3>
+    <p>后验均值：</p>
+    <div class="formula-box">
+      \[ \hat\theta_{\text{MMSE}} = E[\theta|x] = \int_x^1 \theta \cdot \frac{1}{\theta |\log x|} d\theta = \frac{1-x}{|\log x|} \]
+    </div>
+
+    <div class="callout">
+      <p><strong>✨ 启发：</strong> 同一个后验，MAP 和 MMSE 会因为优化准则不同给出不同答案。选择哪个取决于你的<strong>损失函数</strong>。</p>
+    </div>
+  </section>
+
+  <section id="discrete" class="section-card">
+    <h2>6. 【补充例题】离散后验</h2>
+    <p>假设 \(\theta\) 只能取 0、1、2，后验概率为：</p>
+    <div class="formula-box">
+      \[ P(\theta=0|x)=0.2,\quad P(\theta=1|x)=0.5,\quad P(\theta=2|x)=0.3 \]
+    </div>
+
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>📍 MAP</h4>
+        <div class="formula-box" style="margin:8px 0">
+          \[ \hat\theta_{\text{MAP}} = 1 \]
+        </div>
+      </div>
+      <div class="mini-card">
+        <h4>🎯 MMSE</h4>
+        <div class="formula-box" style="margin:8px 0">
+          \[ E[\theta|x] = 0\cdot0.2 + 1\cdot0.5 + 2\cdot0.3 = 1.1 \]
+        </div>
+      </div>
+    </div>
+    <div class="callout" style="border-left-color: var(--accent-light);">
+      <p><strong>📝 注意：</strong> MMSE 不一定是 \(\theta\) 的可取值之一（1.1 不是整数）。</p>
+    </div>
+  </section>
+
+  <section id="hypothesis" class="section-card">
+    <h2>7. 假设检验</h2>
+    <p>如果 \(\theta\) 只能取 \(\theta_1, \ldots, \theta_m\)，每个取值对应一个假设：</p>
+    <div class="formula-box">
+      \[ H_i: \theta = \theta_i \]
+    </div>
+    <p><strong>MAP 规则</strong>：选择使 \(P(\theta_i|x)\) 最大的假设。</p>
+    <p>利用 Bayes rule：</p>
+    <div class="formula-box">
+      \[ P(\theta_i|x) = \frac{P(\theta_i) P(x|\theta_i)}{P(x)} \]
+    </div>
+    <p>因为 \(P(x)\) 对所有假设一样，比较时只需比较 <strong>先验 × 似然</strong>：</p>
+    <div class="formula-box">
+      \[ P(\theta_i) P(x|\theta_i) \]
+    </div>
+  </section>
+
+  <section id="coins" class="section-card">
+    <h2>8. 【课堂例题】两枚偏硬币</h2>
+    <p>有两枚硬币：硬币 1 正面概率 \(p_1\)，硬币 2 正面概率 \(p_2\)。随机等概率选一枚，投一次，观测到反面。</p>
+    <div class="formula-box">
+      \[ H_1: \text{选中硬币 1},\quad H_2: \text{选中硬币 2} \]
+    </div>
+    <p>观测反面 \(x=0\)。比较：</p>
+    <div class="formula-box">
+      \[ P(H_1)P(x=0|H_1) = 0.5(1-p_1) \]
+      \[ P(H_2)P(x=0|H_2) = 0.5(1-p_2) \]
+    </div>
+    <p>如果 \(p_1 &lt; p_2\)，则 \(1-p_1 &gt; 1-p_2\)，所以更可能是硬币 1。</p>
+    <div class="callout">
+      <p><strong>💡 通俗解释：</strong> 看到反面，更支持"更容易出反面"的那枚硬币。</p>
+    </div>
+
+    <div class="interactive-card">
+      <h3>🧪 试试看</h3>
+      <p>假设 \(p_1=0.3, p_2=0.8\)，观测到反面。你选哪个假设？</p>
+      <div class="quiz-options">
+        <button onclick="lessonKit.answer(this, 'quiz-coins')" data-correct="yes" data-explanation="0.5×0.7=0.35 > 0.5×0.2=0.1，硬币 1 更可能。">
+          🪙 选硬币 1
+        </button>
+        <button onclick="lessonKit.answer(this, 'quiz-coins')" data-correct="no" data-explanation="0.5×0.2=0.1 < 0.5×0.7=0.35，硬币 2 可能性更小。">
+          🪙 选硬币 2
+        </button>
+      </div>
+      <div id="quiz-coins" class="quiz-feedback"></div>
+    </div>
+  </section>
+
+  <section id="kf-connect" class="section-card">
+    <h2>9. 为什么这和 Kalman Filter 有关</h2>
+    <p>在线性高斯系统中，后验分布是高斯分布。高斯分布对称单峰，所以：</p>
+    <div class="formula-box">
+      \[ \text{MAP} = \text{MMSE} \]
+    </div>
+    <p>这也是 Kalman Filter 能同时有多种解释的原因：</p>
+    <ul>
+      <li>贝叶斯后验均值</li>
+      <li>最大后验估计</li>
+      <li>最小均方误差估计</li>
+      <li>最优线性估计</li>
+    </ul>
+    <div class="callout">
+      <p><strong>🎯 核心：</strong> 高斯让一切简化为优雅的解析解——这也是 KF 如此优美的原因。</p>
+    </div>
+  </section>
+
+  <section class="section-card">
+    <h2>📌 小结</h2>
+    <div class="summary-grid">
+      <div class="mini-card">
+        <h4>📍 MAP</h4>
+        <p>后验的"最高点"<br>优化 0-1 损失</p>
+      </div>
+      <div class="mini-card">
+        <h4>🎯 MMSE</h4>
+        <p>后验的"平均位置"<br>优化平方损失</p>
+      </div>
+      <div class="mini-card">
+        <h4>🧪 假设检验</h4>
+        <p>MAP 规则：选择 \(P(\theta_i)P(x|\theta_i)\) 最大的假设</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="exercise-box">
+    <h3>📝 自测题</h3>
+    <ol>
+      <li>MAP 和 MMSE 分别优化什么目标？</li>
+      <li>为什么 MMSE 可能不是参数可取值之一？</li>
+      <li>两枚硬币例子中，若看到正面，应更支持哪枚硬币？</li>
+    </ol>
+    <details class="exercise-answer">
+      <summary>查看答案提示</summary>
+      <div class="content">
+        <p><strong>1.</strong> MAP 最大化后验概率（0-1 损失下最优）；MMSE 最小化均方误差（平方损失下最优），结果为后验均值。</p>
+        <p><strong>2.</strong> 均值可以不是离散取值集合中的元素。例如离散后验均值 1.1 不在 {0,1,2} 中。</p>
+        <p><strong>3.</strong> 看到正面应更支持正面概率更大的那枚硬币。若 \(p_1 > p_2\) 则更支持硬币 1。</p>
+      </div>
+    </details>
+  </div>
+
+  <div class="nav-links">
+    <a href="0007-KF-L4-最小能量控制.html">← 上一讲：KF L4</a>
+    <a href="0009-KF-L7-非贝叶斯估计.html" class="next">下一讲：KF L7 非贝叶斯估计 →</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+</div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 9 · KF L6 MAP、MMSE 与假设检验</p>
+    <p>字幕来源：<code>subtitles/20260104_施凌_研讨会系列9_KF_L6_audio_461f8fb080064680.srt</code></p>
+  </div>
+
+</div>
+
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+</body>
+</html>

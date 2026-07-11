@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KF L15：从新息到后验协方差的完整测量更新推导 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<link rel="stylesheet" href="assets/shiclass.css">
+</head>
+<body>
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · KF L15</div>
+    <h1>从新息到后验协方差的完整测量更新推导</h1>
+    <p class="subtitle">五个核心等式的几何证明 —— 新息、新息协方差、Kalman 增益与后验协方差的完整推导</p>
+    <div class="hero-meta">
+      <span>📅 2026-05-17</span>
+      <span>🧩 测量更新</span>
+      <span>📐 新息过程</span>
+      <span>🔄 几何投影</span>
+    </div>
+  </div>
+
+  <!-- Lead Grid -->
+  <div class="lead-grid">
+    <div class="callout">
+      <p><strong>🎯 本讲目标</strong></p>
+      <p>从几何投影的角度，逐条证明 KF 测量更新中的五个核心等式：新息定义、新息协方差、状态更新、Kalman 增益、后验协方差更新。</p>
+    </div>
+    <div class="callout">
+      <p><strong>🔑 核心思想</strong></p>
+      <p>所有证明都依赖一个基本框架：新息的正交性 + 投影定理 + 噪声不相关性。只要抓住"新息空间正交于历史信息空间"这一几何直觉，五个等式全都能直接推出。</p>
+    </div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3>📖 目录</h3>
+    <ul>
+      <li><a href="#sec1">1. 回顾：KF 的五个测量更新等式</a></li>
+      <li><a href="#sec2">2. 预备知识：空间包含关系与噪声正交性</a></li>
+      <li><a href="#sec3">3. ① 新息：\\(e_k = y_k - C\\hat x_{k|k-1}\\)</a></li>
+      <li><a href="#sec4">4. ② 新息协方差：\\(R_{e,k}\\)</a></li>
+      <li><a href="#sec5">5. ③ - ④ 状态更新与 Kalman 增益</a></li>
+      <li><a href="#sec6">6. ⑤ 后验协方差更新</a></li>
+      <li><a href="#sec7">7. 完整测量更新回顾</a></li>
+      <li><a href="#quiz">📝 自测题</a></li>
+    </ul>
+  </div>
+
+  <!-- 1. 回顾 -->
+  <div id="sec1" class="section-card">
+    <h2>1. 回顾：KF 的五个测量更新等式</h2>
+    <p>上节课我们搭建了 Kalman Filter 的舞台——系统模型、基本假设与符号体系。本讲正式进入<strong>测量更新（Measurement Update）</strong>的详细推导。</p>
+    <p>当新的测量 \\(y_k\\) 到来时，我们需要把预测 \\(\\hat x_{k|k-1}\\) 更新为估计 \\(\\hat x_{k|k}\\)。更新过程由以下五个等式描述：</p>
+
+    <div class="formula-box">
+      \\[
+      \\begin{aligned}
+      \\text{①}\\quad & e_k = y_k - C \\hat x_{k|k-1} \\\\
+      \\text{②}\\quad & R_{e,k} = \\langle e_k, e_k \\rangle = C P_{k|k-1} C' + R \\\\
+      \\text{③}\\quad & \\hat x_{k|k} = \\hat x_{k|k-1} + K_k e_k \\\\
+      \\text{④}\\quad & K_k = P_{k|k-1} C' R_{e,k}^{-1} \\\\
+      \\text{⑤}\\quad & P_{k|k} = P_{k|k-1} - P_{k|k-1} C' R_{e,k}^{-1} C P_{k|k-1}
+      \\end{aligned}
+      \\]
+    </div>
+
+    <p>本讲的核心任务就是逐个证明这五个等式。证明将以<strong>正交投影（Orthogonal Projection）</strong>为基本工具。</p>
+  </div>
+
+  <!-- 2. 预备知识 -->
+  <div id="sec2" class="section-card">
+    <h2>2. 预备知识：空间包含关系与噪声正交性</h2>
+    <p>在开始证明之前，我们需要弄清楚各个随机变量所在的空间，以及它们之间的正交性关系。</p>
+
+    <h3>状态的展开</h3>
+    <p>系统的状态可以一直往前展开：</p>
+    <div class="formula-box">
+      \\[
+      x_k = A^k x_0 + A^{k-1} w_0 + A^{k-2} w_1 + \\cdots + A w_{k-2} + w_{k-1}
+      \\]
+    </div>
+    <p>所以 \\(x_k\\) 是 \\(x_0, w_0, \\dots, w_{k-1}\\) 的线性函数。</p>
+
+    <h3>空间包含关系</h3>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>\\(\\mathcal{L}_k = \\text{span}\\{y_0, \\dots, y_k\\}\\)</h4>
+        <p>测量空间 \\(\\mathcal{L}_k\\) 是由截至时刻 \\(k\\) 的所有测量生成的线性空间。</p>
+        <p style="margin-top:8px;font-size:0.85rem">
+          \\(\\mathcal{L}_k \\subset \\text{span}\\{x_0, w_0, \\dots, w_{k-1}; v_0, \\dots, v_k\\}\\)
+        </p>
+      </div>
+      <div class="mini-card">
+        <h4>\\(\\mathcal{L}_{k-1} = \\text{span}\\{y_0, \\dots, y_{k-1}\\}\\)</h4>
+        <p>历史测量空间包含于更大的空间：</p>
+        <p style="margin-top:8px;font-size:0.85rem">
+          \\(\\mathcal{L}_{k-1} \\subset \\text{span}\\{x_0, w_0, \\dots, w_{k-2}; v_0, \\dots, v_{k-1}\\}\\)
+        </p>
+      </div>
+    </div>
+
+    <h3>关键正交性</h3>
+    <div class="callout">
+      <p><strong>💡 核心观察</strong></p>
+      <p>\\(v_k\\) 与 \\(\\mathcal{L}_{k-1}\\) 正交！因为 \\(v_k\\) 与所有 \\(x_0, w_0, \\dots, w_{k-2}, v_0, \\dots, v_{k-1}\\) 都不相关，而 \\(\\mathcal{L}_{k-1}\\) 包含在这个大空间里。</p>
+    </div>
+    <p>这个观察将反复出现在下面的证明中。</p>
+  </div>
+
+  <!-- 3. ① 新息 -->
+  <div id="sec3" class="section-card">
+    <h2>3. ① 新息：\\(e_k = y_k - C\\hat x_{k|k-1}\\)</h2>
+
+    <p>根据 Gram-Schmidt 正交化的思路，新息的定义是：</p>
+    <div class="formula-box">
+      \\[
+      e_k = y_k - \\text{proj}\\{y_k \\mid \\mathcal{L}_{k-1}\\}
+      \\]
+    </div>
+    <p>即在当前测量中，去掉能被历史信息解释的部分后剩下的"纯新"部分。</p>
+
+    <h3>证明</h3>
+    <p>将 \\(y_k = C x_k + v_k\\) 代入：</p>
+    <div class="formula-box">
+      \\[
+      \\begin{aligned}
+      e_k &= y_k - \\sum_{j=0}^{k-1} \\langle y_k, e_j \\rangle \\|e_j\\|^{-2} e_j \\\\
+          &= y_k - \\sum_{j=0}^{k-1} \\langle C x_k + v_k, e_j \\rangle \\|e_j\\|^{-2} e_j \\\\
+          &= y_k - C \\sum_{j=0}^{k-1} \\langle x_k, e_j \\rangle \\|e_j\\|^{-2} e_j - \\sum_{j=0}^{k-1} \\langle v_k, e_j \\rangle \\|e_j\\|^{-2} e_j
+      \\end{aligned}
+      \\]
+    </div>
+
+    <p>注意两个关键事实：</p>
+    <ul>
+      <li>\\(\\text{proj}\\{x_k \\mid \\mathcal{L}_{k-1}\\} = \\hat x_{k|k-1}\\) —— 这是预测的定义</li>
+      <li>\\(\\langle v_k, e_j \\rangle = 0\\) —— 因为 \\(v_k \\perp \\mathcal{L}_{k-1}\\)，而 \\(e_j \\in \\mathcal{L}_{k-1}\\)</li>
+    </ul>
+
+    <p>因此：</p>
+    <div class="formula-box">
+      \\[
+      e_k = y_k - C \\hat x_{k|k-1}
+      \\]
+    </div>
+
+    <div class="callout">
+      <p><strong>📌 直观理解</strong></p>
+      <p>新息 = 真实测量 - 预测测量。它表示"新测量中到底是什么是我之前没想到的"。</p>
+    </div>
+  </div>
+
+  <!-- 4. ② 新息协方差 -->
+  <div id="sec4" class="section-card">
+    <h2>4. ② 新息协方差：\\(R_{e,k} = C P_{k|k-1} C' + R\\)</h2>
+
+    <p>新息协方差是新息 \\(e_k\\) 与自身的内积：</p>
+
+    <div class="formula-box">
+      \\[
+      R_{e,k} = \\langle e_k, e_k \\rangle
+      \\]
+    </div>
+
+    <h3>证明</h3>
+    <p>由等式①：\\(e_k = y_k - C \\hat x_{k|k-1}\\)。代入 \\(y_k\\)：</p>
+
+    <div class="formula-box">
+      \\[
+      \\begin{aligned}
+      e_k &= C x_k + v_k - C \\hat x_{k|k-1} \\\\
+          &= C \\tilde x_{k|k-1} + v_k
+      \\end{aligned}
+      \\]
+    </div>
+
+    <p>其中 \\(\\tilde x_{k|k-1} = x_k - \\hat x_{k|k-1}\\) 是预测误差。现在计算内积：</p>
+
+    <div class="formula-box">
+      \\[
+      \\begin{aligned}
+      R_{e,k} &= \\langle C \\tilde x_{k|k-1} + v_k,\\; C \\tilde x_{k|k-1} + v_k \\rangle \\\\
+              &= C \\underbrace{\\langle \\tilde x_{k|k-1}, \\tilde x_{k|k-1} \\rangle}_{P_{k|k-1}} C' + \\langle v_k, v_k \\rangle \\\\
+              &\\quad + \\underbrace{\\langle C \\tilde x_{k|k-1}, v_k \\rangle}_{=0} + \\underbrace{\\langle v_k, C \\tilde x_{k|k-1} \\rangle}_{=0} \\\\
+              &= C P_{k|k-1} C' + R
+      \\end{aligned}
+      \\]
+    </div>
+
+    <p>交叉项为零的原因是：\\(\\tilde x_{k|k-1} \\in \\mathcal{L}_{k-1}\\)（因为它是预测误差，而预测在 \\(\\mathcal{L}_{k-1}\\) 中），而 \\(v_k \\perp \\mathcal{L}_{k-1}\\)。</p>
+
+    <div class="callout">
+      <p><strong>💡 要点</strong></p>
+      <p>新息协方差由两部分组成：预测不确定性通过观测矩阵映射到测量空间的部分 (\\(C P_{k|k-1} C'\\)) + 测量噪声本身的协方差 (\\(R\\))。</p>
+    </div>
+  </div>
+
+  <!-- 5. ③-④ -->
+  <div id="sec5" class="section-card">
+    <h2>5. ③ - ④ 状态更新与 Kalman 增益</h2>
+
+    <p>这两个等式一起给出测量更新后的状态估计：</p>
+
+    <div class="formula-box">
+      \\[
+      \\hat x_{k|k} = \\hat x_{k|k-1} + K_k e_k, \\quad K_k = P_{k|k-1} C' R_{e,k}^{-1}
+      \\]
+    </div>
+
+    <h3>步骤 1：计算 \\(\\langle x_k, e_k \\rangle\\)</h3>
+    <p>为了将 \\(x_k\\) 投影到 \\(\\mathcal{L}_k\\)（包含了新息 \\(e_k\\)），我们需要知道 \\(x_k\\) 与 \\(e_k\\) 的内积。</p>
+
+    <div class="formula-box">
+      \\[
+      \\begin{aligned}
+      \\langle x_k, e_k \\rangle &= \\langle x_k,\\; y_k - C \\hat x_{k|k-1} \\rangle \\\\
+      &= \\langle x_k,\\; C \\tilde x_{k|k-1} + v_k \\rangle \\\\
+      &= \\langle x_k, C \\tilde x_{k|k-1} \\rangle + \\cancel{\\langle x_k, v_k \\rangle} \\\\
+      &= \\langle \\hat x_{k|k-1} + \\tilde x_{k|k-1},\\; C \\tilde x_{k|k-1} \\rangle \\\\
+      &= \\cancel{\\langle \\hat x_{k|k-1}, C \\tilde x_{k|k-1} \\rangle} + \\langle \\tilde x_{k|k-1}, C \\tilde x_{k|k-1} \\rangle \\\\
+      &= P_{k|k-1} C'
+      \\end{aligned}
+      \\]
+    </div>
+
+    <p>其中交叉项 \\(\\langle \\hat x_{k|k-1}, \\tilde x_{k|k-1} \\rangle = 0\\) 正是<strong>正交原理（Orthogonality Principle）</strong>——最优估计的误差与估计本身正交。</p>
+
+    <h3>步骤 2：投影到 \\(\\mathcal{L}_k\\)</h3>
+    <p>现在将 \\(x_k\\) 投影到 \\(\\mathcal{L}_k\\)（它由 \\(\\mathcal{L}_{k-1}\\) 和 \\(e_k\\) 张成）：</p>
+
+    <div class="formula-box">
+      \\[
+      \\begin{aligned}
+      \\hat x_{k|k} &= \\text{proj}\\{x_k \\mid \\mathcal{L}_k\\} \\\\
+      &= \\sum_{j=0}^{k} \\langle x_k, e_j \\rangle \\|e_j\\|^{-2} e_j \\\\
+      &= \\underbrace{\\sum_{j=0}^{k-1} \\langle x_k, e_j \\rangle \\|e_j\\|^{-2} e_j}_{\\hat x_{k|k-1}} + \\langle x_k, e_k \\rangle \\|e_k\\|^{-2} e_k \\\\
+      &= \\hat x_{k|k-1} + P_{k|k-1} C' \\cdot R_{e,k}^{-1} \\cdot e_k
+      \\end{aligned}
+      \\]
+    </div>
+
+    <p>定义 Kalman 增益 \\(K_k = P_{k|k-1} C' R_{e,k}^{-1}\\)，得到：</p>
+
+    <div class="formula-box">
+      \\[
+      \\hat x_{k|k} = \\hat x_{k|k-1} + K_k e_k
+      \\]
+    </div>
+
+    <div class="callout">
+      <p><strong>🧠 几何解释</strong></p>
+      <p>Kalman 增益 \\(K_k\\) 控制着我们对新息的"信任程度"。如果预测很准（\\(P_{k|k-1}\\) 小），增益就小；如果测量噪声小（\\(R\\) 小），增益就大。</p>
+    </div>
+  </div>
+
+  <!-- 6. ⑤ -->
+  <div id="sec6" class="section-card">
+    <h2>6. ⑤ 后验协方差更新</h2>
+
+    <p>最后，我们推导更新后的误差协方差 \\(P_{k|k}\\)：</p>
+
+    <div class="formula-box">
+      \\[
+      P_{k|k} = P_{k|k-1} - P_{k|k-1} C' R_{e,k}^{-1} C P_{k|k-1}
+      \\]
+    </div>
+
+    <h3>证明</h3>
+    <p>首先写出估计误差：</p>
+
+    <div class="formula-box">
+      \\[
+      \\tilde x_{k|k} = x_k - \\hat x_{k|k} = \\tilde x_{k|k-1} - K_k e_k
+      \\]
+    </div>
+
+    <p>然后计算内积：</p>
+
+    <div class="formula-box">
+      \\[
+      \\begin{aligned}
+      P_{k|k} &= \\langle \\tilde x_{k|k},\\; \\tilde x_{k|k} \\rangle \\\\
+      &= \\langle \\tilde x_{k|k-1} - K_k e_k,\\; \\tilde x_{k|k-1} - K_k e_k \\rangle \\\\
+      &= P_{k|k-1} - K_k \\langle e_k, \\tilde x_{k|k-1} \\rangle - \\langle \\tilde x_{k|k-1}, e_k \\rangle K_k' + K_k \\langle e_k, e_k \\rangle K_k'
+      \\end{aligned}
+      \\]
+    </div>
+
+    <p>我们需要计算其中的交叉项：</p>
+
+    <div class="formula-box">
+      \\[
+      \\begin{aligned}
+      \\langle \\tilde x_{k|k-1}, e_k \\rangle &= \\langle \\tilde x_{k|k-1},\\; C \\tilde x_{k|k-1} + v_k \\rangle = P_{k|k-1} C' \\\\
+      \\langle e_k, \\tilde x_{k|k-1} \\rangle &= C P_{k|k-1}
+      \\end{aligned}
+      \\]
+    </div>
+
+    <p>代入并利用 \\(K_k = P_{k|k-1} C' R_{e,k}^{-1}\\)：</p>
+
+    <div class="formula-box">
+      \\[
+      \\begin{aligned}
+      P_{k|k} &= P_{k|k-1} - K_k \\cdot C P_{k|k-1} - P_{k|k-1} C' \\cdot K_k' + K_k \\cdot R_{e,k} \\cdot K_k' \\\\
+      &= P_{k|k-1} - P_{k|k-1} C' R_{e,k}^{-1} C P_{k|k-1} - P_{k|k-1} C' R_{e,k}^{-1} C P_{k|k-1} \\\\
+      &\\quad + P_{k|k-1} C' R_{e,k}^{-1} \\cdot R_{e,k} \\cdot R_{e,k}^{-1} C P_{k|k-1} \\\\
+      &= P_{k|k-1} - P_{k|k-1} C' R_{e,k}^{-1} C P_{k|k-1}
+      \\end{aligned}
+      \\]
+    </div>
+
+    <p>或者用更紧凑的形式写出：</p>
+
+    <div class="formula-box">
+      \\[
+      P_{k|k} = P_{k|k-1} - P_{k|k-1} C' [C P_{k|k-1} C' + R]^{-1} C P_{k|k-1}
+      \\]
+    </div>
+
+    <div class="callout">
+      <p><strong>📌 关键认识</strong></p>
+      <p>后验协方差 = 先验协方差 - 新信息带来的"不确定性降低量"。这个降低量正是 \\(K_k R_{e,k} K_k'\\)，也就是 Kalman 增益加权后的新息协方差。</p>
+    </div>
+  </div>
+
+  <!-- 7. 完整回顾 -->
+  <div id="sec7" class="section-card">
+    <h2>7. 完整测量更新回顾</h2>
+
+    <p>到此我们完成了五个等式的证明。完整的 KF 测量更新流程如下：</p>
+
+    <div class="summary-grid">
+      <div class="mini-card">
+        <h4>① 新息</h4>
+        \\[
+        e_k = y_k - C \\hat x_{k|k-1}
+        \\]
+      </div>
+      <div class="mini-card">
+        <h4>② 新息协方差</h4>
+        \\[
+        R_{e,k} = C P_{k|k-1} C' + R
+        \\]
+      </div>
+      <div class="mini-card">
+        <h4>③ Kalman 增益</h4>
+        \\[
+        K_k = P_{k|k-1} C' R_{e,k}^{-1}
+        \\]
+      </div>
+      <div class="mini-card">
+        <h4>④ 状态更新</h4>
+        \\[
+        \\hat x_{k|k} = \\hat x_{k|k-1} + K_k e_k
+        \\]
+      </div>
+      <div class="mini-card">
+        <h4>⑤ 协方差更新</h4>
+        \\[
+        P_{k|k} = (I - K_k C) P_{k|k-1}
+        \\]
+      </div>
+    </div>
+
+    <p>在证明过程中，我们反复用到了以下技巧：</p>
+    <ol>
+      <li><strong>分解技巧</strong>：把状态拆成预测 + 预测误差，利用正交原理消掉交叉项</li>
+      <li><strong>空间论证</strong>：利用 \\(v_k \\perp \\mathcal{L}_{k-1}\\) 消去含 \\(v_k\\) 的交叉项</li>
+      <li><strong>投影展开</strong>：把 \\(\\mathcal{L}_k\\) 上的投影拆成 \\(\\mathcal{L}_{k-1}\\) 上的投影 + 新息方向上的投影</li>
+    </ol>
+
+    <div class="callout">
+      <p><strong>🔭 下讲预告</strong></p>
+      <p>测量更新完备之后，我们将进入 Time Update（时间更新）的推导，然后讨论 \\(P_{k|k}\\) 的收敛性、固定增益估计器以及传感器融合。</p>
+    </div>
+  </div>
+
+  <!-- 自测题 -->
+  <div id="quiz" class="section-card">
+    <h2>📝 自测题</h2>
+
+    <div class="interactive-card">
+      <h3>问题 1</h3>
+      <p>新息 \\(e_k\\) 与历史测量空间 \\(\\mathcal{L}_{k-1}\\) 的关系是什么？为什么？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>\\(e_k \\perp \\mathcal{L}_{k-1}\\)。因为 \\(e_k\\) 定义为 \\(y_k\\) 在 \\(\\mathcal{L}_{k-1}\\) 上投影的残差，根据正交原理，残差与投影空间正交。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 2</h3>
+      <p>证明 \\(\\langle \\tilde x_{k|k-1}, v_k \\rangle = 0\\)。</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>\\(\\tilde x_{k|k-1} \\in \\mathcal{L}_{k-1}\\)（预测误差在历史测量空间内），而 \\(v_k \\perp \\mathcal{L}_{k-1}\\)（\\(v_k\\) 与所有历史信息不相关）。所以 \\(\\tilde x_{k|k-1}\\) 与 \\(v_k\\) 正交。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 3</h3>
+      <p>如果测量噪声协方差 \\(R \\to 0\\)，Kalman 增益 \\(K_k\\) 会怎样？后验协方差 \\(P_{k|k}\\) 呢？</p>
+      <div class="quiz-options">
+        <button onclick="lessonKit.answer(this, 'quiz3-feedback')" data-correct="yes" data-explanation="正确！当 R→0 时，R_{e,k}→CPC'，K_k→PC'(CPC')^{-1}，这是完美的测量更新——后验协方差会降为零（在可观测方向上）。">\\(K_k \\to P_{k|k-1}C'[C P_{k|k-1}C']^{-1}\\)，\\(P_{k|k} \\to 0\\)</button>
+        <button onclick="lessonKit.answer(this, 'quiz3-feedback')" data-correct="no" data-explanation="再想想？当测量噪声为零时，测量就是完美的，Kalman 增益应该最大化，后验不确定性应该降为零。">\\(K_k \\to 0\\)，\\(P_{k|k} \\to P_{k|k-1}\\)</button>
+      </div>
+      <div id="quiz3-feedback" class="quiz-feedback"></div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="nav-links">
+    <a href="0016-KF-L14-KalmanFilter-2.html" class="prev">← KF L14：测量更新详解 (2/2)</a>
+    <a href="0018-KF-L16-时间更新增益.html" class="next">KF L16：时间更新、固定增益与传感器融合 →</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+</div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 KF L15 · 从新息到后验协方差的完整测量更新推导</p>
+  </div>
+</div>
+<script src="assets/shiclass.js"></script>
+</body>
+</html>

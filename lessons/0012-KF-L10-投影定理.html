@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KF L10：投影定理与随机最小二乘 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<link rel="stylesheet" href="assets/shiclass.css">
+</head>
+<body>
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · KF L10</div>
+    <h1>投影定理与随机最小二乘</h1>
+    <p class="subtitle">最小二乘到随机估计的桥梁 —— 从内积空间投影到 MMSE 与 LMMSE</p>
+    <div class="hero-meta">
+      <span>📅 2026-03-07</span>
+      <span>📐 投影定理</span>
+      <span>🎯 随机估计基础</span>
+    </div>
+  </div>
+
+  <!-- Lead Grid -->
+  <div class="lead-grid">
+    <div class="callout">
+      <p><strong>🎯 本讲目标</strong></p>
+      <p>本讲是最小二乘到随机估计的桥梁。掌握投影定理的内容、投影误差与子空间的正交性、MMSE 等于条件期望、以及为什么用 LMMSE 代替 MMSE。</p>
+    </div>
+    <div class="callout">
+      <p><strong>🔑 核心洞见</strong></p>
+      <p>估计就是投影。MMSE 是把 \(X\) 投影到由 \(Y\) 决定的所有函数空间；LMMSE 是投影到 \(Y\) 的线性组合空间。</p>
+    </div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3>📖 目录</h3>
+    <ul>
+      <li><a href="#sec1">1. 投影定理</a></li>
+      <li><a href="#sec2">2. 投影定理的三大核心</a></li>
+      <li><a href="#sec3">3. 证明思路：存在性</a></li>
+      <li><a href="#sec4">4. 证明思路：正交性</a></li>
+      <li><a href="#sec5">5. 证明思路：唯一性</a></li>
+      <li><a href="#sec6">6. 随机估计问题</a></li>
+      <li><a href="#sec7">7. MMSE 等于条件期望</a></li>
+      <li><a href="#sec8">8. 补充例题：离散条件期望</a></li>
+      <li><a href="#sec9">9. MMSE 的困难</a></li>
+      <li><a href="#sec10">10. LMMSE：用线性换简单</a></li>
+      <li><a href="#sec11">11. 和 Kalman Filter 的关系</a></li>
+      <li><a href="#quiz">📝 自测题</a></li>
+    </ul>
+  </div>
+
+  <!-- 1. 投影定理 -->
+  <div id="sec1" class="section-card">
+    <h2>1. 投影定理</h2>
+    <p>设 \(L\) 是内积空间 \(V\) 的线性子空间。对任意 \(y\in V\)，存在唯一 \(\hat y_L\in L\)，使：</p>
+    <div class="formula-box">
+      \[
+      \langle y-\hat y_L,a\rangle=0,\quad\forall a\in L
+      \]
+    </div>
+    <p>也就是：</p>
+    <div class="formula-box">
+      \[
+      y-\hat y_L\perp L
+      \]
+    </div>
+    <p>这就是<strong>投影定理</strong>的核心内容。</p>
+    <div class="callout">
+      <p><strong>💡 直观理解</strong></p>
+      <p>你把一个点投影到一张平面上，最近点只有一个，而且连接线垂直于平面 —— 这就是投影定理的几何直觉。</p>
+    </div>
+  </div>
+
+  <!-- 2. 投影定理的三大核心 -->
+  <div id="sec2" class="section-card">
+    <h2>2. 投影定理的三大核心</h2>
+    <p>投影定理说了三件事：</p>
+    <div class="grid-3">
+      <div class="mini-card">
+        <h4>✅ 存在性</h4>
+        <p>投影点一定存在。</p>
+      </div>
+      <div class="mini-card">
+        <h4>✅ 唯一性</h4>
+        <p>投影点只有一个。</p>
+      </div>
+      <div class="mini-card">
+        <h4>✅ 正交性</h4>
+        <p>误差与子空间正交。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 证明思路：存在性 -->
+  <div id="sec3" class="section-card">
+    <h2>3. 证明思路：存在性</h2>
+    <p>取 \(L\) 的正交基 \(v_1,\ldots,v_m\)，扩展成 \(V\) 的正交基 \(v_1,\ldots,v_m,v_{m+1},\ldots,v_N\)。</p>
+    <p>任意 \(y\) 可写成：</p>
+    <div class="formula-box">
+      \[
+      y=\sum_{i=1}^N\alpha_iv_i
+      \]
+    </div>
+    <p>定义投影：</p>
+    <div class="formula-box">
+      \[
+      \hat y_L=\sum_{i=1}^m\alpha_iv_i
+      \]
+    </div>
+    <p>也就是只保留属于 \(L\) 的分量。这天然保证了 \(\hat y_L \in L\)。</p>
+  </div>
+
+  <!-- 4. 证明思路：正交性 -->
+  <div id="sec4" class="section-card">
+    <h2>4. 证明思路：正交性</h2>
+    <p>误差：</p>
+    <div class="formula-box">
+      \[
+      y-\hat y_L=\sum_{i=m+1}^N\alpha_iv_i
+      \]
+    </div>
+    <p>任意 \(a\in L\)，\(a=\sum_{j=1}^m\beta_jv_j\)。由于正交基之间内积为 0：</p>
+    <div class="formula-box">
+      \[
+      \langle y-\hat y_L,a\rangle=0
+      \]
+    </div>
+    <p>这就证明了误差与子空间正交。</p>
+  </div>
+
+  <!-- 5. 证明思路：唯一性 -->
+  <div id="sec5" class="section-card">
+    <h2>5. 证明思路：唯一性</h2>
+    <p>假设有两个投影 \(\hat y_1,\hat y_2\)，二者都在 \(L\) 中，所以：</p>
+    <div class="formula-box">
+      \[
+      \hat y_1-\hat y_2\in L
+      \]
+    </div>
+    <p>利用正交条件可证明：</p>
+    <div class="formula-box">
+      \[
+      \|\hat y_1-\hat y_2\|^2=0 \quad\Rightarrow\quad \hat y_1=\hat y_2
+      \]
+    </div>
+    <p>因此投影点唯一确定。</p>
+  </div>
+
+  <!-- 6. 随机估计问题 -->
+  <div id="sec6" class="section-card">
+    <h2>6. 随机估计问题</h2>
+    <p>现在考虑随机变量 \(X,Y\)。我们想根据 \(Y\) 估计 \(X\)：</p>
+    <div class="formula-box">
+      \[
+      \hat X = f(Y)
+      \]
+    </div>
+    <p>估计误差和目标：</p>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>误差</h4>
+        \[
+        e = X - \hat X
+        \]
+      </div>
+      <div class="mini-card">
+        <h4>优化目标</h4>
+        \[
+        \min_{\hat X} E[e^Te \mid Y=y]
+        \]
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. MMSE 等于条件期望 -->
+  <div id="sec7" class="section-card">
+    <h2>7. MMSE 等于条件期望</h2>
+    <p>固定观测 \(Y=y\)，要最小化：</p>
+    <div class="formula-box">
+      \[
+      E[(X-\hat x)^T(X-\hat x) \mid Y=y]
+      \]
+    </div>
+    <p>展开并配方，可得最优：</p>
+    <div class="formula-box">
+      \[
+      \hat x = E[X \mid Y=y]
+      \]
+    </div>
+    <p>因此：</p>
+    <div class="formula-box">
+      \[
+      \hat X_{\text{MMSE}} = E[X \mid Y]
+      \]
+    </div>
+    <div class="callout">
+      <p><strong>💡 通俗解释</strong></p>
+      <p>给定 \(Y=y\) 后，\(X\) 仍可能有很多可能值。若用平方误差衡量错得多严重，最佳代表点就是条件均值。</p>
+      <p>这好比一群人里头，用"平均身高"代表大家，平方误差最小。</p>
+    </div>
+  </div>
+
+  <!-- 8. 补充例题 -->
+  <div id="sec8" class="section-card">
+    <h2>8. 【补充例题】离散条件期望</h2>
+    <p>已知在 \(Y=y\) 条件下：</p>
+    <div class="formula-box">
+      \[
+      P(X=0 \mid Y=y) = 0.25,\qquad
+      P(X=4 \mid Y=y) = 0.75
+      \]
+    </div>
+    <p>则：</p>
+    <div class="formula-box">
+      \[
+      E[X \mid Y=y] = 0 \cdot 0.25 + 4 \cdot 0.75 = 3
+      \]
+    </div>
+    <div class="callout">
+      <p><strong>📌 理解</strong></p>
+      <p>虽然 \(X\) 实际只可能是 0 或 4，但 MMSE 估计是 3。平均意义下，这是最"不偏不倚"的选择。</p>
+    </div>
+  </div>
+
+  <!-- 9. MMSE 的困难 -->
+  <div id="sec9" class="section-card">
+    <h2>9. MMSE 的困难</h2>
+    <p>MMSE 需要计算：</p>
+    <div class="formula-box">
+      \[
+      E[X \mid Y=y] = \int x\, f(x\mid y)\, dx
+      \]
+    </div>
+    <p>实际困难：</p>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>❌ 条件分布未知</h4>
+        <p>\(f(x\mid y)\) 通常不知道。</p>
+      </div>
+      <div class="mini-card">
+        <h4>❌ 高维积分</h4>
+        <p>高维情况下难以计算。</p>
+      </div>
+      <div class="mini-card">
+        <h4>❌ 实时性差</h4>
+        <p>实时系统计算不起。</p>
+      </div>
+      <div class="mini-card">
+        <h4>❌ 非线性非高斯</h4>
+        <p>情况更复杂。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10. LMMSE -->
+  <div id="sec10" class="section-card">
+    <h2>10. LMMSE：用线性换简单</h2>
+    <p>一般估计器：</p>
+    <div class="formula-box">
+      \[
+      \hat X = f(Y)
+      \]
+    </div>
+    <p>线性估计器：</p>
+    <div class="formula-box">
+      \[
+      \hat X = K Y
+      \]
+    </div>
+    <p>LMMSE 只在线性估计器中找最优。</p>
+
+    <h3>关系对比</h3>
+    <div class="grid-3">
+      <div class="mini-card">
+        <h4>MMSE</h4>
+        <p>所有函数里最优</p>
+        <p style="font-size:0.8rem;color:var(--text-secondary)">但计算困难</p>
+      </div>
+      <div class="mini-card">
+        <h4>LMMSE</h4>
+        <p>所有线性函数里最优</p>
+        <p style="font-size:0.8rem;color:var(--text-secondary)">计算简便</p>
+      </div>
+      <div class="mini-card">
+        <h4>线性高斯系统</h4>
+        <p>MMSE = LMMSE</p>
+        <p style="font-size:0.8rem;color:var(--accent)">最佳情形</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 11. 和 Kalman Filter 的关系 -->
+  <div id="sec11" class="section-card">
+    <h2>11. 和 Kalman Filter 的关系</h2>
+    <p>Kalman Filter 在线性高斯系统中，正好处在"MMSE 和 LMMSE 重合"的幸运情形。它既有概率解释，也有几何投影解释。</p>
+    <div class="callout">
+      <p><strong>🌉 承上启下</strong></p>
+      <p>Kalman Filter 将利用 LMMSE 构造高效递推。投影定理的几何直觉贯穿整个 KF 理论体系。</p>
+    </div>
+  </div>
+
+  <!-- 自测题 -->
+  <div id="quiz" class="section-card">
+    <h2>📝 自测题</h2>
+
+    <div class="interactive-card">
+      <h3>问题 1</h3>
+      <p>投影定理的正交条件是什么意思？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>正交条件 \(\langle y-\hat y_L, a\rangle = 0\) 对任意 \(a\in L\) 成立，意味着误差向量与整个子空间 \(L\) 正交。这是"最近点"的几何特征：连接点到子空间的垂线垂直于子空间。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 2</h3>
+      <p>为什么平方误差下最佳估计是条件均值？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>最小化 \(E[(X-\hat x)^2 \mid Y=y]\)，展开后对 \(\hat x\) 求导，令导数为零可得 \(\hat x = E[X \mid Y=y]\)。条件均值在平方误差意义下是最优代表点。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 3</h3>
+      <p>LMMSE 为什么比 MMSE 更容易计算？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>LMMSE 只需要一阶矩和二阶矩（均值、协方差），不需要完整的条件分布。它避免了高维积分，只需要解一个线性方程 \(K R_y = R_{xy}\)，计算量远小于 MMSE。</p>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="nav-links">
+    <a href="0011-KF-L9-最小二乘几何.html" class="prev">← KF L9：最小二乘几何</a>
+    <a href="0013-KF-L11-LMMSE正交原理.html" class="next">KF L11：LMMSE 与正交原理 →</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+</div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 KF L10 · 投影定理与随机最小二乘</p>
+  </div>
+</div>
+<script src="assets/shiclass.js"></script>
+</body>
+</html>

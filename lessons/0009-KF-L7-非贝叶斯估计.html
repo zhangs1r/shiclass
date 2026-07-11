@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KF L7：非贝叶斯估计与最大似然 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/shiclass.css">
+<script src="assets/shiclass.js"></script>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <div class="eyebrow">研讨会系列 10 · Kalman Filter L7</div>
+    <h1>非贝叶斯估计与最大似然</h1>
+    <p class="subtitle">参数是固定的常数，数据是随机的——最大似然估计：找到让数据"最有可能"的那个参数。</p>
+    <div class="hero-meta">
+      <span>📅 2026-01-31</span>
+      <span>⏱ ~90 分钟</span>
+      <span>📊 中级</span>
+      <span>🎯 估计理论</span>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <h3>📖 本讲目录</h3>
+    <ul>
+      <li><a href="#nonbayesian">1. Non-Bayesian 框架</a></li>
+      <li><a href="#temperature">2. 【课堂例题】房间温度</a></li>
+      <li><a href="#ml">3. 最大似然估计 ML</a></li>
+      <li><a href="#loglikelihood">4. 独立样本和 log-likelihood</a></li>
+      <li><a href="#coin-ml">5. 【课堂例题】偏硬币估计</a></li>
+      <li><a href="#temp-ml">6. 【课堂例题】温度的 ML 直觉</a></li>
+      <li><a href="#map-ml">7. MAP 和 ML 的关系</a></li>
+      <li><a href="#nonuniform">8. 【补充例题】非均匀先验下 MAP 和 ML 不同</a></li>
+    </ul>
+  </nav>
+
+  <section id="nonbayesian" class="section-card">
+    <h2>1. Non-Bayesian 框架</h2>
+    <p>在非贝叶斯估计中：</p>
+    <ul>
+      <li>\(\theta\) 是<strong>确定但未知</strong>的常数</li>
+      <li>\(X\) 是随机测量</li>
+      <li>我们观察到 \(x\)</li>
+      <li>目标是找一个数 \(\hat\theta\)</li>
+    </ul>
+
+    <h3>和 Bayesian 的区别</h3>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>🔵 Bayesian</h4>
+        <p>问：\(P(\theta|x)\) 是多少？<br>把 \(\theta\) 当随机变量，需要先验。</p>
+      </div>
+      <div class="mini-card">
+        <h4>🟢 Non-Bayesian</h4>
+        <p>问：哪个 \(\theta\) 让数据最可能？<br>\(\theta\) 是固定常数，不需要先验。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="temperature" class="section-card">
+    <h2>2. 【课堂例题】房间温度</h2>
+    <p>模型：</p>
+    <div class="formula-box">
+      \[ X = T + V \]
+    </div>
+    <p>其中 \(T\) 是真实温度，固定但未知。若 \(V \sim N(0,1)\)，则：</p>
+    <div class="formula-box">
+      \[ X \sim N(T, 1) \]
+    </div>
+    <p>这里 \(T\) 是分布参数。不同的 \(T\) 会让观测数据的概率密度曲线平移——直观上，ML 会选择让观测值最"合理"的那个 \(T\)。</p>
+  </section>
+
+  <section id="ml" class="section-card">
+    <h2>3. 最大似然估计 ML</h2>
+    <p>观测 \(x_1, \ldots, x_n\)，联合概率或密度写成：</p>
+    <div class="formula-box">
+      \[ p(x_1, \ldots, x_n; \theta) \]
+    </div>
+    <p>分号表示 \(\theta\) 是<strong>参数</strong>，不是随机变量。</p>
+    <p>最大似然估计：</p>
+    <div class="formula-box">
+      \[ \hat\theta_{\text{ML}} = \arg\max_\theta p(x_1, \ldots, x_n; \theta) \]
+    </div>
+    <div class="callout">
+      <p><strong>💡 通俗解释：</strong> 已经看到这些数据了。ML 问：哪个 \(\theta\) 会让这些数据最容易发生？</p>
+    </div>
+  </section>
+
+  <section id="loglikelihood" class="section-card">
+    <h2>4. 独立样本和 log-likelihood</h2>
+    <p>若 \(X_i\) 独立：</p>
+    <div class="formula-box">
+      \[ p(x_1, \ldots, x_n; \theta) = \prod_{i=1}^n p(x_i; \theta) \]
+    </div>
+    <p>取 log（单调递增，不改变最大点）：</p>
+    <div class="formula-box">
+      \[ \log p(x_1, \ldots, x_n; \theta) = \sum_{i=1}^n \log p(x_i; \theta) \]
+    </div>
+
+    <div class="summary-grid">
+      <div class="mini-card">
+        <h4>✅ 为什么喜欢 log</h4>
+        <p>乘积变求和<br>不易数值下溢<br>求导更方便</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="coin-ml" class="section-card">
+    <h2>5. 【课堂例题】偏硬币估计</h2>
+    <p>硬币正面概率为 \(\theta\)。第 \(i\) 次投掷：</p>
+    <div class="formula-box">
+      \[ X_i = \begin{cases} 1, & \text{正面} \\ 0, & \text{反面} \end{cases} \]
+    </div>
+    <p>一个直观估计器：</p>
+    <div class="formula-box">
+      \[ \hat\theta_n = \frac1n \sum_{i=1}^n X_i \]
+    </div>
+    <p>如果 100 次中 70 次正面，则 \(\hat\theta = 0.7\)。</p>
+    <div class="callout">
+      <p><strong>🔗 预告：</strong> 下一讲会完整推导它正是 ML 解。</p>
+    </div>
+  </section>
+
+  <section id="temp-ml" class="section-card">
+    <h2>6. 【课堂例题】温度的 ML 直觉</h2>
+    <p>若观测到多个温度读数 \(x_1, \ldots, x_n\)，且噪声是高斯：</p>
+    <div class="formula-box">
+      \[ X_i \sim N(T, 1) \]
+    </div>
+    <p>当 \(T\) 靠近观测数据中心时，所有观测同时出现的概率最大。</p>
+    <p>在独立同方差高斯噪声下，ML 会给出样本均值：</p>
+    <div class="formula-box">
+      \[ \hat T_{\text{ML}} = \frac1n \sum_i x_i \]
+    </div>
+    <div class="callout">
+      <p><strong>📊 直觉：</strong> 高斯噪声下，最大化似然等价于最小化残差平方和——这是通向最小二乘的桥梁。</p>
+    </div>
+  </section>
+
+  <section id="map-ml" class="section-card">
+    <h2>7. MAP 和 ML 的关系</h2>
+
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>📍 MAP</h4>
+        <div class="formula-box" style="margin:8px 0">
+          \[ \arg\max_\theta P(\theta|x) \]
+        </div>
+        <p>\(= \arg\max_\theta P(\theta) P(x|\theta)\)</p>
+      </div>
+      <div class="mini-card">
+        <h4>📈 ML</h4>
+        <div class="formula-box" style="margin:8px 0">
+          \[ \arg\max_\theta P(x; \theta) \]
+        </div>
+        <p>只看数据似然</p>
+      </div>
+    </div>
+
+    <p>如果先验 \(P(\theta)\) 是常数（uniform prior），则：</p>
+    <div class="formula-box">
+      \[ \hat\theta_{\text{MAP}} = \hat\theta_{\text{ML}} \]
+    </div>
+    <div class="callout">
+      <p><strong>💡 通俗解释：</strong> 如果你事先对所有参数都一视同仁，那么只看数据最支持哪个参数即可。</p>
+    </div>
+  </section>
+
+  <section id="nonuniform" class="section-card">
+    <h2>8. 【补充例题】非均匀先验下 MAP 和 ML 不同</h2>
+    <p>假设两个候选参数 \(\theta_1, \theta_2\)：</p>
+    <div class="formula-box">
+      \[ P(x|\theta_1) = 0.6,\quad P(x|\theta_2) = 0.8 \]
+      \[ P(\theta_1) = 0.9,\quad P(\theta_2) = 0.1 \]
+    </div>
+    <p><strong>ML</strong> 选 \(\theta_2\)，因为 0.8 更大。</p>
+    <p><strong>MAP</strong> 比较：</p>
+    <div class="formula-box">
+      \[ 0.9 \times 0.6 = 0.54 \quad\text{vs}\quad 0.1 \times 0.8 = 0.08 \]
+    </div>
+    <p>所以 MAP 选 \(\theta_1\)。</p>
+    <div class="callout" style="border-left-color: var(--accent-light);">
+      <p><strong>📝 要点：</strong> 先验信息强烈时，MAP 和 ML 可能分歧很大。ML 完全由数据驱动，MAP 则在先验和数据之间做权衡。</p>
+    </div>
+  </section>
+
+  <section class="section-card">
+    <h2>📌 小结</h2>
+    <div class="summary-grid">
+      <div class="mini-card">
+        <h4>📈 最大似然</h4>
+        <p>"让已观测数据最合理"<br>\(\hat\theta_{\text{ML}} = \arg\max p(x;\theta)\)</p>
+      </div>
+      <div class="mini-card">
+        <h4>🆚 MAP vs ML</h4>
+        <p>Uniform prior 时 MAP = ML<br>先验强烈时两者不同</p>
+      </div>
+      <div class="mini-card">
+        <h4>🔗 连接</h4>
+        <p>高斯噪声下 ML → 最小二乘<br>这是下一讲的重要连接点 🧭</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="exercise-box">
+    <h3>📝 自测题</h3>
+    <ol>
+      <li>为什么 ML 中 \(\theta\) 后面常用分号而不是竖线？</li>
+      <li>log-likelihood 为什么和 likelihood 有相同最大点？</li>
+      <li>什么条件下 MAP 和 ML 一致？</li>
+    </ol>
+    <details class="exercise-answer">
+      <summary>查看答案提示</summary>
+      <div class="content">
+        <p><strong>1.</strong> 分号表示 \(\theta\) 是确定参数而非随机变量。竖线在 Bayesian 中表示条件概率，需要 \(\theta\) 是随机变量。</p>
+        <p><strong>2.</strong> log 函数是严格单调递增的，所以 \(\arg\max f(x) = \arg\max \log f(x)\)。</p>
+        <p><strong>3.</strong> 当先验分布是均匀分布（常数）时，MAP = ML。</p>
+      </div>
+    </details>
+  </div>
+
+  <div class="nav-links">
+    <a href="0008-KF-L6-MAP-MMSE.html">← 上一讲：KF L6</a>
+    <a href="0010-KF-L8-最小二乘正规方程.html" class="next">下一讲：KF L8 最小二乘与正规方程 →</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+</div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 10 · KF L7 非贝叶斯估计与最大似然</p>
+    <p>字幕来源：<code>subtitles/20260131_施凌_研讨会系列10_KF_L7_audio_ea83bf8b6caaee41.srt</code></p>
+  </div>
+
+</div>
+
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+</body>
+</html>

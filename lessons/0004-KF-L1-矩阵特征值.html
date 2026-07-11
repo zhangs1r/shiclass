@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KF L1：矩阵特征值、SVD与正定性 · 研讨会系列4</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/shiclass.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script src="assets/shiclass.js"></script>
+</head>
+<body>
+<div class="page">
+
+  <!-- Hero -->
+  <header class="hero">
+    <div class="eyebrow">🎓 施老师大课堂 · KF 系列 L1</div>
+    <h1>矩阵特征值、SVD 与正定性</h1>
+    <p class="subtitle">Kalman Filter 的数学基础——从特征值到正定矩阵，理解协方差的数学结构</p>
+    <div class="hero-meta">
+      <span>2025-11-15</span>
+      <span>线性代数</span>
+      <span>特征值</span>
+      <span>SVD</span>
+    </div>
+  </header>
+
+  <!-- TOC -->
+  <nav class="toc">
+    <h3>📑 本讲内容</h3>
+    <ul>
+      <li><a href="#section-why">为什么 KF 需要线性代数</a></li>
+      <li><a href="#section-eigen">特征值与特征向量</a></li>
+      <li><a href="#section-trace">Trace、Determinant 与特征值</a></li>
+      <li><a href="#section-props">常见矩阵的特征值性质</a></li>
+      <li><a href="#section-diag">对角化与系统分析</a></li>
+      <li><a href="#section-svd">SVD：奇异值分解</a></li>
+      <li><a href="#section-pd">正定与半正定</a></li>
+      <li><a href="#section-ab">AB 和 BA 的非零特征值</a></li>
+      <li><a href="#section-cholesky">Cholesky 分解</a></li>
+      <li><a href="#exercise">课后练习</a></li>
+    </ul>
+  </nav>
+
+  <!-- Lead Callout -->
+  <div class="lead-grid">
+    <div class="callout">
+      <strong>🎯 本讲目标</strong>
+      <p>理解特征值和特征向量；掌握 Trace、Determinant 和特征值的关系；区分 SVD 和特征分解；理解正定/半正定对协方差的重要性。</p>
+    </div>
+    <div class="callout">
+      <strong>📌 前置知识</strong>
+      <p>需要基础的线性代数知识：矩阵乘法、向量、线性变换。<br>需要概率统计基础（后续会用到）。</p>
+    </div>
+  </div>
+
+  <!-- Section 1: Why -->
+  <section id="section-why" class="section-card">
+    <h2>🤔 为什么 Kalman Filter 需要线性代数</h2>
+    <p>Kalman Filter 处理的是向量和矩阵：</p>
+    <div class="formula-box">
+      $$x_{k+1}=Ax_k+w_k$$
+      $$y_k=Cx_k+v_k$$
+    </div>
+    <p>其中：</p>
+    <ul>
+      <li>$x_k$ 是状态向量；</li>
+      <li>$A$ 描述状态如何变化；</li>
+      <li>$C$ 描述状态如何被测量；</li>
+      <li>协方差矩阵描述不确定性。</li>
+    </ul>
+    <p>如果不理解矩阵，就很难理解 Kalman Filter 的工作原理。</p>
+  </section>
+
+  <!-- Section 2: Eigen -->
+  <section id="section-eigen" class="section-card">
+    <h2>🔷 特征值和特征向量</h2>
+    <h3>定义</h3>
+    <p>对方阵 $A$，如果存在非零向量 $v$ 和标量 $\lambda$，使：</p>
+    <div class="formula-box">
+      $$Av=\lambda v$$
+    </div>
+    <p>则 $\lambda$ 是 <strong>eigenvalue（特征值）</strong>，$v$ 是 <strong>eigenvector（特征向量）</strong>。</p>
+
+    <h3>通俗解释</h3>
+    <p>矩阵 $A$ 是一个线性变换。它通常会把向量旋转、拉伸、剪切。但有些特殊方向经过变换后方向不变，只是长度变了。这些方向就是特征向量，长度变化倍数就是特征值。</p>
+
+    <h3>特征方程</h3>
+    <p>由 $Av=\lambda v$ 得到 $(\lambda I-A)v=0$。若 $v \ne 0$，则矩阵 $\lambda I-A$ 必须不可逆：</p>
+    <div class="formula-box">
+      $$\det(\lambda I-A)=0$$
+    </div>
+    <p>这就是特征方程。</p>
+
+    <div class="callout">
+      <strong>💡 例题：对角矩阵的特征值</strong>
+      <p>设 $A=\begin{bmatrix}2&0\\0&3\end{bmatrix}$，求特征值和特征向量。</p>
+      <p><strong>解答：</strong>对 $e_1=[1,0]^T$：$Ae_1=[2,0]^T=2e_1$，所以 $\lambda_1=2$。对 $e_2=[0,1]^T$：$Ae_2=[0,3]^T=3e_2$，所以 $\lambda_2=3$。对角矩阵的特征值即是其对角线元素。</p>
+    </div>
+  </section>
+
+  <!-- Section 3: Trace & Det -->
+  <section id="section-trace" class="section-card">
+    <h2>📊 Trace 和 Determinant</h2>
+    <p>若 $A$ 有特征值 $\lambda_1,\ldots,\lambda_n$，则：</p>
+    <div class="grid-2">
+      <div class="formula-box">
+        $$\sum_i\lambda_i=\operatorname{Tr}(A)$$
+      </div>
+      <div class="formula-box">
+        $$\prod_i\lambda_i=\det(A)$$
+      </div>
+    </div>
+
+    <h3>直觉</h3>
+    <ul>
+      <li><strong>Trace</strong> 是矩阵对角线元素之和，反映总体拉伸趋势。</li>
+      <li><strong>Determinant</strong> 反映体积缩放。</li>
+      <li><strong>特征值</strong> 揭示各个主方向上的变化。</li>
+    </ul>
+  </section>
+
+  <!-- Section 4: Properties -->
+  <section id="section-props" class="section-card">
+    <h2>📋 常见矩阵的特征值性质</h2>
+    <p>若 $A$ 的特征值是 $\lambda_i$：</p>
+    <table>
+      <tr><th>矩阵</th><th>特征值</th></tr>
+      <tr><td>$A^{-1}$</td><td>$\lambda_i^{-1}$</td></tr>
+      <tr><td>$A^T$</td><td>$\lambda_i$（相同）</td></tr>
+      <tr><td>$A^k$</td><td>$\lambda_i^k$</td></tr>
+      <tr><td>$cI+A$</td><td>$c+\lambda_i$</td></tr>
+      <tr><td>$AA^T$</td><td>$\sigma_i^2$（奇异值的平方，不是 $\lambda_i^2$）</td></tr>
+    </table>
+
+    <div class="callout">
+      <strong>⚠️ 易错点：</strong>一般不能说 $AA^T$ 的特征值是 $\lambda_i^2$。正确说法是：$AA^T$ 的特征值是 $A$ 的奇异值平方。
+    </div>
+  </section>
+
+  <!-- Section 5: Diagonalization -->
+  <section id="section-diag" class="section-card">
+    <h2>🔄 对角化</h2>
+    <p>如果 $A$ 有 $n$ 个线性无关的特征向量，则：</p>
+    <div class="formula-box">
+      $$A=PDP^{-1}$$
+    </div>
+    <p>其中 $P=[v_1,\ldots,v_n]$，$D=\operatorname{diag}(\lambda_1,\ldots,\lambda_n)$。</p>
+    <p>于是：</p>
+    <div class="formula-box">
+      $$A^k=PD^kP^{-1}$$
+    </div>
+
+    <h3>为什么重要</h3>
+    <p>分析系统 $x_k=A^kx_0$ 时，如果能对角化，就可以看每个特征值 $\lambda_i^k$ 是否趋于 0。这直接用于稳定性分析。</p>
+
+    <div class="callout">
+      <strong>💡 注意：</strong>并非所有矩阵都可对角化。例如 $A=\begin{bmatrix}1&1\\0&1\end{bmatrix}$ 只有一个特征向量，不可对角化。
+    </div>
+  </section>
+
+  <!-- Section 6: SVD -->
+  <section id="section-svd" class="section-card">
+    <h2>📐 SVD：奇异值分解</h2>
+    <p>任何矩阵 $A$ 都可以做 SVD：</p>
+    <div class="formula-box">
+      $$A=U\Sigma V^T = \sum_i\sigma_i u_i v_i^T$$
+    </div>
+    <p>其中 $\sigma_i$ 是奇异值。</p>
+
+    <h3>与特征分解的区别</h3>
+    <table>
+      <tr><th>项目</th><th>特征分解</th><th>SVD</th></tr>
+      <tr><td>适用对象</td><td>通常要求方阵，且不一定可对角化</td><td>任意矩阵都可以</td></tr>
+      <tr><td>形式</td><td>$A=PDP^{-1}$</td><td>$A=U\Sigma V^T$</td></tr>
+      <tr><td>核心量</td><td>特征值</td><td>奇异值</td></tr>
+      <tr><td>直觉</td><td>特殊方向不变</td><td>输入方向到输出方向的拉伸</td></tr>
+    </table>
+
+    <p>SVD 在 KF 中常用于：数值稳定性、伪逆计算、低秩近似。</p>
+  </section>
+
+  <!-- Section 7: PD -->
+  <section id="section-pd" class="section-card">
+    <h2>✅ 正定与半正定</h2>
+    <h3>定义</h3>
+    <p><strong>半正定</strong> $A \ge 0$：$x^TAx \ge 0,\ \forall x$</p>
+    <p><strong>正定</strong> $A > 0$：$x^TAx > 0,\ \forall x \ne 0$</p>
+
+    <h3>为什么协方差矩阵半正定</h3>
+    <p>协方差矩阵：</p>
+    <div class="formula-box">
+      $$\Sigma = E[(X-\mu)(X-\mu)^T]$$
+    </div>
+    <p>对任意向量 $a$：</p>
+    <div class="formula-box">
+      $$a^T\Sigma a = E[(a^T(X-\mu))^2] \ge 0$$
+    </div>
+    <p>因为平方不可能为负，所以协方差矩阵必然半正定。</p>
+
+    <h3>性质</h3>
+    <ul>
+      <li>若 $A$ 半正定且 $\alpha \ge 0$，则 $\alpha A$ 半正定。</li>
+      <li>若 $A,B$ 半正定，则 $A+B$ 半正定。</li>
+      <li>若 $A$ 半正定，$C \in \mathbb{R}^{n\times m}$，则 $C^TAC$ 半正定。</li>
+      <li>$A$ 正定 $\Leftrightarrow$ 所有特征值 $\lambda_i > 0$。</li>
+      <li>$A$ 半正定 $\Leftrightarrow$ 所有特征值 $\lambda_i \ge 0$。</li>
+      <li>若 $A$ 正定，则 $A^{-1}$ 也正定。</li>
+    </ul>
+  </section>
+
+  <!-- Section 8: AB & BA -->
+  <section id="section-ab" class="section-card">
+    <h2>🔗 AB 和 BA 的非零特征值</h2>
+    <p>若 $A \in \mathbb{R}^{n\times m}$，$B \in \mathbb{R}^{m\times n}$，则 $AB$ 和 $BA$ 的非零特征值相同。</p>
+
+    <p>一个重要推论——<strong>Trace 的循环不变性</strong>：</p>
+    <div class="formula-box">
+      $$\operatorname{Tr}(AB)=\operatorname{Tr}(BA)$$
+      $$\operatorname{Tr}(ABCD)=\operatorname{Tr}(DABC)=\operatorname{Tr}(CDAB)=\operatorname{Tr}(BCDA)$$
+    </div>
+
+    <div class="callout">
+      <strong>⚠️ 易错点：</strong>只能循环移动，不能随便交换顺序。一般 $\operatorname{Tr}(ABC) \ne \operatorname{Tr}(ACB)$。
+    </div>
+  </section>
+
+  <!-- Section 9: Cholesky -->
+  <section id="section-cholesky" class="section-card">
+    <h2>🧩 Cholesky 分解</h2>
+    <p>若 $A$ 是对称半正定矩阵，则存在下三角矩阵 $L$（实对角元非负）使：</p>
+    <div class="formula-box">
+      $$A = LL^T$$
+    </div>
+
+    <h3>在 KF 中的应用</h3>
+    <p>解线性系统 $Ax = y$ 时，可以做 Cholesky 分解然后分两步回代：</p>
+    <ol>
+      <li>$Lz = y$（向前代入）</li>
+      <li>$L^Tx = z$（向后代入）</li>
+    </ol>
+    <p>这比直接求逆更高效、更数值稳定。</p>
+
+    <div class="callout">
+      <strong>💡 计算思路：</strong>将 $A$ 分块，逐层递推计算 $L$——从左上角 $L_{11}=\sqrt{A_{11}}$ 开始，逐层化简为子矩阵的 Cholesky 分解。
+    </div>
+  </section>
+
+  <!-- Exercise Box -->
+  <section id="exercise" class="exercise-box">
+    <h3>📝 课后练习</h3>
+    <ol>
+      <li>
+        <p>特征向量为什么要求非零？</p>
+        <details class="exercise-answer">
+          <summary>查看解答</summary>
+          <div class="content">
+            <p>如果允许零向量，则对任何 $\lambda$ 都有 $A\cdot 0 = \lambda \cdot 0$，这就失去了"寻找特殊方向"的意义。特征向量的本质是非零向量在变换下方向不变（只拉伸/压缩），零向量无法反映方向信息。</p>
+          </div>
+        </details>
+      </li>
+      <li>
+        <p>证明：$A^k$ 的特征值是 $\lambda_i^k$。</p>
+        <details class="exercise-answer">
+          <summary>查看解答</summary>
+          <div class="content">
+            <p>若 $Av = \lambda v$，则 $A^2v = A(Av) = A(\lambda v) = \lambda Av = \lambda^2 v$。由归纳法，$A^k v = \lambda^k v$。所以 $\lambda^k$ 是 $A^k$ 的特征值，对应的特征向量相同。</p>
+          </div>
+        </details>
+      </li>
+      <li>
+        <p>协方差矩阵为什么不能有负方差方向？</p>
+        <details class="exercise-answer">
+          <summary>查看解答</summary>
+          <div class="content">
+            <p>协方差矩阵的任意方向方差由 $a^T\Sigma a$ 给出。这等于 $E[(a^T(X-\mu))^2]$，即随机变量 $a^T(X-\mu)$ 的期望平方。因为平方非负，期望也非负，所以任意方向上的方差都 $\ge 0$。这意味着所有特征值 $\ge 0$，即半正定。</p>
+          </div>
+        </details>
+      </li>
+      <li>
+        <p>用数学归纳法写出 Cholesky 分解的递推算法步骤。</p>
+        <details class="exercise-answer">
+          <summary>查看解答</summary>
+          <div class="content">
+            <p>将 $A$ 分块为 $\begin{bmatrix}A_{11}&A_{12}\\A_{21}&A_{22}\end{bmatrix}$，$L=\begin{bmatrix}L_{11}&0\\L_{21}&L_{22}\end{bmatrix}$：</p>
+            <p>Step 1: $L_{11} = \sqrt{A_{11}}$</p>
+            <p>Step 2: $L_{21} = A_{21}/L_{11}$</p>
+            <p>Step 3: $L_{22}L_{22}^T = A_{22} - L_{21}L_{21}^T$（即对 $(n-1)\times(n-1)$ 子矩阵递归做 Cholesky 分解）</p>
+            <p>递归直到维度为 1。</p>
+          </div>
+        </details>
+      </li>
+    </ol>
+  </section>
+
+  <!-- Navigation -->
+  <nav class="nav-links">
+    <a href="0003-演讲技巧学术表达.html" class="prev">← 上一课</a>
+    <a href="0005-KF-L2-矩阵求逆状态空间.html" class="next">下一课：KF L2 矩阵求逆引理与状态空间 →</a>
+    <a href="../index.html" class="home-link">🏠 返回课程馆</a>
+  </nav>
+
+  <footer class="foot-note">
+    <p>施老师大课堂 · ShiClass · 视频与课件来源于江南大学云盘</p>
+  </footer>
+
+</div>
+
+<script>
+  renderMathInElement(document.body, {
+    delimiters: [
+      { left: '$$', right: '$$', display: true },
+      { left: '$', right: '$', display: false }
+    ]
+  });
+</script>
+</body>
+</html>

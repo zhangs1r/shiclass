@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KF L4：最小能量控制、PBH 证明与可观性 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/shiclass.css">
+<script src="assets/shiclass.js"></script>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <div class="eyebrow">研讨会系列 7 · Kalman Filter L4</div>
+    <h1>最小能量控制、PBH 证明与可观性</h1>
+    <p class="subtitle">从"能不能控"到"怎么控最省力"，再到"输出能不能看见状态"——控制与估计的镜像世界。</p>
+    <div class="hero-meta">
+      <span>📅 2025-12-13</span>
+      <span>⏱ ~90 分钟</span>
+      <span>📊 中级</span>
+      <span>🎯 KF 基础</span>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <h3>📖 本讲目录</h3>
+    <ul>
+      <li><a href="#review">1. 【课堂练习延续】构造控制输入</a></li>
+      <li><a href="#input-sol">2. 单输入和多输入的解</a></li>
+      <li><a href="#pbh-good">3. 为什么 PBH test 好用</a></li>
+      <li><a href="#sqrt-b">4. 【课堂例题】(A,B) 与 (A,√B) 的能控性</a></li>
+      <li><a href="#observability">5. 可观性：从输出能否看见状态</a></li>
+      <li><a href="#obs-matrix">6. 可观性矩阵</a></li>
+      <li><a href="#obs-practice">7. 【课堂练习】由输出恢复 x₀</a></li>
+      <li><a href="#obs-gramian">8. 可观 Gramian 和 PBH 判据</a></li>
+      <li><a href="#duality">9. 能控性和可观性的对偶</a></li>
+    </ul>
+  </nav>
+
+  <section id="review" class="section-card">
+    <h2>1. 【课堂练习延续】构造控制输入</h2>
+    <p>系统：</p>
+    <div class="formula-box">
+      \[ x_{k+1} = A x_k + B u_k \]
+    </div>
+    <p>希望从 \(x_0\) 到 \(x_d\)。展开 \(n\) 步：</p>
+    <div class="formula-box">
+      \[ x_n = A^n x_0 + A^{n-1} B u_0 + A^{n-2} B u_1 + \cdots + B u_{n-1} \]
+    </div>
+    <p>把输入倒序堆叠：</p>
+    <div class="formula-box">
+      \[ \bar u = \begin{bmatrix} u_{n-1} \\ u_{n-2} \\ \vdots \\ u_0 \end{bmatrix} \]
+    </div>
+    <p>则：</p>
+    <div class="formula-box">
+      \[ x_n = A^n x_0 + M_C \bar u,\quad M_C = [B,\; AB,\; \ldots,\; A^{n-1}B] \]
+    </div>
+    <p>若要 \(x_n = x_d\)：</p>
+    <div class="formula-box">
+      \[ M_C \bar u = x_d - A^n x_0 \]
+    </div>
+  </section>
+
+  <section id="input-sol" class="section-card">
+    <h2>2. 单输入和多输入的解</h2>
+
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>🎯 单输入情况</h4>
+        <p>若 \(M_C\) 是 \(n \times n\) 且可逆：</p>
+        <div class="formula-box" style="margin:8px 0">
+          \[ \bar u = M_C^{-1}(x_d - A^n x_0) \]
+        </div>
+      </div>
+      <div class="mini-card">
+        <h4>🎯 多输入情况</h4>
+        <p>输入维数大于 1 时，常用伪逆：</p>
+        <div class="formula-box" style="margin:8px 0">
+          \[ \bar u = M_C^T (M_C M_C^T)^{-1} (x_d - A^n x_0) \]
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <p><strong>💡 通俗解释：</strong> 如果有多种踩油门和打方向的组合都能到达目标，伪逆会倾向选择"整体用力较小"的那组——这就是<strong>最小能量控制</strong>的雏形。</p>
+    </div>
+  </section>
+
+  <section id="pbh-good" class="section-card">
+    <h2>3. 为什么 PBH test 好用</h2>
+    <p>能控矩阵判据 \(\operatorname{rank}[B, AB, \ldots, A^{n-1}B] = n\) 很直观，但证明某些命题时不方便。PBH test 更像从<strong>"模态"</strong>角度看系统：</p>
+    <div class="formula-box">
+      \[ (A,B)\ \text{可控} \Longleftrightarrow \operatorname{rank}[A-\lambda I,\; B] = n,\quad \forall \lambda \]
+    </div>
+    <p>如果存在 \(v \ne 0\) 使得：</p>
+    <div class="formula-box">
+      \[ v^T (A - \lambda I) = 0 \quad\text{且}\quad v^T B = 0 \]
+    </div>
+    <p>说明 \(v\) 对应的系统模态完全不受输入影响，系统不可控。</p>
+    <div class="callout">
+      <p><strong>🔍 直觉：</strong> PBH 逐个检查每个模态（特征方向），看它是否"碰得到"输入。模态不可控 ⟺ 该方向既满足 \(v^T A = \lambda v^T\) 又满足 \(v^T B = 0\)。</p>
+    </div>
+  </section>
+
+  <section id="sqrt-b" class="section-card">
+    <h2>4. 【课堂例题】\((A,B)\) 与 \((A,\sqrt B)\) 的能控性</h2>
+    <p>课堂中证明了一个命题：若 \(B \ge 0\)，则：</p>
+    <div class="formula-box">
+      \[ (A,B)\ \text{可控} \Longleftrightarrow (A,\sqrt B)\ \text{可控} \]
+    </div>
+    <p>其中 \(B = \sqrt B \sqrt B\)。</p>
+
+    <h3>证明思路</h3>
+    <p>用 PBH test。若 \((A,B)\) 不可控，则存在 \(v \ne 0, \lambda\)：</p>
+    <div class="formula-box">
+      \[ v^T (A - \lambda I) = 0,\quad v^T B = 0 \]
+    </div>
+    <p>因为 \(B = \sqrt B \sqrt B\)，可推出 \(v^T \sqrt B = 0\)，所以 \((A,\sqrt B)\) 也不可控。反向同理。</p>
+
+    <div class="callout">
+      <p><strong>🔗 为什么这和 Kalman Filter 有关？</strong> KF 中常假设 \((A,\sqrt Q)\) 可控，这里 \(Q\) 是过程噪声协方差。它表示过程噪声能覆盖系统的重要动态方向。</p>
+    </div>
+  </section>
+
+  <section id="observability" class="section-card">
+    <h2>5. 可观性：从输出能否看见状态</h2>
+    <p>考虑系统：</p>
+    <div class="formula-box">
+      \[ x_{k+1} = A x_k,\qquad y_k = C x_k \]
+    </div>
+    <p>系统 \((A,C)\) <strong>可观</strong>，意思是：</p>
+    <div class="callout">
+      <p>🔭 通过有限个输出 \(y_0, y_1, \ldots, y_{k_1}\)，可以唯一确定初始状态 \(x_0\)。</p>
+    </div>
+
+    <h3>为什么关注 \(x_0\)？</h3>
+    <p>无输入系统中，只要知道 \(x_0\)，就知道所有状态：\(x_k = A^k x_0\)。因此恢复 \(x_0\) 就等于理解整条轨迹。</p>
+  </section>
+
+  <section id="obs-matrix" class="section-card">
+    <h2>6. 可观性矩阵</h2>
+    <p>输出展开：</p>
+    <div class="formula-box">
+      \[ y_0 = C x_0,\quad y_1 = C A x_0,\quad \vdots,\quad y_{n-1} = C A^{n-1} x_0 \]
+    </div>
+    <p>堆叠写成矩阵形式：</p>
+    <div class="formula-box">
+      \[ \bar y = \begin{bmatrix} y_0 \\ y_1 \\ \vdots \\ y_{n-1} \end{bmatrix}
+      = \begin{bmatrix} C \\ C A \\ \vdots \\ C A^{n-1} \end{bmatrix} x_0
+      = M_O x_0 \]
+    </div>
+    <p><strong>可观矩阵</strong>：</p>
+    <div class="formula-box">
+      \[ M_O = \begin{bmatrix} C \\ C A \\ \vdots \\ C A^{n-1} \end{bmatrix} \]
+    </div>
+    <p>系统可观当且仅当：</p>
+    <div class="formula-box">
+      \[ \operatorname{rank}(M_O) = n \]
+    </div>
+  </section>
+
+  <section id="obs-practice" class="section-card">
+    <h2>7. 【课堂练习】由输出恢复 \(x_0\)</h2>
+    <p>如果 \((A,C)\) 可观，则 \(\bar y = M_O x_0\)。</p>
+
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>📐 方阵可逆</h4>
+        <div class="formula-box" style="margin:8px 0">
+          \[ x_0 = M_O^{-1} \bar y \]
+        </div>
+      </div>
+      <div class="mini-card">
+        <h4>📐 高矩阵满列秩</h4>
+        <div class="formula-box" style="margin:8px 0">
+          \[ x_0 = (M_O^T M_O)^{-1} M_O^T \bar y \]
+        </div>
+        <p>这就是伪逆解。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="obs-gramian" class="section-card">
+    <h2>8. 可观 Gramian 和 PBH 判据</h2>
+
+    <h3>可观 Gramian</h3>
+    <div class="formula-box">
+      \[ W_O(n) = \sum_{k=0}^{n-1} (A^k)^T C^T C A^k \]
+    </div>
+    <p>可观当且仅当 \(\operatorname{rank}(W_O(n)) = n\)。</p>
+
+    <h3>PBH 可观性判据</h3>
+    <div class="formula-box">
+      \[ \operatorname{rank} \begin{bmatrix} A - \lambda I \\ C \end{bmatrix} = n,\quad \forall \lambda \]
+    </div>
+    <div class="callout">
+      <p><strong>🤔 通俗解释：</strong> 如果系统有某个内部变化方向永远不影响输出，那你无论看多少测量都看不见它——这个方向<strong>不可观</strong>。</p>
+    </div>
+  </section>
+
+  <section id="duality" class="section-card">
+    <h2>9. 能控性和可观性的对偶</h2>
+    <div class="formula-box">
+      \[ (A,B)\ \text{可控} \Longleftrightarrow (A^T, B^T)\ \text{可观} \]
+    </div>
+    <div class="formula-box">
+      \[ (A,C)\ \text{可观} \Longleftrightarrow (A^T, C^T)\ \text{可控} \]
+    </div>
+    <div class="callout">
+      <p><strong>🪞 对偶思想：</strong> 控制问"输入能不能影响状态"；估计问"状态能不能影响输出"。同一个数学结构，两个面向。</p>
+    </div>
+  </section>
+
+  <section class="section-card">
+    <h2>📌 小结</h2>
+    <div class="summary-grid">
+      <div class="mini-card">
+        <h4>🕹️ 控制输入构造</h4>
+        <p>\(M_C \bar u = x_d - A^n x_0\)，伪逆给出最小能量解。</p>
+      </div>
+      <div class="mini-card">
+        <h4>🔭 可观性</h4>
+        <p>\(M_O\) 满秩 ⟺ 能从输出唯一恢复初始状态。</p>
+      </div>
+      <div class="mini-card">
+        <h4>🪞 对偶</h4>
+        <p>控制 \((A,B)\) ⟺ 估计 \((A^T,B^T)\)，镜像对称。</p>
+      </div>
+    </div>
+    <p style="margin-top:16px;">Kalman Filter 是估计器。如果系统不可观，那么有些状态方向永远藏在测量之外，滤波器再聪明也无法凭空估出来 🔭</p>
+  </section>
+
+  <div class="exercise-box">
+    <h3>📝 自测题</h3>
+    <ol>
+      <li>为什么 \(M_O\) 满列秩才能恢复 \(x_0\)？</li>
+      <li>如果某个状态分量完全不影响 \(y_k\)，系统可观吗？</li>
+      <li>PBH test 为什么能发现"看不见"或"控不到"的模态？</li>
+    </ol>
+    <details class="exercise-answer">
+      <summary>查看答案提示</summary>
+      <div class="content">
+        <p><strong>1.</strong> \(M_O\) 满列秩意味着方程 \(\bar y = M_O x_0\) 有唯一解 \(x_0\)。若不满秩，则多个 \(x_0\) 产生相同的输出，无法区分。</p>
+        <p><strong>2.</strong> 不可观。这个状态分量就是"看不见"的方向，\(M_O\) 相应的列是零向量，rank 下降。</p>
+        <p><strong>3.</strong> PBH 逐个检查特征方向。若某个模态既满足 \(v^T(A-\lambda I)=0\) 又满足 \(v^T B=0\)，则无论怎么输入都影响不到它（不可控）。对可观性同理。</p>
+      </div>
+    </details>
+  </div>
+
+  <div class="nav-links">
+    <a href="0006-KF-L3-二次型优化.html">← 上一讲：KF L3</a>
+    <a href="0008-KF-L6-MAP-MMSE.html" class="next">下一讲：KF L6 MAP 与 MMSE →</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+</div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 7 · KF L4 最小能量控制、PBH 证明与可观性</p>
+    <p>字幕来源：<code>subtitles/20251213_施凌_研讨会系列7_KF_L4_audio_82d60212435e6925.srt</code></p>
+  </div>
+
+</div>
+
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+</body>
+</html>

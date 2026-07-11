@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KF L12：LMMSE 例子、Gram-Schmidt 与三类估计问题 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<link rel="stylesheet" href="assets/shiclass.css">
+</head>
+<body>
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · KF L12</div>
+    <h1>LMMSE 例子、Gram-Schmidt 与三类估计问题</h1>
+    <p class="subtitle">巩固 LMMSE 应用，理解 Gram-Schmidt 正交化思想，区分 Smoothing / Filtering / Prediction</p>
+    <div class="hero-meta">
+      <span>📅 2026-04-18</span>
+      <span>📐 LMMSE 应用</span>
+      <span>🎯 Gram-Schmidt</span>
+    </div>
+  </div>
+
+  <!-- Lead Grid -->
+  <div class="lead-grid">
+    <div class="callout">
+      <p><strong>🎯 本讲目标</strong></p>
+      <p>掌握如何在 \(y=Hx+v\) 中求 LMMSE、如何用正交原理列方程、Gram-Schmidt 正交化的思想、以及 smoothing / filtering / prediction 的区别。</p>
+    </div>
+    <div class="callout">
+      <p><strong>🔑 关键思想</strong></p>
+      <p>无论是有限维测量还是随机过程，只要能定义内积，就能用"误差正交"来求最优线性估计。Gram-Schmidt 则为下一讲的新息过程打基础。</p>
+    </div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3>📖 目录</h3>
+    <ul>
+      <li><a href="#sec1">1. 正交原理的推论</a></li>
+      <li><a href="#sec2">2. 课堂例题：线性测量模型</a></li>
+      <li><a href="#sec3">3. 解题步骤</a></li>
+      <li><a href="#sec4">4. 两个极端情况</a></li>
+      <li><a href="#sec5">5. 课堂例题：随机过程积分估计</a></li>
+      <li><a href="#sec6">6. 列方程</a></li>
+      <li><a href="#sec7">7. Gram-Schmidt 正交化</a></li>
+      <li><a href="#sec8">8. 投影公式</a></li>
+      <li><a href="#sec9">9. 补充例题：二维 Gram-Schmidt</a></li>
+      <li><a href="#sec10">10. 三类估计问题</a></li>
+      <li><a href="#quiz">📝 自测题</a></li>
+    </ul>
+  </div>
+
+  <!-- 1. 正交原理的推论 -->
+  <div id="sec1" class="section-card">
+    <h2>1. 正交原理的推论</h2>
+    <p>若 \(\hat X\) 是基于 \(y_1,\ldots,y_N\) 的 LMMSE 估计，则：</p>
+    <div class="formula-box">
+      \[
+      X - \hat X \perp y_i,\quad i=1,\ldots,N
+      \]
+    </div>
+    <p>也就是说，误差和每一个可用测量都不相关。这为我们提供了列方程求解增益的基本工具。</p>
+  </div>
+
+  <!-- 2. 线性测量模型 -->
+  <div id="sec2" class="section-card">
+    <h2>2. 【课堂例题】线性测量模型</h2>
+    <p>模型：</p>
+    <div class="formula-box">
+      \[
+      y = Hx + v
+      \]
+    </div>
+    <p>假设 \(E[xv^T] = 0\)，已知：</p>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>\(R_x\)</h4>
+        \[
+        R_x = E[xx^T]
+        \]
+      </div>
+      <div class="mini-card">
+        <h4>\(R_v\)</h4>
+        \[
+        R_v = E[vv^T]
+        \]
+      </div>
+    </div>
+    <p>求 \(x\) 给定 \(y\) 的 LMMSE 估计。</p>
+  </div>
+
+  <!-- 3. 解题步骤 -->
+  <div id="sec3" class="section-card">
+    <h2>3. 解题步骤</h2>
+    <p>LMMSE 形式：\(\hat x = K^* y\)，公式 \(K^* = R_{xy}R_y^{-1}\)。</p>
+
+    <h3>步骤 1：计算 \(R_{xy}\)</h3>
+    <div class="formula-box">
+      \[
+      R_{xy} = E[xy^T] = E[x(Hx+v)^T] = E[xx^T]H^T + E[xv^T]
+      \]
+    </div>
+    <p>由于 \(x\) 与 \(v\) 不相关：</p>
+    <div class="formula-box">
+      \[
+      R_{xy} = R_x H^T
+      \]
+    </div>
+
+    <h3>步骤 2：计算 \(R_y\)</h3>
+    <div class="formula-box">
+      \[
+      R_y = E[yy^T] = E[(Hx+v)(Hx+v)^T] = H R_x H^T + R_v
+      \]
+    </div>
+
+    <h3>步骤 3：代入</h3>
+    <div class="formula-box" style="border-color: var(--accent); border-style: solid;">
+      \[
+      \hat x = R_x H^T (H R_x H^T + R_v)^{-1} y
+      \]
+    </div>
+    <p>这就是线性测量模型下 LMMSE 的一般公式。</p>
+  </div>
+
+  <!-- 4. 两个极端情况 -->
+  <div id="sec4" class="section-card">
+    <h2>4. 两个极端情况</h2>
+
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>✅ 测量完美</h4>
+        <p>若 \(H=I,\; v=0\)，则 \(y=x\)：</p>
+        \[
+        \hat x = y
+        \]
+        <p style="font-size:0.85rem;color:var(--text-secondary)">完全相信测量。</p>
+      </div>
+      <div class="mini-card">
+        <h4>❌ 测量全是噪声</h4>
+        <p>若 \(y\) 和 \(x\) 无关：</p>
+        \[
+        \hat x = 0
+        \]
+        <p style="font-size:0.85rem;color:var(--text-secondary)">回到先验均值。</p>
+      </div>
+    </div>
+    <div class="callout">
+      <p><strong>💡 直觉</strong></p>
+      <p>测量可靠就相信测量；测量完全没信息就别被测量影响。Kalman Filter 的增益就自动在这两个极端之间平滑调节。</p>
+    </div>
+  </div>
+
+  <!-- 5. 随机过程积分估计 -->
+  <div id="sec5" class="section-card">
+    <h2>5. 【课堂例题】随机过程积分估计</h2>
+    <p>设 \(\{y(t)\}\) 是零均值平稳随机过程，自协方差：</p>
+    <div class="formula-box">
+      \[
+      R_y(\tau) = E[y(t)\,y(t-\tau)]
+      \]
+    </div>
+    <p>目标：估计 \(X = \int_0^T y(t)dt\)，给定测量 \(y(0), y(T)\)。</p>
+    <p>线性估计：</p>
+    <div class="formula-box">
+      \[
+      \hat X = k_1 y(0) + k_2 y(T)
+      \]
+    </div>
+    <p>根据正交原理，误差与每个测量正交：</p>
+    <div class="flow-formula">
+      \[
+      X - \hat X \perp y(0), \qquad X - \hat X \perp y(T)
+      \]
+    </div>
+  </div>
+
+  <!-- 6. 列方程 -->
+  <div id="sec6" class="section-card">
+    <h2>6. 列方程</h2>
+    <p>第一个正交条件：</p>
+    <div class="formula-box">
+      \[
+      \left\langle \int_0^T y(t)dt - k_1 y(0) - k_2 y(T),\; y(0) \right\rangle = 0
+      \]
+    </div>
+    <p>得到：</p>
+    <div class="formula-box">
+      \[
+      k_1 R_y(0) + k_2 R_y(T) = \int_0^T R_y(t) dt
+      \]
+    </div>
+    <p>第二个正交条件：</p>
+    <div class="formula-box">
+      \[
+      k_1 R_y(T) + k_2 R_y(0) = \int_0^T R_y(T-t) dt
+      \]
+    </div>
+    <p>矩阵形式：</p>
+    <div class="formula-box">
+      \[
+      \begin{bmatrix}
+      k_1 \\ k_2
+      \end{bmatrix}
+      =
+      \begin{bmatrix}
+      R_y(0) & R_y(T) \\
+      R_y(T) & R_y(0)
+      \end{bmatrix}^{-1}
+      \begin{bmatrix}
+      \int_0^T R_y(t) dt \\[4pt]
+      \int_0^T R_y(T-t) dt
+      \end{bmatrix}
+      \]
+    </div>
+    <p>这正是用正交原理列方程求解增益的典型过程。</p>
+  </div>
+
+  <!-- 7. Gram-Schmidt -->
+  <div id="sec7" class="section-card">
+    <h2>7. Gram-Schmidt 正交化</h2>
+    <p>给定一组向量 \(v_1,\ldots,v_n\)，目标是构造一组正交向量 \(u_1,\ldots,u_n\)。</p>
+    <div class="callout">
+      <p><strong>🧠 核心思想</strong></p>
+      <p>新向量减去它在旧方向上的投影，剩下的就是新的正交方向。</p>
+    </div>
+  </div>
+
+  <!-- 8. 投影公式 -->
+  <div id="sec8" class="section-card">
+    <h2>8. 投影公式</h2>
+    <p>向量 \(v\) 在 \(u\) 上的投影：</p>
+    <div class="formula-box">
+      \[
+      \operatorname{Proj}_u(v) = \frac{\langle v,u \rangle}{\langle u,u \rangle} u
+      \]
+    </div>
+    <p>Gram-Schmidt 过程：</p>
+    <div class="formula-box">
+      \[
+      \begin{aligned}
+      u_1 &= v_1 \\
+      u_2 &= v_2 - \operatorname{Proj}_{u_1}(v_2) \\
+      u_3 &= v_3 - \operatorname{Proj}_{u_1}(v_3) - \operatorname{Proj}_{u_2}(v_3)
+      \end{aligned}
+      \]
+    </div>
+    <p>归一化：\(e_i = \frac{u_i}{\|u_i\|}\)。</p>
+  </div>
+
+  <!-- 9. 二维 Gram-Schmidt -->
+  <div id="sec9" class="section-card">
+    <h2>9. 【补充例题】二维 Gram-Schmidt</h2>
+    <p>设：</p>
+    <div class="formula-box">
+      \[
+      v_1 = \begin{bmatrix}1 \\ 0\end{bmatrix},\quad
+      v_2 = \begin{bmatrix}1 \\ 1\end{bmatrix}
+      \]
+    </div>
+    <p>则：</p>
+    <div class="formula-box">
+      \[
+      u_1 = v_1 = \begin{bmatrix}1 \\ 0\end{bmatrix}
+      \]
+    </div>
+    <p>投影：</p>
+    <div class="formula-box">
+      \[
+      \operatorname{Proj}_{u_1}(v_2) = \frac{v_2^T u_1}{u_1^T u_1} u_1 = 1 \cdot \begin{bmatrix}1 \\ 0\end{bmatrix}
+      \]
+    </div>
+    <p>所以：</p>
+    <div class="formula-box">
+      \[
+      u_2 = \begin{bmatrix}1 \\ 1\end{bmatrix} - \begin{bmatrix}1 \\ 0\end{bmatrix} = \begin{bmatrix}0 \\ 1\end{bmatrix}
+      \]
+    </div>
+    <p>得到正交方向 \((1,0)\) 和 \((0,1)\)。</p>
+  </div>
+
+  <!-- 10. 三类估计问题 -->
+  <div id="sec10" class="section-card">
+    <h2>10. 三类估计问题</h2>
+    <p>考虑不可观测状态 \(x_1,x_2,\ldots\) 和观测 \(y_1,y_2,\ldots\)：</p>
+
+    <div class="grid-3">
+      <div class="mini-card" style="border-left: 4px solid var(--accent);">
+        <h4>🔙 Smoothing</h4>
+        <p>用未来和过去的测量估计过去状态：</p>
+        \[
+        \{y_1,\ldots,y_N\} \to x_t,\quad t < N
+        \]
+        <p style="font-size:0.85rem;color:var(--text-secondary)">平滑/后处理</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid var(--accent);">
+        <h4>🔄 Filtering</h4>
+        <p>用当前及过去测量估计当前状态：</p>
+        \[
+        \{y_1,\ldots,y_t\} \to x_t
+        \]
+        <p style="font-size:0.85rem;color:var(--text-secondary)">实时估计</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid var(--accent);">
+        <h4>🔮 Prediction</h4>
+        <p>用当前及过去测量预测未来状态：</p>
+        \[
+        \{y_1,\ldots,y_j\} \to x_t,\quad t > j
+        \]
+        <p style="font-size:0.85rem;color:var(--text-secondary)">预测/预报</p>
+      </div>
+    </div>
+    <div class="callout">
+      <p><strong>💡 Kalman Filter 的定位</strong></p>
+      <p>Kalman Filter 主要解决 <strong>filtering</strong> 问题，同时也包含 prediction（通过时间更新）。Smoothing 通常需要离线处理。</p>
+    </div>
+  </div>
+
+  <!-- 自测题 -->
+  <div id="quiz" class="section-card">
+    <h2>📝 自测题</h2>
+
+    <div class="interactive-card">
+      <h3>问题 1</h3>
+      <p>\(y = Hx + v\) 中为什么 \(R_y = H R_x H^T + R_v\)？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>因为 \(y = Hx + v\)，且 \(x\) 与 \(v\) 不相关，所以 \(R_y = E[(Hx+v)(Hx+v)^T] = H E[xx^T] H^T + E[vv^T] = H R_x H^T + R_v\)。交叉项 \(E[xv^T]\) 和 \(E[vx^T]\) 为零。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 2</h3>
+      <p>Gram-Schmidt 为什么要减去旧方向的投影？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>减去投影的目的是消除新向量中与已有正交方向线性相关的成分。剩下的部分是"纯新"的方向，保证了新向量与之前所有向量正交。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 3</h3>
+      <p>Filtering 和 smoothing 最大区别是什么？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>Filtering 只用当前及之前的信息，是因果的（causal），适合实时应用。Smoothing 用到了未来测量，是非因果的（non-causal），需要离线处理，但精度通常更高。</p>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="nav-links">
+    <a href="0013-KF-L11-LMMSE正交原理.html" class="prev">← KF L11：LMMSE 与正交原理</a>
+    <a href="0015-KF-L13-递归估计.html" class="next">KF L13：递归估计与新息过程 →</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+</div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 KF L12 · LMMSE 例子、Gram-Schmidt 与三类估计问题</p>
+  </div>
+</div>
+<script src="assets/shiclass.js"></script>
+</body>
+</html>

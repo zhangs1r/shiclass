@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KF L9：最小二乘几何、内积空间与投影准备 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/shiclass.css">
+<script src="assets/shiclass.js"></script>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <div class="eyebrow">研讨会系列 12 · Kalman Filter L9</div>
+    <h1>最小二乘几何、内积空间与投影准备</h1>
+    <p class="subtitle">从公式到几何——最小二乘是投影，估计也是投影，一切都关于内积空间中的垂直。</p>
+    <div class="hero-meta">
+      <span>📅 2026-03-01</span>
+      <span>⏱ ~90 分钟</span>
+      <span>📊 中级</span>
+      <span>🎯 几何方法</span>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <h3>📖 本讲目录</h3>
+    <ul>
+      <li><a href="#review">1. 回顾正规方程</a></li>
+      <li><a href="#projection">2. 投影解释</a></li>
+      <li><a href="#pythagorean">3. 勾股定理</a></li>
+      <li><a href="#inner-space">4. 为什么需要内积空间</a></li>
+      <li><a href="#inner-def">5. 内积的定义</a></li>
+      <li><a href="#vector-example">6. 【课堂例题】普通向量内积</a></li>
+      <li><a href="#weighted">7. 【课堂练习】加权内积</a></li>
+      <li><a href="#func-space">8. 【课堂例题】函数空间内积</a></li>
+      <li><a href="#non-degen">9. 函数内积的非退化性</a></li>
+      <li><a href="#ready">10. 为随机变量投影做准备</a></li>
+    </ul>
+  </nav>
+
+  <section id="review" class="section-card">
+    <h2>1. 回顾正规方程</h2>
+    <p>上一讲得到：</p>
+    <div class="formula-box">
+      \[ H^T H \hat x = H^T y \]
+    </div>
+    <p>移项：</p>
+    <div class="formula-box">
+      \[ H^T (y - H \hat x) = 0 \]
+    </div>
+    <p>这表示<strong>残差</strong> \(r = y - H\hat x\) 与 \(H\) 的每一列都正交。</p>
+    <p>因为 \(R(H)\) 由 \(H\) 的列向量张成，所以：</p>
+    <div class="formula-box">
+      \[ r \perp R(H) \]
+    </div>
+  </section>
+
+  <section id="projection" class="section-card">
+    <h2>2. 投影解释</h2>
+    <p>最小二乘解满足：</p>
+    <div class="formula-box">
+      \[ H\hat x = \operatorname{Proj}_{R(H)}(y) \]
+    </div>
+    <p>也就是 \(H\hat x\) 是 \(R(H)\) 中离 \(y\) <strong>最近的点</strong>。</p>
+
+    <div class="callout">
+      <p><strong>🌞 通俗故事：</strong> 你站在地面上，太阳在正上方，你的影子落在地面。你本人是 \(y\)，地面是子空间，影子是投影，人与影子的垂直距离就是残差。</p>
+    </div>
+  </section>
+
+  <section id="pythagorean" class="section-card">
+    <h2>3. 勾股定理</h2>
+    <p>因为 \(y = H\hat x + (y - H\hat x)\) 且两部分正交：</p>
+    <div class="formula-box">
+      \[ \|y\|^2 = \|H\hat x\|^2 + \|y - H\hat x\|^2 \]
+    </div>
+    <p>这就是最小二乘的<strong>几何解释</strong>——向量分解为正交的两部分。</p>
+  </section>
+
+  <section id="inner-space" class="section-card">
+    <h2>4. 为什么需要内积空间</h2>
+    <p>在 \(\mathbb R^n\) 中，正交由点积定义：</p>
+    <div class="formula-box">
+      \[ \langle x, y \rangle = x^T y \]
+    </div>
+    <p>但后面要估计<strong>随机变量</strong>。随机变量不是普通有限维向量，却也可以定义"内积"：</p>
+    <div class="formula-box">
+      \[ \langle X, Y \rangle = E[X Y^T] \]
+    </div>
+    <div class="callout">
+      <p><strong>🎯 统一视角：</strong> 为了统一普通向量、函数、随机变量这些不同的对象，需要<strong>内积空间</strong>的抽象框架。</p>
+    </div>
+  </section>
+
+  <section id="inner-def" class="section-card">
+    <h2>5. 内积的定义</h2>
+    <p>内积 \(\langle u, v \rangle\) 满足三条性质：</p>
+
+    <div class="grid-3">
+      <div class="mini-card">
+        <h4>📐 线性</h4>
+        <div class="formula-box" style="margin:8px 0;font-size:0.85rem">
+          \[ \langle \alpha_1 u_1 + \alpha_2 u_2, v \rangle = \alpha_1 \langle u_1, v \rangle + \alpha_2 \langle u_2, v \rangle \]
+        </div>
+      </div>
+      <div class="mini-card">
+        <h4>🔄 对称性</h4>
+        <div class="formula-box" style="margin:8px 0;font-size:0.85rem">
+          \[ \langle u, v \rangle = \langle v, u \rangle \]
+        </div>
+        <p>（实空间）</p>
+      </div>
+      <div class="mini-card">
+        <h4>✅ 正定性</h4>
+        <div class="formula-box" style="margin:8px 0;font-size:0.85rem">
+          \[ \langle u, u \rangle \ge 0 \]
+        </div>
+        <p>且等号仅当 \(u=0\)</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="vector-example" class="section-card">
+    <h2>6. 【课堂例题】普通向量内积</h2>
+    <p>在 \(\mathbb R^n\) 中，标准内积：</p>
+    <div class="formula-box">
+      \[ \langle x, y \rangle = x^T y \]
+    </div>
+    <p>例如：</p>
+    <div class="formula-box">
+      \[ x = \begin{bmatrix}1\\2\end{bmatrix},\quad y = \begin{bmatrix}3\\4\end{bmatrix} \]
+      \[ \langle x, y \rangle = 1\cdot 3 + 2\cdot 4 = 11 \]
+    </div>
+    <p>满足所有内积条件，是最直观的例子。</p>
+  </section>
+
+  <section id="weighted" class="section-card">
+    <h2>7. 【课堂练习】加权内积</h2>
+    <p>课堂中提到：若 \(M &gt; 0\)，验证：</p>
+    <div class="formula-box">
+      \[ \langle x, y \rangle = x^T M y \]
+    </div>
+    <p>是合法内积。</p>
+
+    <h3>提示</h3>
+    <ul>
+      <li><strong>线性</strong>：来自矩阵乘法线性</li>
+      <li><strong>对称性</strong>：需要 \(M = M^T\)</li>
+      <li><strong>正定性</strong>：来自 \(M &gt; 0\)，即 \(x^T M x &gt; 0\) 对任意 \(x \ne 0\)</li>
+    </ul>
+
+    <div class="interactive-card">
+      <h3>🧪 小测试：加权内积</h3>
+      <p>以下哪个条件不是加权内积 \(\langle x,y \rangle = x^T M y\) 成为合法内积的必要条件？</p>
+      <div class="quiz-options">
+        <button onclick="lessonKit.answer(this, 'quiz-weight')" data-correct="no" data-explanation="正定性确实需要 \(M>0\)，这是必要的。">
+          ✅ \(M &gt; 0\)（正定）
+        </button>
+        <button onclick="lessonKit.answer(this, 'quiz-weight')" data-correct="no" data-explanation="对称性需要 \(M = M^T\)，这也是必要的。">
+          ✅ \(M = M^T\)（对称）
+        </button>
+        <button onclick="lessonKit.answer(this, 'quiz-weight')" data-correct="yes" data-explanation="\(M\) 不必是单位矩阵——实际上加权内积正是用非单位 \(M\) 来"改变度量"的。">
+          ✅ \(M = I\)（单位矩阵）
+        </button>
+      </div>
+      <div id="quiz-weight" class="quiz-feedback"></div>
+    </div>
+  </section>
+
+  <section id="func-space" class="section-card">
+    <h2>8. 【课堂例题】函数空间内积</h2>
+    <p>考虑连续函数空间 \(C[0,1]\)，定义：</p>
+    <div class="formula-box">
+      \[ \langle f, g \rangle = \int_0^1 f(t) g(t) \, dt \]
+    </div>
+    <p>这也是内积。</p>
+
+    <h3>为什么函数可以看作向量？</h3>
+    <p>一个函数可以由无穷多个基函数组合出来，例如：</p>
+    <div class="formula-box">
+      \[ e^x = \sum_{i=0}^{\infty} \frac{x^i}{i!} \]
+    </div>
+    <p>所以函数空间通常是<strong>无限维</strong>的。</p>
+  </section>
+
+  <section id="non-degen" class="section-card">
+    <h2>9. 函数内积的非退化性</h2>
+    <p>若 \(\langle f, f \rangle = \int_0^1 f(t)^2 dt = 0\)，由于 \(f(t)^2 \ge 0\)，积分为 0 意味着 \(f(t)\) 在整个区间上为 0。</p>
+    <div class="callout">
+      <p><strong>📝 证明思路：</strong> 如果某点 \(f(t_1) \ne 0\)，由连续性可知附近一小段也不为 0，积分就会大于 0，矛盾。</p>
+    </div>
+  </section>
+
+  <section id="ready" class="section-card">
+    <h2>10. 为随机变量投影做准备</h2>
+    <p>后面我们会把随机变量看作内积空间中的元素：</p>
+    <div class="formula-box">
+      \[ \langle X, Y \rangle = E[X Y^T] \]
+    </div>
+
+    <div class="summary-grid">
+      <div class="mini-card">
+        <h4>🔄 正交</h4>
+        <p>表示不相关</p>
+      </div>
+      <div class="mini-card">
+        <h4>📐 投影</h4>
+        <p>表示最佳估计</p>
+      </div>
+      <div class="mini-card">
+        <h4>✅ 残差正交</h4>
+        <p>表示没有剩余可用信息</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <p><strong>🧱 桥梁：</strong> 一旦你理解投影，后面的 LMMSE 和 Kalman Filter 就不再是凭空出现的公式，而是同一个几何思想的延伸。</p>
+    </div>
+  </section>
+
+  <section class="section-card">
+    <h2>📌 小结</h2>
+    <p>本讲最重要的转变是：从<strong>"公式求解"</strong>转到<strong>"空间投影"</strong>。</p>
+    <div class="formula-box">
+      \[ \text{最小二乘} \longrightarrow \text{投影} \longrightarrow \text{LMMSE} \longrightarrow \text{Kalman Filter} \]
+    </div>
+    <p>一切都建立在内积空间的几何之上。</p>
+  </section>
+
+  <div class="exercise-box">
+    <h3>📝 自测题</h3>
+    <ol>
+      <li>为什么 \(H^T(y - H\hat x) = 0\) 表示残差垂直于列空间？</li>
+      <li>函数空间为什么可能是无限维？</li>
+      <li>随机变量内积为什么和期望有关？</li>
+    </ol>
+    <details class="exercise-answer">
+      <summary>查看答案提示</summary>
+      <div class="content">
+        <p><strong>1.</strong> \(H^T r = 0\) 意味着残差与 \(H\) 的每一列都正交，而列空间由这些列张成，所以残差与整个列空间正交。</p>
+        <p><strong>2.</strong> 函数可以用无穷级数（如泰勒级数）展开，每个基函数对应一个维度，理论上需要无限个基函数才能精确表示任意函数。</p>
+        <p><strong>3.</strong> 随机变量的"内积"通过期望定义，因为期望衡量了两个随机变量的线性相关性。当 \(E[XY]=0\) 时它们正交（不相关）。</p>
+      </div>
+    </details>
+  </div>
+
+  <div class="nav-links">
+    <a href="0010-KF-L8-最小二乘正规方程.html">← 上一讲：KF L8</a>
+    <a href="0012-KF-L10-投影定理随机最小二乘.html" class="next">下一讲：KF L10 投影定理 →</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+</div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 12 · KF L9 最小二乘几何、内积空间与投影准备</p>
+    <p>字幕来源：<code>subtitles/20260301_施凌_研讨会系列12_KF_L9_audio_b5a4df70f4ab28fa.srt</code></p>
+  </div>
+
+</div>
+
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+</body>
+</html>

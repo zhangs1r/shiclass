@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>研究共同体与方向地图 · 研讨会系列1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/shiclass.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script src="assets/shiclass.js"></script>
+</head>
+<body>
+<div class="page">
+
+  <!-- Hero -->
+  <header class="hero">
+    <div class="eyebrow">🎓 施老师大课堂 · 研讨会系列 1</div>
+    <h1>研究共同体与方向地图</h1>
+    <p class="subtitle">本讲不是公式课，而是整套课的开场——看懂不同研究方向之间的联系，建立学习 Kalman Filter 的动机</p>
+    <div class="hero-meta">
+      <span>2025-11-01</span>
+      <span>研究导论</span>
+      <span>状态估计</span>
+      <span>约45分钟</span>
+    </div>
+  </header>
+
+  <!-- TOC -->
+  <nav class="toc">
+    <h3>📑 本讲内容</h3>
+    <ul>
+      <li><a href="#section-why">为什么研究不是一个人闷头做</a></li>
+      <li><a href="#section-text">研究方向一：文本分析与海关检测</a></li>
+      <li><a href="#section-state">研究方向二：状态估计与系统安全</a></li>
+      <li><a href="#section-slam">研究方向三：SLAM 与机器人</a></li>
+      <li><a href="#section-nonlinear">研究方向四：鲁棒估计与非线性系统</a></li>
+      <li><a href="#section-connect">与后续课程的连接</a></li>
+      <li><a href="#exercise">课后练习</a></li>
+    </ul>
+  </nav>
+
+  <!-- Lead Callout -->
+  <div class="lead-grid">
+    <div class="callout">
+      <strong>🎯 本讲目标</strong>
+      <p>看懂不同研究方向之间的联系；明白为什么"状态估计"会同时出现在机器人、SLAM、隐私安全、海关检测等方向中；建立学习后续 Kalman Filter 的动机。</p>
+    </div>
+    <div class="callout">
+      <strong>📌 前置知识</strong>
+      <p>无特殊要求。本讲是整套课的开场，适合所有同学。后续课程会逐步引入线性代数和概率统计。</p>
+    </div>
+  </div>
+
+  <!-- Section 1: Why -->
+  <section id="section-why" class="section-card">
+    <h2>🤔 为什么研究不是一个人闷头做</h2>
+    <p>想象你进入一个实验室。每个人都在做不同项目：有人做机器人抓取，有人做视觉 SLAM，有人做物理系统安全，有人做大模型文本抽取。表面看这些方向很散，但它们都在回答同一种问题：</p>
+    <div class="callout">
+      <p><strong>核心问题：</strong>世界里有些重要东西我看不全、看不准、看得有噪声，我该怎样推断真实情况？</p>
+    </div>
+    <p>这就是 <strong>estimation（估计）</strong> 的核心。整个研讨会系列的目标，就是把隐藏在不同领域背后的统一数学语言讲清楚。</p>
+  </section>
+
+  <!-- Section 2: Text Analysis -->
+  <section id="section-text" class="section-card">
+    <h2>🔬 研究方向一：文本分析与海关检测</h2>
+    <h3>问题背景</h3>
+    <p>有些境外商品会宣传"减肥""兴奋""增强体力"等功效。这些功效背后可能添加了国内不合法的成分。传统检测方式是化学实验——逐个排查违禁物质清单，每项检测可能花 1 到 2 天，成本非常高。</p>
+
+    <h3>研究思路</h3>
+    <p>用自然语言处理和大模型做前置筛查：</p>
+    <ol>
+      <li>从网页、数据库、文献中收集"某功效对应哪些物质"的信息。</li>
+      <li>抽取物质名、功效、来源、证据。</li>
+      <li>形成候选物质库。</li>
+      <li>帮海关缩小检测范围。</li>
+    </ol>
+
+    <h3>通俗解释</h3>
+    <p>这不是让 AI 直接判断"有没有违禁品"，而是让 AI 做一个聪明的助手：先根据文本资料告诉你最可能查哪几种。化学检测从"大海捞针"变成"小范围精查"。</p>
+
+    <div class="callout">
+      <strong>💡 例子：</strong>某商品宣传"快速减肥"。数据库发现 A、B、C、D 四种物质都可能产生减肥效果，其中 A、C 在国内禁用。AI 文本抽取系统应输出候选物质、风险标记、以及证据来源——重点不是替代实验，而是帮实验排序。
+    </div>
+  </section>
+
+  <!-- Section 3: State Estimation -->
+  <section id="section-state" class="section-card">
+    <h2>📐 研究方向二：状态估计与系统安全</h2>
+    <h3>什么是状态</h3>
+    <p>状态是系统内部真正重要、但不一定能直接看到的变量：</p>
+    <div class="grid-3">
+      <div class="mini-card"><h4>🚗 车辆</h4><p>位置、速度</p></div>
+      <div class="mini-card"><h4>🤖 机器人</h4><p>关节角度</p></div>
+      <div class="mini-card"><h4>✈️ 飞行器</h4><p>姿态角</p></div>
+      <div class="mini-card"><h4>🌡️ 房间</h4><p>真实温度</p></div>
+      <div class="mini-card"><h4>🛡️ 网络</h4><p>是否被攻击</p></div>
+      <div class="mini-card"><h4>🚶 人体</h4><p>步态阶段</p></div>
+    </div>
+
+    <h3>什么是测量</h3>
+    <p>测量是传感器给你的数据，通常有噪声：</p>
+    <div class="formula-box">
+      $$y = x + v$$
+    </div>
+    <p>其中 $x$ 是真实状态，$y$ 是测量，$v$ 是噪声。</p>
+
+    <h3>安全和隐私的关联</h3>
+    <p>如果传感器被攻击，测量就不只是"有随机噪声"，还可能被恶意篡改。估计器要回答：哪些测量可信？系统真实状态是否还能恢复？能不能在保护隐私的同时完成估计？</p>
+  </section>
+
+  <!-- Section 4: SLAM -->
+  <section id="section-slam" class="section-card">
+    <h2>🗺️ 研究方向三：SLAM 与机器人</h2>
+    <p>SLAM 是 Simultaneous Localization and Mapping，同时定位与建图。机器人一边走，一边回答两个问题：</p>
+    <ol>
+      <li><strong>我在哪里？</strong>（定位）</li>
+      <li><strong>周围地图长什么样？</strong>（建图）</li>
+    </ol>
+    <p>但机器人看到的是摄像头、雷达、IMU 的测量，都会有误差。因此 SLAM 本质上也是状态估计问题。</p>
+
+    <h3>机器人应该相信谁？</h3>
+    <p>机器人向前走 1 米，但轮子打滑，真实只走了 0.8 米。摄像头因为光照误差估计走了 0.9 米。你应该信谁？</p>
+    <div class="callout">
+      <p><strong>解答：</strong>不能简单只信一个。应根据模型和测量的不确定性加权——如果轮速计误差大，少信运动模型；如果视觉误差大，少信摄像头。这正是 <strong>Kalman Filter</strong> 的思想。</p>
+    </div>
+  </section>
+
+  <!-- Section 5: Nonlinear -->
+  <section id="section-nonlinear" class="section-card">
+    <h2>🔀 研究方向四：鲁棒估计与非线性系统</h2>
+    <p>标准 Kalman Filter 通常假设系统线性、噪声高斯、状态是普通向量。但真实场景中经常不是这样：</p>
+    <ul>
+      <li>姿态是旋转，不是普通加减的向量；</li>
+      <li>噪声可能有离群点；</li>
+      <li>传感器可能被攻击；</li>
+      <li>模型可能非线性。</li>
+    </ul>
+    <p>后续扩展方向包括：鲁棒滤波、非线性状态估计（EKF / UKF）、李群上的状态估计、变分滤波、平滑（smoothing）等。</p>
+  </section>
+
+  <!-- Section 6: Connection -->
+  <section id="section-connect" class="section-card">
+    <h2>🔗 本讲与后续课程的连接</h2>
+    <p>后续数学课要解决的核心链条：</p>
+    <div class="flow-formula">
+      $$ \text{真实状态} \rightarrow \text{带噪声测量} \rightarrow \text{估计状态} $$
+    </div>
+    <p>具体工具将一步步出现：</p>
+    <table>
+      <tr><th>工具</th><th>作用</th></tr>
+      <tr><td>线性代数</td><td>描述系统和协方差</td></tr>
+      <tr><td>概率统计</td><td>描述噪声和不确定性</td></tr>
+      <tr><td>最小二乘</td><td>处理没有精确解的数据</td></tr>
+      <tr><td>投影定理</td><td>解释最优估计的几何本质</td></tr>
+      <tr><td>LMMSE</td><td>在线性估计器中找最优</td></tr>
+      <tr><td>Kalman Filter</td><td>把 LMMSE 递归化</td></tr>
+    </table>
+  </section>
+
+  <!-- Exercise Box -->
+  <section id="exercise" class="exercise-box">
+    <h3>📝 课后练习</h3>
+    <ol>
+      <li>
+        <p>为什么海关检测项目也可以看作"估计问题"？</p>
+        <details class="exercise-answer">
+          <summary>查看解答</summary>
+          <div class="content">
+            <p>海关检测的核心是在有限的检测资源下，推断商品是否含有违禁物质。这和状态估计问题的结构一致：真实状态（是否含违禁物）不能直接看到，只能通过文本信息（测量）来推断。AI 做的正是"根据测量估计状态"的工作。</p>
+          </div>
+        </details>
+      </li>
+      <li>
+        <p>SLAM 中机器人要估计哪些状态？</p>
+        <details class="exercise-answer">
+          <summary>查看解答</summary>
+          <div class="content">
+            <p>至少需要估计两类状态：(1) 机器人的位姿（位置 + 朝向）；(2) 环境地图（通常是路标点的三维坐标）。两者相互依赖——要定位需要地图，要建图需要位姿，所以 SLAM 是一个联合估计问题。</p>
+          </div>
+        </details>
+      </li>
+      <li>
+        <p>为什么状态估计和隐私安全会有关？</p>
+        <details class="exercise-answer">
+          <summary>查看解答</summary>
+          <div class="content">
+            <p>两方面原因：(1) 传感器数据可能泄露用户隐私（如位置轨迹、生物特征），需要在估计过程中保护隐私（差分隐私、联邦学习）；(2) 传感器可能被攻击者篡改，导致估计器基于错误数据做出错误判断，因此需要安全鲁棒的估计算法。</p>
+          </div>
+        </details>
+      </li>
+    </ol>
+  </section>
+
+  <!-- Navigation -->
+  <nav class="nav-links">
+    <a href="0000-图像算法安防应用.html" class="prev">← 上一课</a>
+    <a href="0002-学术规范职业习惯.html" class="next">下一课：组规与学术规范 →</a>
+    <a href="../index.html" class="home-link">🏠 返回课程馆</a>
+  </nav>
+
+  <footer class="foot-note">
+    <p>施老师大课堂 · ShiClass · 视频与课件来源于江南大学云盘</p>
+  </footer>
+
+</div>
+
+<script>
+  renderMathInElement(document.body, {
+    delimiters: [
+      { left: '$$', right: '$$', display: true },
+      { left: '$', right: '$', display: false }
+    ]
+  });
+</script>
+</body>
+</html>
