@@ -7,8 +7,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
 <link rel="stylesheet" href="assets/shiclass.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
 </head>
 <body>
 <div class="page">
@@ -60,7 +64,7 @@ lead-grid">
       <li><a href="#sec1">1. Kalman Filter 解决什么问题</a></li>
       <li><a href="#sec2">2. 系统模型</a></li>
       <li><a href="#sec3">3. KF 基本假设</a></li>
-      <li><a href="#sec4">4. 为什么 \(R>0\) 而 \(Q\ge 0\)？</a></li>
+      <li><a href="#sec4">4. 为什么 $R>0$ 而 $Q\ge 0$？</a></li>
       <li><a href="#sec5">5. 为什么假设高斯噪声</a></li>
       <li><a href="#sec6">6. 估计符号体系</a></li>
       <li><a href="#sec7">7. 初始化</a></li>
@@ -73,17 +77,17 @@ lead-grid">
   <!-- 1. KF 解决什么问题 -->
   <div id="sec1" class="section-card">
     <h2>1. Kalman Filter 解决什么问题</h2>
-    <p>真实状态 \(x_k\) 看不见或看不准。我们只有带噪声测量：</p>
+    <p>真实状态 $x_k$ 看不见或看不准。我们只有带噪声测量：</p>
     <div class="formula-box">
-      \[
+      $$
       y_k = C x_k + v_k
-      \]
+      $$
     </div>
     <p>同时我们知道系统大致如何演化：</p>
     <div class="formula-box">
-      \[
+      $$
       x_{k+1} = A x_k + w_k
-      \]
+      $$
     </div>
     <div class="callout">
       <p><strong>🎯 目标</strong></p>
@@ -97,29 +101,29 @@ lead-grid">
     <div class="grid-2">
       <div class="mini-card" style="border-left: 4px solid var(--accent);">
         <h4>状态方程</h4>
-        \[
+        $$
         x_{k+1} = A x_k + w_k
-        \]
+        $$
         <p style="font-size:0.85rem">若有控制输入：</p>
-        \[
+        $$
         x_{k+1} = A x_k + B u_k + w_k
-        \]
+        $$
       </div>
       <div class="mini-card" style="border-left: 4px solid var(--accent);">
         <h4>测量方程</h4>
-        \[
+        $$
         y_k = C x_k + v_k
-        \]
+        $$
       </div>
     </div>
     <p>其中：</p>
     <ul>
-      <li>\(x_k \in \mathbb{R}^n\)：系统状态（随机变量）</li>
-      <li>\(y_k \in \mathbb{R}^m\)：测量值</li>
-      <li>\(w_k \sim N(0, Q)\)：过程噪声</li>
-      <li>\(v_k \sim N(0, R)\)：测量噪声</li>
-      <li>\(A \in \mathbb{R}^{n\times n}\)：系统动态矩阵</li>
-      <li>\(C \in \mathbb{R}^{m\times n}\)：观测矩阵</li>
+      <li>$x_k \in \mathbb{R}^n$：系统状态（随机变量）</li>
+      <li>$y_k \in \mathbb{R}^m$：测量值</li>
+      <li>$w_k \sim N(0, Q)$：过程噪声</li>
+      <li>$v_k \sim N(0, R)$：测量噪声</li>
+      <li>$A \in \mathbb{R}^{n\times n}$：系统动态矩阵</li>
+      <li>$C \in \mathbb{R}^{m\times n}$：观测矩阵</li>
     </ul>
   </div>
 
@@ -130,57 +134,57 @@ lead-grid">
     <div class="grid-2">
       <div class="mini-card">
         <h4>① 初始状态</h4>
-        \[
+        $$
         x_0 \sim N(0, \Pi_0),\quad \Pi_0 \ge 0
-        \]
+        $$
       </div>
       <div class="mini-card">
         <h4>② 过程噪声</h4>
-        \[
+        $$
         w_k \sim N(0, Q),\quad Q \ge 0
-        \]
+        $$
       </div>
       <div class="mini-card">
         <h4>③ 测量噪声</h4>
-        \[
+        $$
         v_k \sim N(0, R),\quad R > 0
-        \]
+        $$
       </div>
       <div class="mini-card">
         <h4>④ 互不相关</h4>
-        <p>\(x_0, w_k, v_k\) 彼此不相关</p>
+        <p>$x_0, w_k, v_k$ 彼此不相关</p>
       </div>
     </div>
     <p>还要求：</p>
     <div class="grid-2">
       <div class="mini-card">
         <h4>⑤ 可观性</h4>
-        \[
+        $$
         (A, C)\ \text{observable}
-        \]
+        $$
       </div>
       <div class="mini-card">
         <h4>⑥ 能控性</h4>
-        \[
+        $$
         (A, \sqrt{Q})\ \text{controllable}
-        \]
+        $$
       </div>
     </div>
   </div>
 
   <!-- 4. R>0 vs Q>=0 -->
   <div id="sec4" class="section-card">
-    <h2>4. 为什么 \(R>0\) 而 \(Q\ge 0\)？</h2>
-    <p>这是一个很好的问题。课堂中同学提问：为什么前面很多地方是"半正定"，到了测量噪声协方差 \(R\) 这里却要求正定？</p>
+    <h2>4. 为什么 $R>0$ 而 $Q\ge 0$？</h2>
+    <p>这是一个很好的问题。课堂中同学提问：为什么前面很多地方是"半正定"，到了测量噪声协方差 $R$ 这里却要求正定？</p>
 
-    <h3>为什么 \(R \succ 0\)</h3>
+    <h3>为什么 $R \succ 0$</h3>
     <div class="callout">
       <p><strong>🎯 核心观点</strong></p>
-      <p>\(R\) 对应测量噪声。如果某个方向上的测量噪声等于零，那等于说你在那个方向上拿到了完美测量（perfect measurement）。这在真实世界里几乎不成立，因为测量设备本身是人造装置，天然带误差。</p>
+      <p>$R$ 对应测量噪声。如果某个方向上的测量噪声等于零，那等于说你在那个方向上拿到了完美测量（perfect measurement）。这在真实世界里几乎不成立，因为测量设备本身是人造装置，天然带误差。</p>
     </div>
-    <p>所以对 measurement noise 来说，要求 \(R\) 正定，体现的是一种<strong>"现实测量不可能完美"</strong>的建模立场。</p>
+    <p>所以对 measurement noise 来说，要求 $R$ 正定，体现的是一种<strong>"现实测量不可能完美"</strong>的建模立场。</p>
 
-    <h3>为什么 \(Q \succeq 0\)</h3>
+    <h3>为什么 $Q \succeq 0$</h3>
     <p>过程噪声可以半正定的原因：</p>
     <ol>
       <li><strong>某些维度可能被物理约束住了</strong> —— 比如系统只能沿某个方向运动，另一些方向没有状态变化。</li>
@@ -227,37 +231,37 @@ lead-grid">
     <p>这是本讲最容易绕晕但必须记住的部分。关键在于理解<strong>下标含义</strong>：</p>
 
     <div class="formula-box">
-      \[
+      $$
       \hat x_{k|k} = \text{时刻 }k\text{ 对 }x_k\text{ 的估计（利用了截至 }k\text{ 的测量）}
-      \]
+      $$
     </div>
     <div class="formula-box">
-      \[
+      $$
       \hat x_{k|k-1} = \text{时刻 }k\text{ 对 }x_k\text{ 的预测（只用了截至 }k-1\text{ 的测量）}
-      \]
+      $$
     </div>
 
     <h3>误差与协方差</h3>
     <div class="grid-2">
       <div class="mini-card">
         <h4>估计误差</h4>
-        \[
+        $$
         \tilde x_{k|k} = x_k - \hat x_{k|k}
-        \]
+        $$
         <h4>误差协方差</h4>
-        \[
+        $$
         P_{k|k} = E[\tilde x_{k|k} \tilde x_{k|k}^T]
-        \]
+        $$
       </div>
       <div class="mini-card">
         <h4>预测误差</h4>
-        \[
+        $$
         \tilde x_{k|k-1} = x_k - \hat x_{k|k-1}
-        \]
+        $$
         <h4>预测误差协方差</h4>
-        \[
+        $$
         P_{k|k-1} = E[\tilde x_{k|k-1} \tilde x_{k|k-1}^T]
-        \]
+        $$
       </div>
     </div>
 
@@ -272,18 +276,18 @@ lead-grid">
     <h2>7. 初始化</h2>
     <p>零均值假设下：</p>
     <div class="formula-box">
-      \[
+      $$
       \hat x_{0|-1} = 0
-      \]
+      $$
     </div>
     <div class="formula-box">
-      \[
+      $$
       P_{0|-1} = \Pi_0
-      \]
+      $$
     </div>
     <div class="callout">
       <p><strong>🚀 为什么初始化重要</strong></p>
-      <p>任何算法都必须给出 initialization，不然根本跑不起来。在任何测量到来前，对初始状态的最佳估计就是均值 0，不确定性就是 \(\Pi_0\)。</p>
+      <p>任何算法都必须给出 initialization，不然根本跑不起来。在任何测量到来前，对初始状态的最佳估计就是均值 0，不确定性就是 $\Pi_0$。</p>
     </div>
   </div>
 
@@ -296,23 +300,23 @@ lead-grid">
       <div class="mini-card" style="border-left: 4px solid #3b82f6;">
         <h4>⏱ Time Update（时间更新）</h4>
         <p>没有新 measurement 时，只能根据系统时间推进做 prediction。</p>
-        \[
+        $$
         \hat x_{k+1|k} = A \hat x_{k|k}
-        \]
-        \[
+        $$
+        $$
         P_{k+1|k} = A P_{k|k} A^T + Q
-        \]
+        $$
         <p style="font-size:0.85rem;color:var(--text-secondary)">基于模型做一步预测</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid var(--accent);">
         <h4>📏 Measurement Update（测量更新）</h4>
-        <p>新 measurement \(y_k\) 到来时，用它修正 prediction。</p>
-        \[
+        <p>新 measurement $y_k$ 到来时，用它修正 prediction。</p>
+        $$
         \hat x_{k|k} = \hat x_{k|k-1} + K_k e_k
-        \]
-        \[
+        $$
+        $$
         P_{k|k} = P_{k|k-1} - K_k R_{e,k} K_k^T
-        \]
+        $$
         <p style="font-size:0.85rem;color:var(--text-secondary)">用新息修正估计</p>
       </div>
     </div>
@@ -346,22 +350,22 @@ lead-grid">
 
     <div class="interactive-card">
       <h3>问题 1</h3>
-      <p>新息 \(e_k\) 表示什么？</p>
+      <p>新息 $e_k$ 表示什么？</p>
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>新息 \(e_k = y_k - C\hat x_{k|k-1}\) 是实际测量与预测测量之差，代表当前测量中无法由过去信息解释的"纯新"部分。</p>
+          <p>新息 $e_k = y_k - C\hat x_{k|k-1}$ 是实际测量与预测测量之差，代表当前测量中无法由过去信息解释的"纯新"部分。</p>
         </div>
       </details>
     </div>
 
     <div class="interactive-card">
       <h3>问题 2</h3>
-      <p>为什么 \(R\) 要正定而 \(Q\) 可以半正定？</p>
+      <p>为什么 $R$ 要正定而 $Q$ 可以半正定？</p>
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>\(R>0\) 意味着每个测量方向都有噪声——现实测量不可能完美。\(Q\ge 0\) 允许某些状态方向不被过程噪声激励——那些方向可能被物理约束或你不关心。</p>
+          <p>$R>0$ 意味着每个测量方向都有噪声——现实测量不可能完美。$Q\ge 0$ 允许某些状态方向不被过程噪声激励——那些方向可能被物理约束或你不关心。</p>
         </div>
       </details>
     </div>

@@ -7,8 +7,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
 <link rel="stylesheet" href="assets/shiclass.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
 </head>
 <body>
 <div class="page">
@@ -48,7 +52,7 @@ lead-grid">
     </div>
     <div class="callout">
       <p><strong>🔑 核心洞见</strong></p>
-      <p>估计就是投影。MMSE 是把 \(X\) 投影到由 \(Y\) 决定的所有函数空间；LMMSE 是投影到 \(Y\) 的线性组合空间。</p>
+      <p>估计就是投影。MMSE 是把 $X$ 投影到由 $Y$ 决定的所有函数空间；LMMSE 是投影到 $Y$ 的线性组合空间。</p>
     </div>
   </div>
 
@@ -74,17 +78,17 @@ lead-grid">
   <!-- 1. 投影定理 -->
   <div id="sec1" class="section-card">
     <h2>1. 投影定理</h2>
-    <p>设 \(L\) 是内积空间 \(V\) 的线性子空间。对任意 \(y\in V\)，存在唯一 \(\hat y_L\in L\)，使：</p>
+    <p>设 $L$ 是内积空间 $V$ 的线性子空间。对任意 $y\in V$，存在唯一 $\hat y_L\in L$，使：</p>
     <div class="formula-box">
-      \[
+      $$
       \langle y-\hat y_L,a\rangle=0,\quad\forall a\in L
-      \]
+      $$
     </div>
     <p>也就是：</p>
     <div class="formula-box">
-      \[
+      $$
       y-\hat y_L\perp L
-      \]
+      $$
     </div>
     <p>这就是<strong>投影定理</strong>的核心内容。</p>
     <div class="callout">
@@ -116,20 +120,20 @@ lead-grid">
   <!-- 3. 证明思路：存在性 -->
   <div id="sec3" class="section-card">
     <h2>3. 证明思路：存在性</h2>
-    <p>取 \(L\) 的正交基 \(v_1,\ldots,v_m\)，扩展成 \(V\) 的正交基 \(v_1,\ldots,v_m,v_{m+1},\ldots,v_N\)。</p>
-    <p>任意 \(y\) 可写成：</p>
+    <p>取 $L$ 的正交基 $v_1,\ldots,v_m$，扩展成 $V$ 的正交基 $v_1,\ldots,v_m,v_{m+1},\ldots,v_N$。</p>
+    <p>任意 $y$ 可写成：</p>
     <div class="formula-box">
-      \[
+      $$
       y=\sum_{i=1}^N\alpha_iv_i
-      \]
+      $$
     </div>
     <p>定义投影：</p>
     <div class="formula-box">
-      \[
+      $$
       \hat y_L=\sum_{i=1}^m\alpha_iv_i
-      \]
+      $$
     </div>
-    <p>也就是只保留属于 \(L\) 的分量。这天然保证了 \(\hat y_L \in L\)。</p>
+    <p>也就是只保留属于 $L$ 的分量。这天然保证了 $\hat y_L \in L$。</p>
   </div>
 
   <!-- 4. 证明思路：正交性 -->
@@ -137,15 +141,15 @@ lead-grid">
     <h2>4. 证明思路：正交性</h2>
     <p>误差：</p>
     <div class="formula-box">
-      \[
+      $$
       y-\hat y_L=\sum_{i=m+1}^N\alpha_iv_i
-      \]
+      $$
     </div>
-    <p>任意 \(a\in L\)，\(a=\sum_{j=1}^m\beta_jv_j\)。由于正交基之间内积为 0：</p>
+    <p>任意 $a\in L$，$a=\sum_{j=1}^m\beta_jv_j$。由于正交基之间内积为 0：</p>
     <div class="formula-box">
-      \[
+      $$
       \langle y-\hat y_L,a\rangle=0
-      \]
+      $$
     </div>
     <p>这就证明了误差与子空间正交。</p>
   </div>
@@ -153,17 +157,17 @@ lead-grid">
   <!-- 5. 证明思路：唯一性 -->
   <div id="sec5" class="section-card">
     <h2>5. 证明思路：唯一性</h2>
-    <p>假设有两个投影 \(\hat y_1,\hat y_2\)，二者都在 \(L\) 中，所以：</p>
+    <p>假设有两个投影 $\hat y_1,\hat y_2$，二者都在 $L$ 中，所以：</p>
     <div class="formula-box">
-      \[
+      $$
       \hat y_1-\hat y_2\in L
-      \]
+      $$
     </div>
     <p>利用正交条件可证明：</p>
     <div class="formula-box">
-      \[
+      $$
       \|\hat y_1-\hat y_2\|^2=0 \quad\Rightarrow\quad \hat y_1=\hat y_2
-      \]
+      $$
     </div>
     <p>因此投影点唯一确定。</p>
   </div>
@@ -171,25 +175,25 @@ lead-grid">
   <!-- 6. 随机估计问题 -->
   <div id="sec6" class="section-card">
     <h2>6. 随机估计问题</h2>
-    <p>现在考虑随机变量 \(X,Y\)。我们想根据 \(Y\) 估计 \(X\)：</p>
+    <p>现在考虑随机变量 $X,Y$。我们想根据 $Y$ 估计 $X$：</p>
     <div class="formula-box">
-      \[
+      $$
       \hat X = f(Y)
-      \]
+      $$
     </div>
     <p>估计误差和目标：</p>
     <div class="grid-2">
       <div class="mini-card">
         <h4>误差</h4>
-        \[
+        $$
         e = X - \hat X
-        \]
+        $$
       </div>
       <div class="mini-card">
         <h4>优化目标</h4>
-        \[
+        $$
         \min_{\hat X} E[e^Te \mid Y=y]
-        \]
+        $$
       </div>
     </div>
   </div>
@@ -197,27 +201,27 @@ lead-grid">
   <!-- 7. MMSE 等于条件期望 -->
   <div id="sec7" class="section-card">
     <h2>7. MMSE 等于条件期望</h2>
-    <p>固定观测 \(Y=y\)，要最小化：</p>
+    <p>固定观测 $Y=y$，要最小化：</p>
     <div class="formula-box">
-      \[
+      $$
       E[(X-\hat x)^T(X-\hat x) \mid Y=y]
-      \]
+      $$
     </div>
     <p>展开并配方，可得最优：</p>
     <div class="formula-box">
-      \[
+      $$
       \hat x = E[X \mid Y=y]
-      \]
+      $$
     </div>
     <p>因此：</p>
     <div class="formula-box">
-      \[
+      $$
       \hat X_{\text{MMSE}} = E[X \mid Y]
-      \]
+      $$
     </div>
     <div class="callout">
       <p><strong>💡 通俗解释</strong></p>
-      <p>给定 \(Y=y\) 后，\(X\) 仍可能有很多可能值。若用平方误差衡量错得多严重，最佳代表点就是条件均值。</p>
+      <p>给定 $Y=y$ 后，$X$ 仍可能有很多可能值。若用平方误差衡量错得多严重，最佳代表点就是条件均值。</p>
       <p>这好比一群人里头，用"平均身高"代表大家，平方误差最小。</p>
     </div>
   </div>
@@ -225,22 +229,22 @@ lead-grid">
   <!-- 8. 补充例题 -->
   <div id="sec8" class="section-card">
     <h2>8. 【补充例题】离散条件期望</h2>
-    <p>已知在 \(Y=y\) 条件下：</p>
+    <p>已知在 $Y=y$ 条件下：</p>
     <div class="formula-box">
-      \[
+      $$
       P(X=0 \mid Y=y) = 0.25,\qquad
       P(X=4 \mid Y=y) = 0.75
-      \]
+      $$
     </div>
     <p>则：</p>
     <div class="formula-box">
-      \[
+      $$
       E[X \mid Y=y] = 0 \cdot 0.25 + 4 \cdot 0.75 = 3
-      \]
+      $$
     </div>
     <div class="callout">
       <p><strong>📌 理解</strong></p>
-      <p>虽然 \(X\) 实际只可能是 0 或 4，但 MMSE 估计是 3。平均意义下，这是最"不偏不倚"的选择。</p>
+      <p>虽然 $X$ 实际只可能是 0 或 4，但 MMSE 估计是 3。平均意义下，这是最"不偏不倚"的选择。</p>
     </div>
   </div>
 
@@ -249,15 +253,15 @@ lead-grid">
     <h2>9. MMSE 的困难</h2>
     <p>MMSE 需要计算：</p>
     <div class="formula-box">
-      \[
+      $$
       E[X \mid Y=y] = \int x\, f(x\mid y)\, dx
-      \]
+      $$
     </div>
     <p>实际困难：</p>
     <div class="grid-2">
       <div class="mini-card">
         <h4>❌ 条件分布未知</h4>
-        <p>\(f(x\mid y)\) 通常不知道。</p>
+        <p>$f(x\mid y)$ 通常不知道。</p>
       </div>
       <div class="mini-card">
         <h4>❌ 高维积分</h4>
@@ -279,15 +283,15 @@ lead-grid">
     <h2>10. LMMSE：用线性换简单</h2>
     <p>一般估计器：</p>
     <div class="formula-box">
-      \[
+      $$
       \hat X = f(Y)
-      \]
+      $$
     </div>
     <p>线性估计器：</p>
     <div class="formula-box">
-      \[
+      $$
       \hat X = K Y
-      \]
+      $$
     </div>
     <p>LMMSE 只在线性估计器中找最优。</p>
 
@@ -331,7 +335,7 @@ lead-grid">
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>正交条件 \(\langle y-\hat y_L, a\rangle = 0\) 对任意 \(a\in L\) 成立，意味着误差向量与整个子空间 \(L\) 正交。这是"最近点"的几何特征：连接点到子空间的垂线垂直于子空间。</p>
+          <p>正交条件 $\langle y-\hat y_L, a\rangle = 0$ 对任意 $a\in L$ 成立，意味着误差向量与整个子空间 $L$ 正交。这是"最近点"的几何特征：连接点到子空间的垂线垂直于子空间。</p>
         </div>
       </details>
     </div>
@@ -342,7 +346,7 @@ lead-grid">
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>最小化 \(E[(X-\hat x)^2 \mid Y=y]\)，展开后对 \(\hat x\) 求导，令导数为零可得 \(\hat x = E[X \mid Y=y]\)。条件均值在平方误差意义下是最优代表点。</p>
+          <p>最小化 $E[(X-\hat x)^2 \mid Y=y]$，展开后对 $\hat x$ 求导，令导数为零可得 $\hat x = E[X \mid Y=y]$。条件均值在平方误差意义下是最优代表点。</p>
         </div>
       </details>
     </div>
@@ -353,7 +357,7 @@ lead-grid">
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>LMMSE 只需要一阶矩和二阶矩（均值、协方差），不需要完整的条件分布。它避免了高维积分，只需要解一个线性方程 \(K R_y = R_{xy}\)，计算量远小于 MMSE。</p>
+          <p>LMMSE 只需要一阶矩和二阶矩（均值、协方差），不需要完整的条件分布。它避免了高维积分，只需要解一个线性方程 $K R_y = R_{xy}$，计算量远小于 MMSE。</p>
         </div>
       </details>
     </div>

@@ -7,8 +7,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
 <link rel="stylesheet" href="assets/shiclass.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
 </head>
 <body>
 <div class="page">
@@ -77,21 +81,21 @@ lead-grid">
     <div class="grid-3">
       <div class="mini-card">
         <h4>动态系统</h4>
-        \\[
+        \$$
         x_{k+1} = f_k(x_k, u_k, w_k)
-        \\]
+        \$$
       </div>
       <div class="mini-card">
         <h4>累加代价</h4>
-        \\[
+        \$$
         J = \\mathbb{E}\\{g_N(x_N) + \\sum_{k=0}^{N-1} g_k(x_k, u_k, w_k)\\}
-        \\]
+        \$$
       </div>
       <div class="mini-card">
         <h4>控制目标</h4>
-        \\[
+        \$$
         \\min_{u_0,\\dots,u_{N-1}} J(x_0)
-        \\]
+        \$$
       </div>
     </div>
 
@@ -105,35 +109,35 @@ lead-grid">
     <p>把闭环决策规则的形式化：</p>
 
     <div class="formula-box">
-      \\[
+      \$$
       u_k = \\mu_k(x_k)
-      \\]
-      <p style="margin-top:8px;font-size:0.9rem">\\(\\mu_k\\) 称为第 \\(k\\) 步的<strong>控制律</strong>（control law）</p>
+      \$$
+      <p style="margin-top:8px;font-size:0.9rem">\$\\mu_k\$ 称为第 \$k\$ 步的<strong>控制律</strong>（control law）</p>
     </div>
 
     <p>完整的策略定义为：</p>
     <div class="formula-box">
-      \\[
+      \$$
       \\pi = \\{\\mu_0, \\mu_1, \\dots, \\mu_{N-1}\\}
-      \\]
-      <p style="margin-top:8px;font-size:0.9rem">\\(\\pi\\) 称为一个<strong>策略</strong>（policy）或控制律序列</p>
+      \$$
+      <p style="margin-top:8px;font-size:0.9rem">\$\\pi\$ 称为一个<strong>策略</strong>（policy）或控制律序列</p>
     </div>
 
     <p>基本问题 (P1) 最终可以表述为：</p>
     <div class="formula-box">
-      \\[
+      \$$
       \\boxed{\\min_{\\pi} J(x_0)}
-      \\]
+      \$$
       <p style="margin-top:8px;font-size:0.9rem">在所有可能的策略中，找到使总期望代价最小的那个策略</p>
     </div>
 
     <div class="callout">
       <p><strong>💡 理解策略</strong></p>
-      <p>策略就是"如果看到状态 \\(x_k\\)，就执行动作 \\(\\mu_k(x_k)\\)"的一系列规则。动态规划的目标是<strong>找到最优策略</strong>，而不是简单找到一组最优控制值。因为策略是状态到动作的映射，天然具备反馈能力。</p>
+      <p>策略就是"如果看到状态 \$x_k\$，就执行动作 \$\\mu_k(x_k)\$"的一系列规则。动态规划的目标是<strong>找到最优策略</strong>，而不是简单找到一组最优控制值。因为策略是状态到动作的映射，天然具备反馈能力。</p>
     </div>
 
     <h3>策略空间的维度</h3>
-    <p>策略空间的大小取决于状态空间和动作空间的大小。如果状态有 \\(|S|\\) 种可能，动作有 \\(|A|\\) 种可能，那么每个 \\(\\mu_k\\) 就有 \\(|A|^{|S|}\\) 种选择——组合数巨大！DP 的强大之处就在于不需要穷举所有策略。</p>
+    <p>策略空间的大小取决于状态空间和动作空间的大小。如果状态有 \$|S|\$ 种可能，动作有 \$|A|\$ 种可能，那么每个 \$\\mu_k\$ 就有 \$|A|^{|S|}\$ 种选择——组合数巨大！DP 的强大之处就在于不需要穷举所有策略。</p>
   </div>
 
   <!-- 3. 最优性原理 -->
@@ -170,27 +174,27 @@ lead-grid">
   <div id="sec4" class="section-card">
     <h2>4. Bellman 方程推导</h2>
 
-    <p>定义<strong>最优代价函数（value function）</strong>\\(V_k(x_k)\\) 为从状态 \\(x_k\\) 开始、执行最优策略到终点的最小期望代价：</p>
+    <p>定义<strong>最优代价函数（value function）</strong>\$V_k(x_k)\$ 为从状态 \$x_k\$ 开始、执行最优策略到终点的最小期望代价：</p>
 
     <div class="formula-box">
-      \\[
+      \$$
       V_k(x_k) = \\min_{\\pi} \\mathbb{E}\\left[ g_N(x_N) + \\sum_{i=k}^{N-1} g_i(x_i, u_i, w_i) \\Big| x_k \\right]
-      \\]
+      \$$
     </div>
 
-    <p>根据最优性原理，我们可以写出 \\(V_k\\) 和 \\(V_{k+1}\\) 之间的递推关系：</p>
+    <p>根据最优性原理，我们可以写出 \$V_k\$ 和 \$V_{k+1}\$ 之间的递推关系：</p>
 
     <div class="formula-box">
-      \\[
+      \$$
       \\boxed{V_k(x_k) = \\min_{u_k} \\mathbb{E}_{w_k} \\big[ g_k(x_k, u_k, w_k) + V_{k+1}(f_k(x_k, u_k, w_k)) \\big]}
-      \\]
+      \$$
     </div>
 
     <p>边界条件：</p>
     <div class="formula-box">
-      \\[
+      \$$
       \\boxed{V_N(x_N) = g_N(x_N)}
-      \\]
+      \$$
     </div>
 
     <p>这就是 <strong>Bellman 方程</strong>——DP 的核心递推公式。</p>
@@ -198,14 +202,14 @@ lead-grid">
     <h3>方程的含义</h3>
     <p>Bellman 方程将多步优化分解为单步优化：</p>
     <ul>
-      <li><strong>当前步</strong>：选择 \\(u_k\\) 使 \\(g_k(x_k, u_k, w_k)\\)（即时代价）+ \\(V_{k+1}(x_{k+1})\\)（未来最优代价）的期望最小</li>
-      <li><strong>未来步</strong>：\\(V_{k+1}\\) 已经假设了从 \\(k+1\\) 开始的所有决策都是最优的</li>
-      <li><strong>递归求解</strong>：从 \\(V_N\\) 开始反向递推，直到算出 \\(V_0\\)</li>
+      <li><strong>当前步</strong>：选择 \$u_k\$ 使 \$g_k(x_k, u_k, w_k)\$（即时代价）+ \$V_{k+1}(x_{k+1})\$（未来最优代价）的期望最小</li>
+      <li><strong>未来步</strong>：\$V_{k+1}\$ 已经假设了从 \$k+1\$ 开始的所有决策都是最优的</li>
+      <li><strong>递归求解</strong>：从 \$V_N\$ 开始反向递推，直到算出 \$V_0\$</li>
     </ul>
 
     <div class="callout">
       <p><strong>🎯 Bellman 方程的魔力</strong></p>
-      <p>我们只需要在每个状态 \\(x_k\\) 上求解一个单步优化问题，而不需要考虑未来的所有可能路径！正是最优性原理保证了这种分解是全局最优的。</p>
+      <p>我们只需要在每个状态 \$x_k\$ 上求解一个单步优化问题，而不需要考虑未来的所有可能路径！正是最优性原理保证了这种分解是全局最优的。</p>
     </div>
   </div>
 
@@ -219,44 +223,44 @@ lead-grid">
       <div class="mini-card" style="border-left: 4px solid #8b5cf6;">
         <h4>1️⃣ 初始化</h4>
         <p>设置终端代价函数：</p>
-        \\[
+        \$$
         V_N(x_N) = g_N(x_N), \\quad \\forall x_N
-        \\]
+        \$$
         <p>为每个可能的终端状态赋值。</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #3b82f6;">
         <h4>2️⃣ 反向递推</h4>
-        <p>对 \\(k = N-1, N-2, \\dots, 0\\)：</p>
-        \\[
+        <p>对 \$k = N-1, N-2, \\dots, 0\$：</p>
+        \$$
         V_k(x_k) = \\min_{u_k} \\mathbb{E}[g_k + V_{k+1}]
-        \\]
-        <p>对每个可能的状态 \\(x_k\\) 求解。</p>
+        \$$
+        <p>对每个可能的状态 \$x_k\$ 求解。</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #22c55e;">
         <h4>3️⃣ 提取策略</h4>
         <p>保存每个状态下的最优决策：</p>
-        \\[
+        \$$
         \\mu_k^*(x_k) = \\arg\\min_{u_k} \\mathbb{E}[g_k + V_{k+1}]
-        \\]
+        \$$
         <p>记录最优动作。</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #f59e0b;">
         <h4>4️⃣ 正向执行</h4>
         <p>在实际运行时，根据当前状态查表执行最优动作：</p>
-        \\[
+        \$$
         u_k = \\mu_k^*(x_k)
-        \\]
+        \$$
         <p>直到达到终端状态。</p>
       </div>
     </div>
 
     <h3>以库存控制为例</h3>
-    <p>假设库存 \\(x_k\\) 的取值范围是 0~100（离散化），订货量 \\(u_k\\) 的取值范围是 0~50：</p>
+    <p>假设库存 \$x_k\$ 的取值范围是 0~100（离散化），订货量 \$u_k\$ 的取值范围是 0~50：</p>
     <ol>
-      <li><strong>初始化</strong>：\\(V_N(x_N) = R(x_N)\\) 对每个 \\(x_N \\in [0,100]\\)</li>
-      <li><strong>反向递推</strong>：对 \\(k=N-1\\)，对每个可能的 \\(x_k \in [0,100]\\)，计算 \\(\\min_{u_k} \\mathbb{E}[r(x_k) + c u_k - \\beta w_k + V_{k+1}(x_k + u_k - w_k)]\\)</li>
-      <li><strong>提取策略</strong>：对每个 \\(x_k\\)，记录使期望最小的 \\(u_k\\)</li>
-      <li><strong>正向执行</strong>：每天根据实际库存 \\(x_k\\)，查表得到最优订货量</li>
+      <li><strong>初始化</strong>：\$V_N(x_N) = R(x_N)\$ 对每个 \$x_N \\in [0,100]\$</li>
+      <li><strong>反向递推</strong>：对 \$k=N-1\$，对每个可能的 \$x_k \in [0,100]\$，计算 \$\\min_{u_k} \\mathbb{E}[r(x_k) + c u_k - \\beta w_k + V_{k+1}(x_k + u_k - w_k)]\$</li>
+      <li><strong>提取策略</strong>：对每个 \$x_k\$，记录使期望最小的 \$u_k\$</li>
+      <li><strong>正向执行</strong>：每天根据实际库存 \$x_k\$，查表得到最优订货量</li>
     </ol>
   </div>
 
@@ -269,13 +273,13 @@ lead-grid">
       <p>DP 理论上可以解决任何离散状态和离散控制的序贯决策问题，但状态空间的维度会导致计算量指数增长。这是 DP 在实际应用中的主要限制。</p>
     </div>
 
-    <p>假设状态是 10 维的向量，每维离散化为 10 个值，那么状态总数就是 \\(10^{10} = 100\\) 亿——完全不可行。</p>
+    <p>假设状态是 10 维的向量，每维离散化为 10 个值，那么状态总数就是 \$10^{10} = 100\$ 亿——完全不可行。</p>
 
     <h3>常用的应对方法</h3>
     <div class="grid-2">
       <div class="mini-card" style="border-left: 4px solid #3b82f6;">
         <h4>📉 值函数近似</h4>
-        <p>用参数化模型（如神经网络）来近似 \\(V_k(x_k)\\)，而不是精确存储每个状态的值。这是深度强化学习的核心思路。</p>
+        <p>用参数化模型（如神经网络）来近似 \$V_k(x_k)\$，而不是精确存储每个状态的值。这是深度强化学习的核心思路。</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #22c55e;">
         <h4>🎯 蒙特卡洛方法</h4>
@@ -312,7 +316,7 @@ lead-grid">
       <tbody>
         <tr>
           <td><strong>策略</strong></td>
-          <td>\\(\\pi = \\{\\mu_0, \\dots, \\mu_{N-1}\\}\\)</td>
+          <td>\$\\pi = \\{\\mu_0, \\dots, \\mu_{N-1}\\}\$</td>
           <td>从状态到动作的映射序列</td>
         </tr>
         <tr>
@@ -322,7 +326,7 @@ lead-grid">
         </tr>
         <tr>
           <td><strong>Bellman 方程</strong></td>
-          <td>\\(V_k = \\min_{u_k} \\mathbb{E}[g_k + V_{k+1}]\\)</td>
+          <td>\$V_k = \\min_{u_k} \\mathbb{E}[g_k + V_{k+1}]\$</td>
           <td>分解多步为单步优化</td>
         </tr>
         <tr>
@@ -361,11 +365,11 @@ lead-grid">
 
     <div class="interactive-card">
       <h3>问题 2</h3>
-      <p>Bellman 方程 \\(V_k(x_k) = \\min_{u_k} \\mathbb{E}[g_k + V_{k+1}(f_k)]\\) 的每一项代表什么？</p>
+      <p>Bellman 方程 \$V_k(x_k) = \\min_{u_k} \\mathbb{E}[g_k + V_{k+1}(f_k)]\$ 的每一项代表什么？</p>
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>\\(g_k(x_k, u_k, w_k)\\) 是当前步的即时代价，\\(V_{k+1}(f_k(x_k, u_k, w_k))\\) 是从下一步状态开始的最优未来代价。期望 \\(\\mathbb{E}\\) 对随机扰动 \\(w_k\\) 取。\\(\\min_{u_k}\\) 选择当前步的最优控制。</p>
+          <p>\$g_k(x_k, u_k, w_k)\$ 是当前步的即时代价，\$V_{k+1}(f_k(x_k, u_k, w_k))\$ 是从下一步状态开始的最优未来代价。期望 \$\\mathbb{E}\$ 对随机扰动 \$w_k\$ 取。\$\\min_{u_k}\$ 选择当前步的最优控制。</p>
         </div>
       </details>
     </div>

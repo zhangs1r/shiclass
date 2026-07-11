@@ -7,8 +7,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
 <link rel="stylesheet" href="assets/shiclass.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
 </head>
 <body>
 <div class="page">
@@ -45,7 +49,7 @@
 lead-grid">
     <div class="callout">
       <p><strong>🎯 本讲目标</strong></p>
-      <p>从 Gram-Schmidt 正交化的角度引入新息（Innovation）概念，严格证明新息与历史测量空间的正交性，并推导新息协方差 \\(R_{e,k}\\) 的表达式。</p>
+      <p>从 Gram-Schmidt 正交化的角度引入新息（Innovation）概念，严格证明新息与历史测量空间的正交性，并推导新息协方差 \$R_{e,k}\$ 的表达式。</p>
     </div>
     <div class="callout">
       <p><strong>🔑 核心思想</strong></p>
@@ -60,9 +64,9 @@ lead-grid">
       <li><a href="#sec1">1. 回顾：KF 的五个测量更新等式</a></li>
       <li><a href="#sec2">2. 预备知识：空间包含关系与噪声正交性</a></li>
       <li><a href="#sec3">3. Gram-Schmidt 正交化与新息的思想</a></li>
-      <li><a href="#sec4">4. ① 新息定义：\\(e_k = y_k - C\\hat x_{k|k-1}\\)</a></li>
+      <li><a href="#sec4">4. ① 新息定义：\$e_k = y_k - C\\hat x_{k|k-1}\$</a></li>
       <li><a href="#sec5">5. 新息的正交性证明</a></li>
-      <li><a href="#sec6">6. ② 新息协方差：\\(R_{e,k} = C P_{k|k-1} C' + R\\)</a></li>
+      <li><a href="#sec6">6. ② 新息协方差：\$R_{e,k} = C P_{k|k-1} C' + R\$</a></li>
       <li><a href="#sec7">7. 新息过程总结</a></li>
       <li><a href="#quiz">📝 自测题</a></li>
     </ul>
@@ -72,10 +76,10 @@ lead-grid">
   <div id="sec1" class="section-card">
     <h2>1. 回顾：KF 的五个测量更新等式</h2>
     <p>上节课（KF L14）我们搭建了 Kalman Filter 的基本舞台——系统模型、基本假设与符号体系。本讲开始正式进入<strong>测量更新（Measurement Update）</strong>的详细推导。</p>
-    <p>当新的测量 \\(y_k\\) 到来时，我们需要把预测 \\(\hat x_{k|k-1}\\) 更新为后验估计 \\(\hat x_{k|k}\\)。整个更新过程由以下五个等式描述：</p>
+    <p>当新的测量 \$y_k\$ 到来时，我们需要把预测 \$\hat x_{k|k-1}\$ 更新为后验估计 \$\hat x_{k|k}\$。整个更新过程由以下五个等式描述：</p>
 
     <div class="formula-box">
-      \\[
+      \$$
       \\begin{aligned}
       \\text{①}\\quad & e_k = y_k - C \\hat x_{k|k-1} \\\\\\\\
       \\text{②}\\quad & R_{e,k} = \\langle e_k, e_k \\rangle = C P_{k|k-1} C' + R \\\\\\\\
@@ -83,7 +87,7 @@ lead-grid">
       \\text{④}\\quad & K_k = P_{k|k-1} C' R_{e,k}^{-1} \\\\\\\\
       \\text{⑤}\\quad & P_{k|k} = P_{k|k-1} - P_{k|k-1} C' R_{e,k}^{-1} C P_{k|k-1}
       \\end{aligned}
-      \\]
+      \$$
     </div>
 
     <p>本讲集中证明等式①和②——新息的定义与新息协方差。余下的③④⑤将在下一讲（后验协方差更新）中完成。</p>
@@ -95,28 +99,28 @@ lead-grid">
     <p>在开始证明之前，我们必须弄清楚各个随机变量所在的线性空间，以及它们之间的正交性关系。</p>
 
     <h3>状态的展开</h3>
-    <p>回顾系统的状态方程 \\(x_{k+1} = A x_k + w_k\\)。将状态反复展开：</p>
+    <p>回顾系统的状态方程 \$x_{k+1} = A x_k + w_k\$。将状态反复展开：</p>
     <div class="formula-box">
-      \\[
+      \$$
       x_k = A^k x_0 + A^{k-1} w_0 + A^{k-2} w_1 + \\cdots + A w_{k-2} + w_{k-1}
-      \\]
+      \$$
     </div>
-    <p>所以 \\(x_k\\) 是初始状态 \\(x_0\\) 和过程噪声 \\(w_0, \\dots, w_{k-1}\\) 的<strong>线性组合</strong>。</p>
+    <p>所以 \$x_k\$ 是初始状态 \$x_0\$ 和过程噪声 \$w_0, \\dots, w_{k-1}\$ 的<strong>线性组合</strong>。</p>
 
     <h3>空间包含关系</h3>
     <div class="grid-2">
       <div class="mini-card">
-        <h4>\\(\mathcal{L}_k = \\text{span}\\{y_0, \\dots, y_k\\}\\)</h4>
-        <p>当前测量空间 \\(\mathcal{L}_k\\) 由截至时刻 \\(k\\) 的所有测量生成。</p>
+        <h4>\$\mathcal{L}_k = \\text{span}\\{y_0, \\dots, y_k\\}\$</h4>
+        <p>当前测量空间 \$\mathcal{L}_k\$ 由截至时刻 \$k\$ 的所有测量生成。</p>
         <p style="margin-top:8px;font-size:0.85rem">
-          \\(\mathcal{L}_k \\subset \\text{span}\\{x_0, w_0, \\dots, w_{k-1}; v_0, \\dots, v_k\\}\\)
+          \$\mathcal{L}_k \\subset \\text{span}\\{x_0, w_0, \\dots, w_{k-1}; v_0, \\dots, v_k\\}\$
         </p>
       </div>
       <div class="mini-card">
-        <h4>\\(\mathcal{L}_{k-1} = \\text{span}\\{y_0, \\dots, y_{k-1}\\}\\)</h4>
-        <p>历史测量空间，比 \\(\mathcal{L}_k\\) 少一个最新测量 \\(y_k\\)。</p>
+        <h4>\$\mathcal{L}_{k-1} = \\text{span}\\{y_0, \\dots, y_{k-1}\\}\$</h4>
+        <p>历史测量空间，比 \$\mathcal{L}_k\$ 少一个最新测量 \$y_k\$。</p>
         <p style="margin-top:8px;font-size:0.85rem">
-          \\(\mathcal{L}_{k-1} \\subset \\text{span}\\{x_0, w_0, \\dots, w_{k-2}; v_0, \\dots, v_{k-1}\\}\\)
+          \$\mathcal{L}_{k-1} \\subset \\text{span}\\{x_0, w_0, \\dots, w_{k-2}; v_0, \\dots, v_{k-1}\\}\$
         </p>
       </div>
     </div>
@@ -124,7 +128,7 @@ lead-grid">
     <h3>关键正交性</h3>
     <div class="callout">
       <p><strong>💡 核心观察</strong></p>
-      <p>\\(v_k\\) 与 \\(\mathcal{L}_{k-1}\\) 正交！因为 \\(v_k\\) 与所有 \\(x_0, w_0, \\dots, w_{k-2}, v_0, \\dots, v_{k-1}\\) 都不相关（噪声假设），而 \\(\mathcal{L}_{k-1}\\) 包含在这个大空间里。</p>
+      <p>\$v_k\$ 与 \$\mathcal{L}_{k-1}\$ 正交！因为 \$v_k\$ 与所有 \$x_0, w_0, \\dots, w_{k-2}, v_0, \\dots, v_{k-1}\$ 都不相关（噪声假设），而 \$\mathcal{L}_{k-1}\$ 包含在这个大空间里。</p>
     </div>
     <p>这个简单的观察将反复出现在下面的证明中，是理解新息正交性的关键钥匙。</p>
   </div>
@@ -133,74 +137,74 @@ lead-grid">
   <div id="sec3" class="section-card">
     <h2>3. Gram-Schmidt 正交化与新息的思想</h2>
 
-    <p>回忆线性代数中的 <strong>Gram-Schmidt 正交化</strong>流程：给定一组向量 \\(v_1, v_2, \\dots\\)，我们可以生成一组相互正交的向量 \\(e_1, e_2, \\dots\\)：</p>
+    <p>回忆线性代数中的 <strong>Gram-Schmidt 正交化</strong>流程：给定一组向量 \$v_1, v_2, \\dots\$，我们可以生成一组相互正交的向量 \$e_1, e_2, \\dots\$：</p>
 
     <div class="formula-box">
-      \\[
+      \$$
       \\begin{aligned}
       e_1 &= v_1 \\\\
       e_2 &= v_2 - \\text{proj}\\{v_2 \\mid \\text{span}\\{e_1\\}\\} \\\\
       e_3 &= v_3 - \\text{proj}\\{v_3 \\mid \\text{span}\\{e_1, e_2\\}\\} \\\\
       &\\;\\;\\vdots
       \\end{aligned}
-      \\]
+      \$$
     </div>
 
-    <p>新息（Innovation）正是 <strong>Gram-Schmidt 在随机向量空间中的对应物</strong>。对于依次到达的测量 \\(y_0, y_1, \\dots, y_k\\)：</p>
+    <p>新息（Innovation）正是 <strong>Gram-Schmidt 在随机向量空间中的对应物</strong>。对于依次到达的测量 \$y_0, y_1, \\dots, y_k\$：</p>
 
     <div class="formula-box">
-      \\[
+      \$$
       e_k = y_k - \\text{proj}\\{y_k \\mid \\mathcal{L}_{k-1}\\}
-      \\]
+      \$$
     </div>
 
-    <p>\\(e_k\\) 就是在当前测量中，去掉能被历史信息解释的部分后剩下的<strong>"纯新"部分</strong>。正因为如此，它被称为"新息"（Innovation）——真正的信息增量。</p>
+    <p>\$e_k\$ 就是在当前测量中，去掉能被历史信息解释的部分后剩下的<strong>"纯新"部分</strong>。正因为如此，它被称为"新息"（Innovation）——真正的信息增量。</p>
 
     <div class="callout">
       <p><strong>📌 核心性质</strong></p>
-      <p>由 Gram-Schmidt 构造过程可知，新息 \\(e_k\\) 与历史测量空间 \\(\mathcal{L}_{k-1}\\) 正交，且不同时刻的新息彼此正交：</p>
-      \\[
+      <p>由 Gram-Schmidt 构造过程可知，新息 \$e_k\$ 与历史测量空间 \$\mathcal{L}_{k-1}\$ 正交，且不同时刻的新息彼此正交：</p>
+      \$$
       \\langle e_k, e_j \\rangle = 0, \\quad \\forall j < k
-      \\]
+      \$$
       <p>这正是递归估计能够实现的根本原因——新息提供了"不重复"的信息。</p>
     </div>
   </div>
 
   <!-- 4. 新息定义 -->
   <div id="sec4" class="section-card">
-    <h2>4. ① 新息定义：\\(e_k = y_k - C\\hat x_{k|k-1}\\)</h2>
+    <h2>4. ① 新息定义：\$e_k = y_k - C\\hat x_{k|k-1}\$</h2>
 
-    <p>我们首先要证明：Gram-Schmidt 定义的投影残差恰好等于 \\(y_k - C \\hat x_{k|k-1}\\)。</p>
+    <p>我们首先要证明：Gram-Schmidt 定义的投影残差恰好等于 \$y_k - C \\hat x_{k|k-1}\$。</p>
 
     <h3>推导</h3>
-    <p>将 \\(y_k = C x_k + v_k\\) 代入投影表达式：</p>
+    <p>将 \$y_k = C x_k + v_k\$ 代入投影表达式：</p>
     <div class="formula-box">
-      \\[
+      \$$
       \\begin{aligned}
       e_k &= y_k - \\sum_{j=0}^{k-1} \\langle y_k, e_j \\rangle \\|e_j\\|^{-2} e_j \\\\\\\\
           &= y_k - \\sum_{j=0}^{k-1} \\langle C x_k + v_k, e_j \\rangle \\|e_j\\|^{-2} e_j \\\\\\\\
           &= y_k - C \\underbrace{\\sum_{j=0}^{k-1} \\langle x_k, e_j \\rangle \\|e_j\\|^{-2} e_j}_{\\hat x_{k|k-1}} - \\underbrace{\\sum_{j=0}^{k-1} \\langle v_k, e_j \\rangle \\|e_j\\|^{-2} e_j}_{=0}
       \\end{aligned}
-      \\]
+      \$$
     </div>
 
     <p>这里用到了两个关键事实：</p>
     <ol>
-      <li>\\(\\text{proj}\\{x_k \\mid \\mathcal{L}_{k-1}\\} = \\hat x_{k|k-1}\\)——这正是预测的定义</li>
-      <li>\\(\\langle v_k, e_j \\rangle = 0\\)——因为 \\(v_k \\perp \\mathcal{L}_{k-1}\\)，而 \\(e_j \\in \\mathcal{L}_{k-1}\\)</li>
+      <li>\$\\text{proj}\\{x_k \\mid \\mathcal{L}_{k-1}\\} = \\hat x_{k|k-1}\$——这正是预测的定义</li>
+      <li>\$\\langle v_k, e_j \\rangle = 0\$——因为 \$v_k \\perp \\mathcal{L}_{k-1}\$，而 \$e_j \\in \\mathcal{L}_{k-1}\$</li>
     </ol>
 
     <p>因此我们得到了简洁的表达式：</p>
     <div class="formula-box">
-      \\[
+      \$$
       \\boxed{e_k = y_k - C \\hat x_{k|k-1}}
-      \\]
+      \$$
     </div>
 
     <div class="callout">
       <p><strong>🧠 直观理解</strong></p>
       <p>新息 = 真实测量 - 预测测量。它回答了这个问题："新测量中到底是什么是我之前没想到的？"</p>
-      <p>如果预测很准（\\(\\hat x_{k|k-1} \\approx x_k\\)），新息就很小；如果测量与预测差异大，新息就大——可能意味着新的信息来了，或者出现了异常。</p>
+      <p>如果预测很准（\$\\hat x_{k|k-1} \\approx x_k\$），新息就很小；如果测量与预测差异大，新息就大——可能意味着新的信息来了，或者出现了异常。</p>
     </div>
   </div>
 
@@ -208,102 +212,102 @@ lead-grid">
   <div id="sec5" class="section-card">
     <h2>5. 新息的正交性证明</h2>
 
-    <p>现在我们直接验证 \\(e_k\\) 与 \\(\mathcal{L}_{k-1}\\) 中的任意向量正交。</p>
+    <p>现在我们直接验证 \$e_k\$ 与 \$\mathcal{L}_{k-1}\$ 中的任意向量正交。</p>
 
-    <h3>与任意历史测量 \\(y_i\\) 的正交性</h3>
-    <p>对任意 \\(i < k\\)，考虑内积 \\(\\langle e_k, y_i \\rangle\\)：</p>
+    <h3>与任意历史测量 \$y_i\$ 的正交性</h3>
+    <p>对任意 \$i < k\$，考虑内积 \$\\langle e_k, y_i \\rangle\$：</p>
     <div class="formula-box">
-      \\[
+      \$$
       \\begin{aligned}
       \\langle e_k, y_i \\rangle &= \\langle y_k - C \\hat x_{k|k-1},\\; y_i \\rangle \\\\\\\\
       &= \\langle y_k, y_i \\rangle - \\langle C \\hat x_{k|k-1}, y_i \\rangle \\\\\\\\
       &= \\langle C x_k + v_k, y_i \\rangle - \\langle C \\hat x_{k|k-1}, y_i \\rangle
       \\end{aligned}
-      \\]
+      \$$
     </div>
 
-    <p>注意 \\(v_k \\perp y_i\\)（因为 \\(y_i \\in \\mathcal{L}_{k-1}\\)），且 \\(\\hat x_{k|k-1}\\) 正是 \\(x_k\\) 在 \\(\mathcal{L}_{k-1}\\) 上的投影：</p>
+    <p>注意 \$v_k \\perp y_i\$（因为 \$y_i \\in \\mathcal{L}_{k-1}\$），且 \$\\hat x_{k|k-1}\$ 正是 \$x_k\$ 在 \$\mathcal{L}_{k-1}\$ 上的投影：</p>
     <div class="formula-box">
-      \\[
+      \$$
       \\begin{aligned}
       \\langle e_k, y_i \\rangle &= \\langle C x_k, y_i \\rangle - \\langle C \\hat x_{k|k-1}, y_i \\rangle \\\\\\\\
       &= \\langle C (x_k - \\hat x_{k|k-1}), y_i \\rangle \\\\\\\\
       &= \\langle C \\tilde x_{k|k-1}, y_i \\rangle
       \\end{aligned}
-      \\]
+      \$$
     </div>
 
-    <p>而 \\(\\tilde x_{k|k-1} \\perp \\mathcal{L}_{k-1}\\)（根据正交原理，预测误差与历史测量空间正交），所以：</p>
+    <p>而 \$\\tilde x_{k|k-1} \\perp \\mathcal{L}_{k-1}\$（根据正交原理，预测误差与历史测量空间正交），所以：</p>
     <div class="formula-box">
-      \\[
+      \$$
       \\boxed{\\langle e_k, y_i \\rangle = 0, \\quad \\forall i < k}
-      \\]
+      \$$
     </div>
 
     <p>这就证明了新息正交于整个历史测量空间。</p>
 
     <h3>新息之间的正交性</h3>
-    <p>由于 \\(e_i \\in \\mathcal{L}_{k-1}\\)（对 \\(i < k\\)），由上述结论立即得到：</p>
+    <p>由于 \$e_i \\in \\mathcal{L}_{k-1}\$（对 \$i < k\$），由上述结论立即得到：</p>
     <div class="formula-box">
-      \\[
+      \$$
       \\boxed{\\langle e_k, e_i \\rangle = 0, \\quad \\forall i < k}
-      \\]
+      \$$
     </div>
 
     <div class="callout">
       <p><strong>🎯 重大意义</strong></p>
-      <p>新息的正交性意味着：随着时间的推移，我们得到的是一个<strong>正交的新息序列</strong> \\(e_0, e_1, \\dots, e_k\\)。这类似于 Gram-Schmidt 过程将原始测量序列 \\(y_0, y_1, \\dots, y_k\\) 正交化。每个新息带来的是不重复的、正交的全新信息。</p>
+      <p>新息的正交性意味着：随着时间的推移，我们得到的是一个<strong>正交的新息序列</strong> \$e_0, e_1, \\dots, e_k\$。这类似于 Gram-Schmidt 过程将原始测量序列 \$y_0, y_1, \\dots, y_k\$ 正交化。每个新息带来的是不重复的、正交的全新信息。</p>
     </div>
   </div>
 
   <!-- 6. 新息协方差 -->
   <div id="sec6" class="section-card">
-    <h2>6. ② 新息协方差：\\(R_{e,k} = C P_{k|k-1} C' + R\\)</h2>
+    <h2>6. ② 新息协方差：\$R_{e,k} = C P_{k|k-1} C' + R\$</h2>
 
-    <p>新息协方差是新息 \\(e_k\\) 与其自身的内积（即协方差矩阵），它度量了新息的不确定性：</p>
+    <p>新息协方差是新息 \$e_k\$ 与其自身的内积（即协方差矩阵），它度量了新息的不确定性：</p>
 
     <div class="formula-box">
-      \\[
+      \$$
       R_{e,k} = \\langle e_k, e_k \\rangle
-      \\]
+      \$$
     </div>
 
     <h3>证明</h3>
-    <p>由等式①：\\(e_k = y_k - C \\hat x_{k|k-1}\\)。代入 \\(y_k = C x_k + v_k\\)：</p>
+    <p>由等式①：\$e_k = y_k - C \\hat x_{k|k-1}\$。代入 \$y_k = C x_k + v_k\$：</p>
 
     <div class="formula-box">
-      \\[
+      \$$
       \\begin{aligned}
       e_k &= C x_k + v_k - C \\hat x_{k|k-1} \\\\\\\\
           &= C (x_k - \\hat x_{k|k-1}) + v_k \\\\\\\\
           &= C \\tilde x_{k|k-1} + v_k
       \\end{aligned}
-      \\]
+      \$$
     </div>
 
-    <p>其中 \\(\\tilde x_{k|k-1} = x_k - \\hat x_{k|k-1}\\) 是预测误差。现在计算内积：</p>
+    <p>其中 \$\\tilde x_{k|k-1} = x_k - \\hat x_{k|k-1}\$ 是预测误差。现在计算内积：</p>
 
     <div class="formula-box">
-      \\[
+      \$$
       \\begin{aligned}
       R_{e,k} &= \\langle C \\tilde x_{k|k-1} + v_k,\\; C \\tilde x_{k|k-1} + v_k \\rangle \\\\\\\\
               &= C \\underbrace{\\langle \\tilde x_{k|k-1}, \\tilde x_{k|k-1} \\rangle}_{P_{k|k-1}} C' + \\langle v_k, v_k \\rangle \\\\\\\\
               &\\quad + \\underbrace{\\langle C \\tilde x_{k|k-1}, v_k \\rangle}_{=0} + \\underbrace{\\langle v_k, C \\tilde x_{k|k-1} \\rangle}_{=0} \\\\\\\\
               &= C P_{k|k-1} C' + R
       \\end{aligned}
-      \\]
+      \$$
     </div>
 
-    <p>交叉项为零的原因：\\(\\tilde x_{k|k-1} \\in \\mathcal{L}_{k-1}\\)（预测误差在历史测量空间内），而 \\(v_k \\perp \\mathcal{L}_{k-1}\\)。</p>
+    <p>交叉项为零的原因：\$\\tilde x_{k|k-1} \\in \\mathcal{L}_{k-1}\$（预测误差在历史测量空间内），而 \$v_k \\perp \\mathcal{L}_{k-1}\$。</p>
 
     <h3>分量解读</h3>
     <div class="grid-2">
       <div class="mini-card" style="border-left: 4px solid #3b82f6;">
-        <h4>\\(C P_{k|k-1} C'\\)</h4>
+        <h4>\$C P_{k|k-1} C'\$</h4>
         <p>预测不确定性通过观测矩阵映射到测量空间的部分。如果预测很准，这部分就小。</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #f59e0b;">
-        <h4>\\(R\\)</h4>
+        <h4>\$R\$</h4>
         <p>测量噪声本身的协方差。这是传感器固有的不确定性，与预测无关。</p>
       </div>
     </div>
@@ -323,23 +327,23 @@ lead-grid">
     <div class="summary-grid">
       <div class="mini-card">
         <h4>① 新息定义</h4>
-        \\[
+        \$$
         e_k = y_k - C \\hat x_{k|k-1}
-        \\]
+        \$$
         <p style="font-size:0.85rem">测量中真正"新"的部分</p>
       </div>
       <div class="mini-card">
         <h4>② 正交性</h4>
-        \\[
+        \$$
         e_k \\perp \\mathcal{L}_{k-1}
-        \\]
+        \$$
         <p style="font-size:0.85rem">新息与历史信息不相关</p>
       </div>
       <div class="mini-card">
         <h4>③ 新息协方差</h4>
-        \\[
+        \$$
         R_{e,k} = C P_{k|k-1} C' + R
-        \\]
+        \$$
         <p style="font-size:0.85rem">预测不确定性 + 测量噪声</p>
       </div>
     </div>
@@ -348,7 +352,7 @@ lead-grid">
 
     <div class="callout">
       <p><strong>🔭 下讲预告</strong></p>
-      <p>继续证明剩余的③④⑤：利用 \\(\\langle x_k, e_k \\rangle\\) 推导 Kalman 增益 \\(K_k\\)，并完成后验协方差 \\(P_{k|k}\\) 的更新公式。</p>
+      <p>继续证明剩余的③④⑤：利用 \$\\langle x_k, e_k \\rangle\$ 推导 Kalman 增益 \$K_k\$，并完成后验协方差 \$P_{k|k}\$ 的更新公式。</p>
     </div>
   </div>
 
@@ -358,32 +362,32 @@ lead-grid">
 
     <div class="interactive-card">
       <h3>问题 1</h3>
-      <p>新息 \\(e_k\\) 与历史测量空间 \\(\mathcal{L}_{k-1}\\) 的关系是什么？为什么？</p>
+      <p>新息 \$e_k\$ 与历史测量空间 \$\mathcal{L}_{k-1}\$ 的关系是什么？为什么？</p>
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>\\(e_k \\perp \\mathcal{L}_{k-1}\\)。因为 \\(e_k\\) 定义为 \\(y_k\\) 在 \\(\mathcal{L}_{k-1}\\) 上投影的残差，根据正交原理，残差与投影空间正交。</p>
+          <p>\$e_k \\perp \\mathcal{L}_{k-1}\$。因为 \$e_k\$ 定义为 \$y_k\$ 在 \$\mathcal{L}_{k-1}\$ 上投影的残差，根据正交原理，残差与投影空间正交。</p>
         </div>
       </details>
     </div>
 
     <div class="interactive-card">
       <h3>问题 2</h3>
-      <p>为什么 \\(\\langle \\tilde x_{k|k-1}, v_k \\rangle = 0\\)？请解释。</p>
+      <p>为什么 \$\\langle \\tilde x_{k|k-1}, v_k \\rangle = 0\$？请解释。</p>
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>\\(\\tilde x_{k|k-1} \\in \\mathcal{L}_{k-1}\\)（预测误差在历史测量空间内），而 \\(v_k \\perp \\mathcal{L}_{k-1}\\)（\\(v_k\\) 与所有历史信息不相关）。所以二者正交。</p>
+          <p>\$\\tilde x_{k|k-1} \\in \\mathcal{L}_{k-1}\$（预测误差在历史测量空间内），而 \$v_k \\perp \\mathcal{L}_{k-1}\$（\$v_k\$ 与所有历史信息不相关）。所以二者正交。</p>
         </div>
       </details>
     </div>
 
     <div class="interactive-card">
       <h3>问题 3</h3>
-      <p>新息协方差 \\(R_{e,k}\\) 由哪两部分组成？分别对应什么物理意义？</p>
+      <p>新息协方差 \$R_{e,k}\$ 由哪两部分组成？分别对应什么物理意义？</p>
       <div class="quiz-options">
-        <button onclick="lessonKit.answer(this, 'q3-feedback')" data-correct="yes" data-explanation="正确！C P_{k|k-1} C' 是预测不确定性映射到测量空间的部分，R 是测量噪声协方差。二者之和决定了新息的不确定性范围。">\\(C P_{k|k-1} C'\\)（预测不确定性）+ \\(R\\)（测量噪声）</button>
-        <button onclick="lessonKit.answer(this, 'q3-feedback')" data-correct="no" data-explanation="再想想。新息协方差不是简单的平均，而是预测不确定性和测量噪声的叠加。">\\(P_{k|k-1}\\) 和 \\(R\\) 的平均值</button>
+        <button onclick="lessonKit.answer(this, 'q3-feedback')" data-correct="yes" data-explanation="正确！C P_{k|k-1} C' 是预测不确定性映射到测量空间的部分，R 是测量噪声协方差。二者之和决定了新息的不确定性范围。">\$C P_{k|k-1} C'\$（预测不确定性）+ \$R\$（测量噪声）</button>
+        <button onclick="lessonKit.answer(this, 'q3-feedback')" data-correct="no" data-explanation="再想想。新息协方差不是简单的平均，而是预测不确定性和测量噪声的叠加。">\$P_{k|k-1}\$ 和 \$R\$ 的平均值</button>
       </div>
       <div id="q3-feedback" class="quiz-feedback"></div>
     </div>

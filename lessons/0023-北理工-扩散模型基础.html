@@ -7,8 +7,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
 <link rel="stylesheet" href="assets/shiclass.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
 </head>
 <body>
 <div class="page">
@@ -83,16 +87,16 @@ lead-grid">
       <div class="mini-card">
         <h4>🎯 输出（动作）</h4>
         <ul>
-          <li>机器人动作序列 \\(A \\in \\mathbb{R}^{D}\\)</li>
+          <li>机器人动作序列 \$A \\in \\mathbb{R}^{D}\$</li>
           <li>例如 7 自由度机械臂 + 夹爪 → 8 维动作</li>
-          <li>动作生成 = 给定条件 \\(C\\)，从 \\(p(A|C)\\) 采样</li>
+          <li>动作生成 = 给定条件 \$C\$，从 \$p(A|C)\$ 采样</li>
         </ul>
       </div>
     </div>
 
     <div class="callout">
       <p><strong>💡 关键设定</strong></p>
-      <p>定义条件 \\(C = \\{ \\text{Image}, \\text{State}, \\text{Language} \\}\\)，目标是生成动作序列 \\(A = \\{a_0, a_1, \\dots, a_H\\}\\)。生成式模型要建模的是<strong>条件分布 \\(p(A|C)\\)</strong>，而非确定性映射。</p>
+      <p>定义条件 \$C = \\{ \\text{Image}, \\text{State}, \\text{Language} \\}\$，目标是生成动作序列 \$A = \\{a_0, a_1, \\dots, a_H\\}\$。生成式模型要建模的是<strong>条件分布 \$p(A|C)\$</strong>，而非确定性映射。</p>
     </div>
   </div>
 
@@ -103,24 +107,24 @@ lead-grid">
     <h3>基础方法：Behavioral Cloning (BC)</h3>
     <p>最朴素的模仿学习方法：让网络直接监督人类示教数据中的动作。</p>
     <div class="formula-box">
-      \\[
+      \$$
       \\mathcal{L}_{\\text{BC}} = \\mathbb{E}_{(C, A) \\sim \\mathcal{D}} \\| F(C) - A \\|^2
-      \\]
-      <p style="margin-top:8px;font-size:0.9rem">试图学习一个确定性的映射 \\(F: C \\mapsto A\\)</p>
+      \$$
+      <p style="margin-top:8px;font-size:0.9rem">试图学习一个确定性的映射 \$F: C \\mapsto A\$</p>
     </div>
 
     <h3>最优解分析</h3>
-    <p>设 \\(Y = F(C)\\)，损失函数可以分解为：</p>
+    <p>设 \$Y = F(C)\$，损失函数可以分解为：</p>
     <div class="formula-box">
-      \\[
+      \$$
       \\mathbb{E}[\\|Y - A\\|^2] = \\|Y\\|^2 - 2 Y^T \\mathbb{E}[A|C] + \\mathbb{E}[\\|A\\|^2|C]
-      \\]
+      \$$
     </div>
     <p>求导令梯度为零得到：</p>
     <div class="formula-box">
-      \\[
+      \$$
       Y^* = \\mathbb{E}[A | C]
-      \\]
+      \$$
       <p style="margin-top:8px;font-size:0.9rem">最优解是<strong>条件期望</strong>——即"平均动作"</p>
     </div>
 
@@ -142,26 +146,26 @@ lead-grid">
     <div class="grid-2">
       <div class="mini-card" style="border-left: 4px solid #f59e0b;">
         <h4>🔁 正向过程（加噪）</h4>
-        <p>从干净的动作分布 \\(x_0\\) 开始，逐步添加高斯噪声：</p>
-        \\[
+        <p>从干净的动作分布 \$x_0\$ 开始，逐步添加高斯噪声：</p>
+        \$$
         x_t = \\sqrt{\\bar\\alpha_t}\\, x_0 + \\sqrt{1 - \\bar\\alpha_t}\\,\\epsilon
-        \\]
-        <p>经过足够多步（通常 \\(T=50\\sim1000\\)），\\(x_T\\) 接近纯高斯噪声。</p>
+        \$$
+        <p>经过足够多步（通常 \$T=50\\sim1000\$），\$x_T\$ 接近纯高斯噪声。</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #3b82f6;">
         <h4>🔃 反向过程（去噪）</h4>
-        <p>从纯噪声 \\(x_T\\) 出发，学习一个神经网络 \\(\\epsilon_\\theta\\) 预测噪声，逐步去噪恢复原始动作：</p>
-        \\[
+        <p>从纯噪声 \$x_T\$ 出发，学习一个神经网络 \$\\epsilon_\\theta\$ 预测噪声，逐步去噪恢复原始动作：</p>
+        \$$
         x_{t-1} = \\frac{1}{\\sqrt{\\alpha_t}}\\left(x_t - \\frac{1-\\alpha_t}{\\sqrt{1-\\bar\\alpha_t}}\\epsilon_\\theta(x_t, t, C)\\right) + \\sigma_t z
-        \\]
+        \$$
       </div>
     </div>
 
     <h3>训练目标</h3>
     <div class="formula-box">
-      \\[
+      \$$
       \\mathcal{L}_{\\text{DDPM}} = \\mathbb{E}_{t, x_0, \\epsilon} \\left[ \\| \\epsilon - \\epsilon_\\theta(x_t, t, C) \\|^2 \\right]
-      \\]
+      \$$
       <p style="margin-top:8px;font-size:0.9rem">网络学会预测添加的噪声，而不是直接预测动作。</p>
     </div>
 
@@ -193,27 +197,27 @@ lead-grid">
     <p>2023 年提出的 Flow Matching 采用了一种不同的思路：不去预测噪声，而是学习一个<strong>速度场（velocity field）</strong>，把噪声"流"到数据分布。</p>
 
     <h3>基本思想</h3>
-    <p>定义一条从噪声 \\(x_0 \\sim \\mathcal{N}(0, I)\\) 到数据 \\(x_1 \\sim p_{\\text{data}}\\) 的概率路径：</p>
+    <p>定义一条从噪声 \$x_0 \\sim \\mathcal{N}(0, I)\$ 到数据 \$x_1 \\sim p_{\\text{data}}\$ 的概率路径：</p>
     <div class="formula-box">
-      \\[
+      \$$
       x_t = (1 - t) x_0 + t x_1, \\quad t \\in [0, 1]
-      \\]
+      \$$
       <p style="margin-top:8px;font-size:0.9rem">线性插值路径——简单而高效</p>
     </div>
 
     <p>速度场就是路径对时间的导数：</p>
     <div class="formula-box">
-      \\[
+      \$$
       \\dot{x}_t = v_t(x_t) = x_1 - x_0
-      \\]
+      \$$
     </div>
 
     <h3>目标函数</h3>
-    <p>学习一个参数化的速度场 \\(v_\\theta(x_t, t, C)\\) 来拟合真实速度：</p>
+    <p>学习一个参数化的速度场 \$v_\\theta(x_t, t, C)\$ 来拟合真实速度：</p>
     <div class="formula-box">
-      \\[
+      \$$
       \\mathcal{L}_{\\text{FM}} = \\mathbb{E}_{t, x_0, x_1} \\left[ \\| v_\\theta(x_t, t, C) - (x_1 - x_0) \\|^2 \\right]
-      \\]
+      \$$
     </div>
 
     <div class="callout">
@@ -224,9 +228,9 @@ lead-grid">
     <h3>推理过程</h3>
     <p>通过求解常微分方程（ODE）将噪声搬运到动作分布：</p>
     <div class="formula-box">
-      \\[
+      \$$
       x_{t+\\Delta t} = x_t + \\Delta t \\cdot v_\\theta(x_t, t, C)
-      \\]
+      \$$
     </div>
     <p>通常只需 <strong>10~20 步 ODE 求解</strong> 就能得到高质量结果，比 DDPM 的 50~1000 步大幅降低。</p>
 
@@ -265,8 +269,8 @@ lead-grid">
       <tbody>
         <tr>
           <td><strong>预测目标</strong></td>
-          <td>预测噪声 \\(\\epsilon_\\theta\\)</td>
-          <td>预测速度场 \\(v_\\theta\\)</td>
+          <td>预测噪声 \$\\epsilon_\\theta\$</td>
+          <td>预测速度场 \$v_\\theta\$</td>
         </tr>
         <tr>
           <td><strong>生成路径</strong></td>
@@ -291,7 +295,7 @@ lead-grid">
         <tr>
           <td><strong>代表应用</strong></td>
           <td>扩散策略（Diffusion Policy）</td>
-          <td>\\(\\pi_0\\)、RDT 等 VLA 模型</td>
+          <td>\$\\pi_0\$、RDT 等 VLA 模型</td>
         </tr>
       </tbody>
     </table>
@@ -312,7 +316,7 @@ lead-grid">
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>BC 的最优解是条件期望 \\(\\mathbb{E}[A|C]\\)。当数据包含多个模态（如从不同方向抓杯）时，期望会输出"平均动作"，在两个模态中间摇摆不定，最终无法完成任务。</p>
+          <p>BC 的最优解是条件期望 \$\\mathbb{E}[A|C]\$。当数据包含多个模态（如从不同方向抓杯）时，期望会输出"平均动作"，在两个模态中间摇摆不定，最终无法完成任务。</p>
         </div>
       </details>
     </div>
@@ -323,7 +327,7 @@ lead-grid">
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>DDPM 预测噪声（\\(\\epsilon_\\theta\\)），通过多步去噪生成；Flow Matching 预测速度场（\\(v_\\theta\\)），通过求解 ODE 生成。Flow Matching 通常需要更少的推理步数（10-20 步 vs 50-1000 步）。</p>
+          <p>DDPM 预测噪声（\$\\epsilon_\\theta\$），通过多步去噪生成；Flow Matching 预测速度场（\$v_\\theta\$），通过求解 ODE 生成。Flow Matching 通常需要更少的推理步数（10-20 步 vs 50-1000 步）。</p>
         </div>
       </details>
     </div>

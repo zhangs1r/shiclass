@@ -9,6 +9,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/shiclass.css">
 <script src="assets/shiclass.js"></script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
 </head>
 <body>
 <div class="page">
@@ -58,40 +62,40 @@
   <section class="section-card"
 section-card">
     <h2>1. 【课堂例题】偏硬币的 ML 推导</h2>
-    <p>硬币正面概率为 \(\theta\)。第 \(i\) 次投掷：</p>
+    <p>硬币正面概率为 $\theta$。第 $i$ 次投掷：</p>
     <div class="formula-box">
-      \[ X_i = \begin{cases} 1, & \text{正面} \\ 0, & \text{反面} \end{cases} \]
+      $$ X_i = \begin{cases} 1, & \text{正面} \\ 0, & \text{反面} \end{cases} $$
     </div>
     <p>单次观测概率：</p>
     <div class="formula-box">
-      \[ p(x_i; \theta) = \theta^{x_i} (1-\theta)^{1-x_i} \]
+      $$ p(x_i; \theta) = \theta^{x_i} (1-\theta)^{1-x_i} $$
     </div>
     <div class="callout">
-      <p><strong>🔍 为什么这个式子成立？</strong> 如果 \(x_i=1\)：\(\theta^1(1-\theta)^0 = \theta\)；如果 \(x_i=0\)：\(\theta^0(1-\theta)^1 = 1-\theta\)。一个式子覆盖两种情况。</p>
+      <p><strong>🔍 为什么这个式子成立？</strong> 如果 $x_i=1$：$\theta^1(1-\theta)^0 = \theta$；如果 $x_i=0$：$\theta^0(1-\theta)^1 = 1-\theta$。一个式子覆盖两种情况。</p>
     </div>
   </section>
 
   <section id="likelihood" class="section-card">
     <h2>2. 联合似然</h2>
-    <p>假设 \(X_i\) 独立同分布：</p>
+    <p>假设 $X_i$ 独立同分布：</p>
     <div class="formula-box">
-      \[ p(x; \theta) = \prod_{i=1}^n \theta^{x_i} (1-\theta)^{1-x_i} \]
+      $$ p(x; \theta) = \prod_{i=1}^n \theta^{x_i} (1-\theta)^{1-x_i} $$
     </div>
     <p>取 log：</p>
     <div class="formula-box">
-      \[ \ell(\theta) = \sum_{i=1}^n x_i \log \theta + \sum_{i=1}^n (1-x_i) \log(1-\theta) \]
+      $$ \ell(\theta) = \sum_{i=1}^n x_i \log \theta + \sum_{i=1}^n (1-x_i) \log(1-\theta) $$
     </div>
     <p>求导：</p>
     <div class="formula-box">
-      \[ \frac{d\ell}{d\theta} = \frac{1}{\theta} \sum_{i=1}^n x_i - \frac{1}{1-\theta} \sum_{i=1}^n (1-x_i) \]
+      $$ \frac{d\ell}{d\theta} = \frac{1}{\theta} \sum_{i=1}^n x_i - \frac{1}{1-\theta} \sum_{i=1}^n (1-x_i) $$
     </div>
     <p>令导数为 0：</p>
     <div class="formula-box">
-      \[ \frac{1}{\theta} \sum x_i = \frac{1}{1-\theta} \sum (1-x_i) \]
+      $$ \frac{1}{\theta} \sum x_i = \frac{1}{1-\theta} \sum (1-x_i) $$
     </div>
     <p>化简得到：</p>
     <div class="formula-box">
-      \[ \boxed{\hat\theta_{\text{ML}} = \frac1n \sum_{i=1}^n x_i} \]
+      $$ \boxed{\hat\theta_{\text{ML}} = \frac1n \sum_{i=1}^n x_i} $$
     </div>
     <div class="callout">
       <p><strong>💡 通俗解释：</strong> 估计硬币正面概率，最合理的答案就是历史上正面出现的比例。</p>
@@ -100,9 +104,9 @@ section-card">
 
   <section id="lln" class="section-card">
     <h2>3. 大数定律带来的收敛</h2>
-    <p>如果真实正面概率是 \(\theta\)，则样本均值会随着 \(n\) 增大收敛到 \(\theta\)：</p>
+    <p>如果真实正面概率是 $\theta$，则样本均值会随着 $n$ 增大收敛到 $\theta$：</p>
     <div class="formula-box">
-      \[ \frac1n \sum_{i=1}^n X_i \xrightarrow{n\to\infty} \theta \]
+      $$ \frac1n \sum_{i=1}^n X_i \xrightarrow{n\to\infty} \theta $$
     </div>
     <div class="callout">
       <p><strong>📊 意义：</strong> ML 估计在这个例子里是合理的——样本越多，估计越准。</p>
@@ -113,32 +117,32 @@ section-card">
     <h2>4. 为什么进入最小二乘</h2>
     <p>很多工程问题可以写成：</p>
     <div class="formula-box">
-      \[ y = H x \]
+      $$ y = H x $$
     </div>
-    <p>其中 \(y\) 是观测，\(H\) 是已知矩阵，\(x\) 是未知量。</p>
-    <p>但现实中有噪声，所以常常没有任何 \(x\) 能让方程完全成立。于是我们改问：</p>
+    <p>其中 $y$ 是观测，$H$ 是已知矩阵，$x$ 是未知量。</p>
+    <p>但现实中有噪声，所以常常没有任何 $x$ 能让方程完全成立。于是我们改问：</p>
     <div class="callout">
-      <p>🎯 哪个 \(x\) 让 \(Hx\) 离 \(y\) 最近？——这就是<strong>最小二乘</strong>。</p>
+      <p>🎯 哪个 $x$ 让 $Hx$ 离 $y$ 最近？——这就是<strong>最小二乘</strong>。</p>
     </div>
   </section>
 
   <section id="solvability" class="section-card">
     <h2>5. 线性方程是否有解</h2>
-    <p>方程 \(y = Hx\) 有解当且仅当：</p>
+    <p>方程 $y = Hx$ 有解当且仅当：</p>
     <div class="formula-box">
-      \[ y \in R(H) \]
+      $$ y \in R(H) $$
     </div>
-    <p>其中 \(R(H)\) 是 \(H\) 的<strong>列空间</strong>——\(H\) 的所有列向量能线性组合出来的空间。</p>
+    <p>其中 $R(H)$ 是 $H$ 的<strong>列空间</strong>——$H$ 的所有列向量能线性组合出来的空间。</p>
 
     <h3>【补充例题】列空间</h3>
     <div class="grid-2">
       <div class="mini-card">
         <h4>📐 有解</h4>
-        <p>\(H = \begin{bmatrix}1\\2\end{bmatrix}\)，\(y = \begin{bmatrix}2\\4\end{bmatrix}=2H\)，有解。</p>
+        <p>$H = \begin{bmatrix}1\\2\end{bmatrix}$，$y = \begin{bmatrix}2\\4\end{bmatrix}=2H$，有解。</p>
       </div>
       <div class="mini-card">
         <h4>❌ 无解</h4>
-        <p>\(y = \begin{bmatrix}2\\5\end{bmatrix}\) 不在列空间直线上，没有精确解。</p>
+        <p>$y = \begin{bmatrix}2\\5\end{bmatrix}$ 不在列空间直线上，没有精确解。</p>
       </div>
     </div>
   </section>
@@ -147,11 +151,11 @@ section-card">
     <h2>6. 最小二乘定义</h2>
     <p>若没有精确解，定义：</p>
     <div class="formula-box">
-      \[ \hat x = \arg\min_x \|y - Hx\|^2 \]
+      $$ \hat x = \arg\min_x \|y - Hx\|^2 $$
     </div>
     <p>残差：</p>
     <div class="formula-box">
-      \[ r = y - H\hat x \]
+      $$ r = y - H\hat x $$
     </div>
     <p>最小二乘就是让<strong>残差长度</strong>最小。</p>
   </section>
@@ -160,37 +164,37 @@ section-card">
     <h2>7. 正规方程推导</h2>
     <p>定义代价函数：</p>
     <div class="formula-box">
-      \[ J(x) = \|y - Hx\|^2 = (y-Hx)^T (y-Hx) \]
+      $$ J(x) = \|y - Hx\|^2 = (y-Hx)^T (y-Hx) $$
     </div>
     <p>展开：</p>
     <div class="formula-box">
-      \[ J(x) = y^T y - 2x^T H^T y + x^T H^T H x \]
+      $$ J(x) = y^T y - 2x^T H^T y + x^T H^T H x $$
     </div>
-    <p>对 \(x\) 求导并令为 0：</p>
+    <p>对 $x$ 求导并令为 0：</p>
     <div class="formula-box">
-      \[ \nabla J(x) = -2 H^T y + 2 H^T H x = 0 \]
+      $$ \nabla J(x) = -2 H^T y + 2 H^T H x = 0 $$
     </div>
     <p>得到 <strong>Normal Equation（正规方程）</strong>：</p>
     <div class="formula-box">
-      \[ \boxed{H^T H \hat x = H^T y} \]
+      $$ \boxed{H^T H \hat x = H^T y} $$
     </div>
   </section>
 
   <section id="full-rank" class="section-card">
     <h2>8. 满列秩时的解</h2>
-    <p>如果 \(H\) 满列秩，则 \(H^T H\) 可逆：</p>
+    <p>如果 $H$ 满列秩，则 $H^T H$ 可逆：</p>
     <div class="formula-box">
-      \[ \boxed{\hat x = (H^T H)^{-1} H^T y} \]
+      $$ \boxed{\hat x = (H^T H)^{-1} H^T y} $$
     </div>
     <p>这就是最常见的最小二乘公式。</p>
   </section>
 
   <section id="rank-deficient" class="section-card">
     <h2>9. 不满秩时发生什么</h2>
-    <p>如果 \(H\) 不满列秩，存在非零 \(x_c\) 使得 \(H x_c = 0\)。</p>
-    <p>若 \(\hat x\) 是一个最小二乘解，那么 \(\hat x + x_c\) 也是解，因为：</p>
+    <p>如果 $H$ 不满列秩，存在非零 $x_c$ 使得 $H x_c = 0$。</p>
+    <p>若 $\hat x$ 是一个最小二乘解，那么 $\hat x + x_c$ 也是解，因为：</p>
     <div class="formula-box">
-      \[ H(\hat x + x_c) = H\hat x \]
+      $$ H(\hat x + x_c) = H\hat x $$
     </div>
     <div class="callout" style="border-left-color: #ef4444;">
       <p><strong>⚠️ 重要：</strong> 不满秩时，解不唯一。需要额外的约束（如最小范数解）来选出特定的解。</p>
@@ -199,11 +203,11 @@ section-card">
 
   <section id="geometry" class="section-card">
     <h2>10. 最小二乘的几何图像</h2>
-    <p>\(H\hat x\) 是 \(y\) 在 \(R(H)\) 上的<strong>投影</strong>。</p>
+    <p>$H\hat x$ 是 $y$ 在 $R(H)$ 上的<strong>投影</strong>。</p>
     <div class="formula-box">
-      \[ H\hat x = \operatorname{Proj}_{R(H)}(y) \]
+      $$ H\hat x = \operatorname{Proj}_{R(H)}(y) $$
     </div>
-    <p>残差 \(y - H\hat x\) 垂直于 \(R(H)\)。</p>
+    <p>残差 $y - H\hat x$ 垂直于 $R(H)$。</p>
     <div class="callout">
       <p><strong>🔑 核心思想：</strong> 这句话是后面所有内容的核心——因为 LMMSE 和 Kalman Filter 也是投影，只不过投影空间变成了<strong>随机变量空间</strong> 📐</p>
     </div>
@@ -214,11 +218,11 @@ section-card">
     <div class="summary-grid">
       <div class="mini-card">
         <h4>🪙 硬币 ML</h4>
-        <p>\(\hat\theta_{\text{ML}} = \frac1n \sum x_i\)<br>样本均值 = 最大似然</p>
+        <p>$\hat\theta_{\text{ML}} = \frac1n \sum x_i$<br>样本均值 = 最大似然</p>
       </div>
       <div class="mini-card">
         <h4>📐 正规方程</h4>
-        <p>\(H^T H \hat x = H^T y\)<br>满秩解：\(\hat x = (H^T H)^{-1} H^T y\)</p>
+        <p>$H^T H \hat x = H^T y$<br>满秩解：$\hat x = (H^T H)^{-1} H^T y$</p>
       </div>
       <div class="mini-card">
         <h4>🖼️ 几何</h4>
@@ -231,15 +235,15 @@ section-card">
     <h3>📝 自测题</h3>
     <ol>
       <li>偏硬币 ML 为什么等于样本均值？</li>
-      <li>\(y \in R(H)\) 表示什么？</li>
-      <li>为什么正规方程说明残差和 \(H\) 的列空间正交？</li>
+      <li>$y \in R(H)$ 表示什么？</li>
+      <li>为什么正规方程说明残差和 $H$ 的列空间正交？</li>
     </ol>
     <details class="exercise-answer">
       <summary>查看答案提示</summary>
       <div class="content">
         <p><strong>1.</strong> 对数似然求导令为 0 推导出样本均值。直观上 ML 选择使数据最可能的参数，对于伯努利分布就是样本中正面的比例。</p>
-        <p><strong>2.</strong> 表示 \(y\) 可以表示为 \(H\) 各列的线性组合，即方程有精确解。</p>
-        <p><strong>3.</strong> \(H^T(y - H\hat x) = 0\) 意味着残差与 \(H\) 的每一列都正交，因此与整个列空间正交。</p>
+        <p><strong>2.</strong> 表示 $y$ 可以表示为 $H$ 各列的线性组合，即方程有精确解。</p>
+        <p><strong>3.</strong> $H^T(y - H\hat x) = 0$ 意味着残差与 $H$ 的每一列都正交，因此与整个列空间正交。</p>
       </div>
     </details>
   </div>
@@ -257,12 +261,7 @@ section-card">
 
 </div>
 
-<script>
-window.MathJax = {
-  tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
-  svg: { fontCache: 'global' }
-};
-</script>
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+
+
 </body>
 </html>

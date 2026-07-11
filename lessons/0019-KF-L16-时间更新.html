@@ -7,8 +7,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
 <link rel="stylesheet" href="assets/shiclass.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
 </head>
 <body>
 <div class="page">
@@ -17,7 +21,7 @@
   <div class="hero">
     <div class="eyebrow">研讨会系列 · KF L16 · 第一部分</div>
     <h1>时间更新：投影法证明与收敛性</h1>
-    <p class="subtitle">Time Update 的投影法严格证明、完整的预测-估计递归循环、以及误差协方差 \\(P_{k|k}\\) 的收敛性分析</p>
+    <p class="subtitle">Time Update 的投影法严格证明、完整的预测-估计递归循环、以及误差协方差 \$P_{k|k}\$ 的收敛性分析</p>
     <div class="hero-meta">
       <span>📅 2026-05-23</span>
       <span>⏱ 时间更新</span>
@@ -45,11 +49,11 @@
 lead-grid">
     <div class="callout">
       <p><strong>🎯 本讲目标</strong></p>
-      <p>完成 KF 时间更新（Time Update）的投影法严格推导，建立完整的预测-估计递归循环，并分析误差协方差 \\(P_{k|k}\\) 的收敛条件。</p>
+      <p>完成 KF 时间更新（Time Update）的投影法严格推导，建立完整的预测-估计递归循环，并分析误差协方差 \$P_{k|k}\$ 的收敛条件。</p>
     </div>
     <div class="callout">
       <p><strong>🔑 核心思想</strong></p>
-      <p>时间更新是在没有新测量的情况下，用系统模型把状态"推进一步"。均值通过 \\(A\\) 传播，不确定性通过 \\(A\\) 传播后还要加上过程噪声 \\(Q\\)。</p>
+      <p>时间更新是在没有新测量的情况下，用系统模型把状态"推进一步"。均值通过 \$A\$ 传播，不确定性通过 \$A\$ 传播后还要加上过程噪声 \$Q\$。</p>
     </div>
   </div>
 
@@ -62,7 +66,7 @@ lead-grid">
       <li><a href="#sec3">3. 从几何角度理解时间更新</a></li>
       <li><a href="#sec4">4. 预测与估计的完整递归步</a></li>
       <li><a href="#sec5">5. 协方差的可离线计算特性</a></li>
-      <li><a href="#sec6">6. \\(P_{k|k}\\) 的收敛性分析</a></li>
+      <li><a href="#sec6">6. \$P_{k|k}\$ 的收敛性分析</a></li>
       <li><a href="#sec7">7. 可观性与能控性的直观理解</a></li>
       <li><a href="#quiz">📝 自测题</a></li>
     </ul>
@@ -76,27 +80,27 @@ lead-grid">
     <div class="grid-2">
       <div class="mini-card" style="border-left: 4px solid #3b82f6;">
         <h4>⏱ Time Update（预测步）</h4>
-        \\[
+        \$$
         \\hat x_{k+1|k} = A \\hat x_{k|k}
-        \\]
-        \\[
+        \$$
+        \$$
         P_{k+1|k} = A P_{k|k} A' + Q
-        \\]
+        \$$
       </div>
       <div class="mini-card" style="border-left: 4px solid var(--accent);">
         <h4>📏 Measurement Update（更新步）</h4>
-        \\[
+        \$$
         e_k = y_k - C \\hat x_{k|k-1}
-        \\]
-        \\[
+        \$$
+        \$$
         K_k = P_{k|k-1} C' [C P_{k|k-1} C' + R]^{-1}
-        \\]
-        \\[
+        \$$
+        \$$
         \\hat x_{k|k} = \\hat x_{k|k-1} + K_k e_k
-        \\]
-        \\[
+        \$$
+        \$$
         P_{k|k} = P_{k|k-1} - K_k C P_{k|k-1}
-        \\]
+        \$$
       </div>
     </div>
 
@@ -107,21 +111,21 @@ lead-grid">
   <div id="sec2" class="section-card">
     <h2>2. 时间更新推导（⑥ - ⑦）</h2>
 
-    <p><strong>定理：</strong>给定 \\(\\hat x_{k|k}\\) 和 \\(P_{k|k}\\)，时间更新为：</p>
+    <p><strong>定理：</strong>给定 \$\\hat x_{k|k}\$ 和 \$P_{k|k}\$，时间更新为：</p>
 
     <div class="formula-box">
-      \\[
+      \$$
       \\boxed{\\hat x_{k+1|k} = A \\hat x_{k|k}}
       \\qquad
       \\boxed{P_{k+1|k} = A P_{k|k} A' + Q}
-      \\]
+      \$$
     </div>
 
-    <h3>证明：预测均值 \\(\\hat x_{k+1|k}\\)</h3>
-    <p>预测均值是 \\(x_{k+1}\\) 在当前测量空间 \\(\mathcal{L}_k\\) 上的投影（条件期望）：</p>
+    <h3>证明：预测均值 \$\\hat x_{k+1|k}\$</h3>
+    <p>预测均值是 \$x_{k+1}\$ 在当前测量空间 \$\mathcal{L}_k\$ 上的投影（条件期望）：</p>
 
     <div class="formula-box">
-      \\[
+      \$$
       \\begin{aligned}
       \\hat x_{k+1|k} &= \\text{proj}\\{x_{k+1} \\mid \\mathcal{L}_k\\} \\\\\\\\
       &= \\text{proj}\\{A x_k + w_k \\mid \\mathcal{L}_k\\} \\\\\\\\
@@ -129,26 +133,26 @@ lead-grid">
       &= A \\cdot \\text{proj}\\{x_k \\mid \\mathcal{L}_k\\} + 0 \\\\\\\\
       &= A \\hat x_{k|k}
       \\end{aligned}
-      \\]
+      \$$
     </div>
 
-    <p>其中 \\(\\text{proj}\\{w_k \\mid \\mathcal{L}_k\\} = 0\\) 因为 \\(w_k\\) 与所有历史测量不相关——\\(w_k\\) 只影响未来的状态，不影响当前及过去的测量。</p>
+    <p>其中 \$\\text{proj}\\{w_k \\mid \\mathcal{L}_k\\} = 0\$ 因为 \$w_k\$ 与所有历史测量不相关——\$w_k\$ 只影响未来的状态，不影响当前及过去的测量。</p>
 
-    <h3>证明：预测误差协方差 \\(P_{k+1|k}\\)</h3>
+    <h3>证明：预测误差协方差 \$P_{k+1|k}\$</h3>
     <p>首先计算预测误差：</p>
     <div class="formula-box">
-      \\[
+      \$$
       \\begin{aligned}
       \\tilde x_{k+1|k} &= x_{k+1} - \\hat x_{k+1|k} \\\\\\\\
       &= (A x_k + w_k) - A \\hat x_{k|k} \\\\\\\\
       &= A \\tilde x_{k|k} + w_k
       \\end{aligned}
-      \\]
+      \$$
     </div>
 
     <p>然后计算内积：</p>
     <div class="formula-box">
-      \\[
+      \$$
       \\begin{aligned}
       P_{k+1|k} &= \\langle \\tilde x_{k+1|k},\\; \\tilde x_{k+1|k} \\rangle \\\\\\\\
       &= \\langle A \\tilde x_{k|k} + w_k,\\; A \\tilde x_{k|k} + w_k \\rangle \\\\\\\\
@@ -156,16 +160,16 @@ lead-grid">
       &\\quad + \\underbrace{A \\langle \\tilde x_{k|k}, w_k \\rangle}_{=0} + \\underbrace{\\langle w_k, \\tilde x_{k|k} \\rangle A'}_{=0} \\\\\\\\
       &= A P_{k|k} A' + Q
       \\end{aligned}
-      \\]
+      \$$
     </div>
 
-    <p>交叉项为零是因为 \\(w_k \\perp \\mathcal{L}_k\\)，而 \\(\\tilde x_{k|k} \\in \\mathcal{L}_k\\)。</p>
+    <p>交叉项为零是因为 \$w_k \\perp \\mathcal{L}_k\$，而 \$\\tilde x_{k|k} \\in \\mathcal{L}_k\$。</p>
 
     <div class="callout">
       <p><strong>💡 直观理解</strong></p>
       <p>时间更新就是在没有新测量的情况下，用系统模型"推进一步"：
-      <br>① 均值通过 \\(A\\) 线性传播
-      <br>② 不确定性通过 \\(A\\) 传播后，还要加上过程噪声 \\(Q\\)——因为有新的随机扰动进入了系统。</p>
+      <br>① 均值通过 \$A\$ 线性传播
+      <br>② 不确定性通过 \$A\$ 传播后，还要加上过程噪声 \$Q\$——因为有新的随机扰动进入了系统。</p>
     </div>
   </div>
 
@@ -178,19 +182,19 @@ lead-grid">
     <div class="grid-2">
       <div class="mini-card" style="border-left: 4px solid #3b82f6;">
         <h4>📐 均值传播</h4>
-        <p>\\(\\hat x_{k+1|k} = A \\hat x_{k|k}\\)</p>
-        <p style="font-size:0.85rem">状态空间中的线性映射：已知 \\(x_k\\) 在 \\(\mathcal{L}_k\\) 上的投影，通过 \\(A\\) 变换得到 \\(x_{k+1}\\) 在同一空间上的投影。</p>
+        <p>\$\\hat x_{k+1|k} = A \\hat x_{k|k}\$</p>
+        <p style="font-size:0.85rem">状态空间中的线性映射：已知 \$x_k\$ 在 \$\mathcal{L}_k\$ 上的投影，通过 \$A\$ 变换得到 \$x_{k+1}\$ 在同一空间上的投影。</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #f59e0b;">
         <h4>📐 不确定性传播</h4>
-        <p>\\(P_{k+1|k} = A P_{k|k} A' + Q\\)</p>
-        <p style="font-size:0.85rem">椭球通过 \\(A\\) 进行线性变换后，再叠加一个 \\(Q\\) 椭球（因为 \\(w_k\\) 的加入）。</p>
+        <p>\$P_{k+1|k} = A P_{k|k} A' + Q\$</p>
+        <p style="font-size:0.85rem">椭球通过 \$A\$ 进行线性变换后，再叠加一个 \$Q\$ 椭球（因为 \$w_k\$ 的加入）。</p>
       </div>
     </div>
 
     <div class="callout">
       <p><strong>🔭 注意</strong></p>
-      <p>时间更新后，不确定性是<strong>增大</strong>的：\\(P_{k+1|k} \\ge P_{k|k}\\)（在矩阵半正定意义下）。因为在没有新测量的时间段里，过程噪声不断累积，我们的认知在衰减。等到下一次测量到来时，测量更新会重新降低不确定性。</p>
+      <p>时间更新后，不确定性是<strong>增大</strong>的：\$P_{k+1|k} \\ge P_{k|k}\$（在矩阵半正定意义下）。因为在没有新测量的时间段里，过程噪声不断累积，我们的认知在衰减。等到下一次测量到来时，测量更新会重新降低不确定性。</p>
     </div>
   </div>
 
@@ -198,27 +202,27 @@ lead-grid">
   <div id="sec4" class="section-card">
     <h2>4. 预测与估计的完整递归步</h2>
 
-    <p>现在我们可以把完整的 KF 递归写成紧凑形式。给定 \\(\\hat x_{k-1|k-1}\\) 和 \\(P_{k-1|k-1}\\)：</p>
+    <p>现在我们可以把完整的 KF 递归写成紧凑形式。给定 \$\\hat x_{k-1|k-1}\$ 和 \$P_{k-1|k-1}\$：</p>
 
     <h3>预测步（时间更新）</h3>
     <div class="formula-box">
-      \\[
+      \$$
       \\begin{aligned}
       \\hat x_{k|k-1} &= A \\hat x_{k-1|k-1} \\\\\\\\
       P_{k|k-1} &= A P_{k-1|k-1} A' + Q
       \\end{aligned}
-      \\]
+      \$$
     </div>
 
     <h3>更新步（测量更新）</h3>
     <div class="formula-box">
-      \\[
+      \$$
       \\begin{aligned}
       K_k &= P_{k|k-1} C' [C P_{k|k-1} C' + R]^{-1} \\\\\\\\
       \\hat x_{k|k} &= \\hat x_{k|k-1} + K_k (y_k - C \\hat x_{k|k-1}) \\\\\\\\
       P_{k|k} &= P_{k|k-1} - K_k C P_{k|k-1}
       \\end{aligned}
-      \\]
+      \$$
     </div>
 
     <div class="callout">
@@ -234,25 +238,25 @@ lead-grid">
     <p>观察 KF 的递归等式，可以发现一个重要性质：</p>
 
     <div class="formula-box">
-      \\[
+      \$$
       \\begin{aligned}
       P_{k|k-1} &\\;\\text{only depends on}\\; P_{k-1|k-1} \\\\\\\\
       K_k &\\;\\text{only depends on}\\; P_{k|k-1} \\\\\\\\
       P_{k|k} &\\;\\text{only depends on}\\; P_{k|k-1} \\\\\\\\
       \\end{aligned}
-      \\]
+      \$$
     </div>
 
-    <p>特别地，<strong>\\(P_{k|k}\\) 和 \\(K_k\\) 完全不依赖测量值 \\(y_k\\)！</strong>它们只由系统参数 \\((A, C, Q, R)\\) 和初始协方差 \\(\\Pi_0\\) 决定。</p>
+    <p>特别地，<strong>\$P_{k|k}\$ 和 \$K_k\$ 完全不依赖测量值 \$y_k\$！</strong>它们只由系统参数 \$(A, C, Q, R)\$ 和初始协方差 \$\\Pi_0\$ 决定。</p>
 
     <div class="grid-2">
       <div class="mini-card" style="border-left: 4px solid #22c55e;">
         <h4>🚀 离线阶段</h4>
-        <p>预先计算所有 \\(P_{k|k}\\) 和 \\(K_k\\)，存成表格。只需要矩阵运算，不涉及传感器数据。</p>
+        <p>预先计算所有 \$P_{k|k}\$ 和 \$K_k\$，存成表格。只需要矩阵运算，不涉及传感器数据。</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #3b82f6;">
         <h4>⚡ 在线阶段</h4>
-        <p>查表获得 \\(K_k\\)，然后只做简单的向量运算更新状态估计。计算量从 O(n³) 降到 O(n²)。</p>
+        <p>查表获得 \$K_k\$，然后只做简单的向量运算更新状态估计。计算量从 O(n³) 降到 O(n²)。</p>
       </div>
     </div>
 
@@ -261,46 +265,46 @@ lead-grid">
 
   <!-- 6. 收敛性 -->
   <div id="sec6" class="section-card">
-    <h2>6. \\(P_{k|k}\\) 的收敛性分析</h2>
+    <h2>6. \$P_{k|k}\$ 的收敛性分析</h2>
 
     <div class="figure">
       <p style="text-align:center;padding:20px;background:var(--bg);border-radius:8px;">
-        📊 模拟实验显示：\\(P_{k|k}\\) 随 \\(k\\) 增加而趋于一个稳态值 \\(\\bar P\\)
+        📊 模拟实验显示：\$P_{k|k}\$ 随 \$k\$ 增加而趋于一个稳态值 \$\\bar P\$
       </p>
     </div>
 
     <h3>收敛条件</h3>
-    <p>随着时间 \\(k \\to \\infty\\)，\\(P_{k|k}\\) 是否会收敛到一个稳态值？答案是肯定的，但需要满足以下两个条件：</p>
+    <p>随着时间 \$k \\to \\infty\$，\$P_{k|k}\$ 是否会收敛到一个稳态值？答案是肯定的，但需要满足以下两个条件：</p>
 
     <div class="grid-2">
       <div class="mini-card">
         <h4>📌 可观性（Observability）</h4>
-        \\[
+        \$$
         (A, C)\\; \\text{observable}
-        \\]
+        \$$
         <p style="font-size:0.85rem">系统的所有模态都能通过测量被观测到。如果某个模态不可观，它的不确定性永远不会降低。</p>
       </div>
       <div class="mini-card">
         <h4>📌 能控性（Controllability）</h4>
-        \\[
+        \$$
         (A, \\sqrt{Q})\\; \\text{controllable}
-        \\]
+        \$$
         <p style="font-size:0.85rem">过程噪声能激励系统的所有模态。如果某个模态不受噪声驱动，它的不确定性就是"冻结"的。</p>
       </div>
     </div>
 
     <h3>收敛的工程意义</h3>
-    <p>当 \\(P_{k|k}\\) 收敛到 \\(\\bar P\\) 之后，Kalman 增益也收敛到一个常数矩阵 \\(K^*\\)。此时估计器退化为一个简单的线性时不变系统：</p>
+    <p>当 \$P_{k|k}\$ 收敛到 \$\\bar P\$ 之后，Kalman 增益也收敛到一个常数矩阵 \$K^*\$。此时估计器退化为一个简单的线性时不变系统：</p>
 
     <div class="formula-box">
-      \\[
+      \$$
       \\hat x_{k+1|k} = A \\hat x_{k|k-1} + K^* [y_k - C \\hat x_{k|k-1}]
-      \\]
+      \$$
     </div>
 
     <div class="callout">
       <p><strong>🎯 重要含义</strong></p>
-      <p>收敛意味着我们不仅不需要在线计算增益，甚至不需要查表——只需要记住一个固定的增益矩阵 \\(K^*\\)。这大幅降低了实现复杂度，是 KF 工程化部署的关键。</p>
+      <p>收敛意味着我们不仅不需要在线计算增益，甚至不需要查表——只需要记住一个固定的增益矩阵 \$K^*\$。这大幅降低了实现复杂度，是 KF 工程化部署的关键。</p>
     </div>
   </div>
 
@@ -313,13 +317,13 @@ lead-grid">
     <div class="grid-2">
       <div class="mini-card" style="border-left: 4px solid #3b82f6;">
         <h4>🔍 可观性</h4>
-        <p>你能否通过测量 \\(y_k\\) 推断出状态 \\(x_k\\) 的每一个分量？</p>
-        <p><strong>例子：</strong>如果 \\(C\\) 的第 \\(i\\) 列全为零，那么 \\(x_k\\) 的第 \\(i\\) 个分量永远无法被观测到——即使有再多的测量也无法降低其不确定性。</p>
+        <p>你能否通过测量 \$y_k\$ 推断出状态 \$x_k\$ 的每一个分量？</p>
+        <p><strong>例子：</strong>如果 \$C\$ 的第 \$i\$ 列全为零，那么 \$x_k\$ 的第 \$i\$ 个分量永远无法被观测到——即使有再多的测量也无法降低其不确定性。</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #f59e0b;">
         <h4>🎛️ 能控性</h4>
-        <p>过程噪声 \\(w_k\\) 能否激励状态的每一个分量？</p>
-        <p><strong>例子：</strong>如果 \\(Q\\) 的某个对角元为零，对应的状态分量不受噪声驱动——它的不确定性变化仅由 \\(A\\) 传播决定。</p>
+        <p>过程噪声 \$w_k\$ 能否激励状态的每一个分量？</p>
+        <p><strong>例子：</strong>如果 \$Q\$ 的某个对角元为零，对应的状态分量不受噪声驱动——它的不确定性变化仅由 \$A\$ 传播决定。</p>
       </div>
     </div>
 
@@ -335,32 +339,32 @@ lead-grid">
 
     <div class="interactive-card">
       <h3>问题 1</h3>
-      <p>为什么 KF 的协方差 \\(P_{k|k}\\) 和增益 \\(K_k\\) 与测量值 \\(y_k\\) 无关？</p>
+      <p>为什么 KF 的协方差 \$P_{k|k}\$ 和增益 \$K_k\$ 与测量值 \$y_k\$ 无关？</p>
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>因为 \\(P_{k|k}\\) 的更新只依赖于系统参数 \\((A, C, Q, R)\\) 和上一步的 \\(P_{k-1|k-1}\\)，不包含任何测量值。测量值只影响状态估计 \\(\\hat x_{k|k}\\) 的轨迹，不影响不确定性。</p>
+          <p>因为 \$P_{k|k}\$ 的更新只依赖于系统参数 \$(A, C, Q, R)\$ 和上一步的 \$P_{k-1|k-1}\$，不包含任何测量值。测量值只影响状态估计 \$\\hat x_{k|k}\$ 的轨迹，不影响不确定性。</p>
         </div>
       </details>
     </div>
 
     <div class="interactive-card">
       <h3>问题 2</h3>
-      <p>为什么时间更新后协方差 \\(P_{k+1|k}\\) 会比 \\(P_{k|k}\\) 更大？</p>
+      <p>为什么时间更新后协方差 \$P_{k+1|k}\$ 会比 \$P_{k|k}\$ 更大？</p>
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>因为时间更新引入了过程噪声 \\(w_k\\) 带来的不确定性 \\(Q\\)。在没有新测量来修正之前，系统的不确定性只会增加不会减少。等到测量更新时，新信息才会降低不确定性。</p>
+          <p>因为时间更新引入了过程噪声 \$w_k\$ 带来的不确定性 \$Q\$。在没有新测量来修正之前，系统的不确定性只会增加不会减少。等到测量更新时，新信息才会降低不确定性。</p>
         </div>
       </details>
     </div>
 
     <div class="interactive-card">
       <h3>问题 3</h3>
-      <p>\\(P_{k|k}\\) 收敛的条件是什么？</p>
+      <p>\$P_{k|k}\$ 收敛的条件是什么？</p>
       <div class="quiz-options">
-        <button onclick="lessonKit.answer(this, 'q3-feedback')" data-correct="yes" data-explanation="正确！(A, C) observable 确保所有模态可以被观测，(A, √Q) controllable 确保所有模态被噪声激励。两个条件缺一不可。">\\((A, C)\\) observable 且 \\((A, \\sqrt{Q})\\) controllable</button>
-        <button onclick="lessonKit.answer(this, 'q3-feedback')" data-correct="no" data-explanation="再想想。收敛需要可观性和能控性两个条件同时满足。">只需要 \\(P_0\\) 是正定矩阵</button>
+        <button onclick="lessonKit.answer(this, 'q3-feedback')" data-correct="yes" data-explanation="正确！(A, C) observable 确保所有模态可以被观测，(A, √Q) controllable 确保所有模态被噪声激励。两个条件缺一不可。">\$(A, C)\$ observable 且 \$(A, \\sqrt{Q})\$ controllable</button>
+        <button onclick="lessonKit.answer(this, 'q3-feedback')" data-correct="no" data-explanation="再想想。收敛需要可观性和能控性两个条件同时满足。">只需要 \$P_0\$ 是正定矩阵</button>
       </div>
       <div id="q3-feedback" class="quiz-feedback"></div>
     </div>

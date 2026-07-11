@@ -7,8 +7,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
 <link rel="stylesheet" href="assets/shiclass.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
 </head>
 <body>
 <div class="page">
@@ -44,7 +48,7 @@
 lead-grid">
     <div class="callout">
       <p><strong>🎯 本讲目标</strong></p>
-      <p>掌握如何在 \(y=Hx+v\) 中求 LMMSE、如何用正交原理列方程、Gram-Schmidt 正交化的思想、以及 smoothing / filtering / prediction 的区别。</p>
+      <p>掌握如何在 $y=Hx+v$ 中求 LMMSE、如何用正交原理列方程、Gram-Schmidt 正交化的思想、以及 smoothing / filtering / prediction 的区别。</p>
     </div>
     <div class="callout">
       <p><strong>🔑 关键思想</strong></p>
@@ -73,11 +77,11 @@ lead-grid">
   <!-- 1. 正交原理的推论 -->
   <div id="sec1" class="section-card">
     <h2>1. 正交原理的推论</h2>
-    <p>若 \(\hat X\) 是基于 \(y_1,\ldots,y_N\) 的 LMMSE 估计，则：</p>
+    <p>若 $\hat X$ 是基于 $y_1,\ldots,y_N$ 的 LMMSE 估计，则：</p>
     <div class="formula-box">
-      \[
+      $$
       X - \hat X \perp y_i,\quad i=1,\ldots,N
-      \]
+      $$
     </div>
     <p>也就是说，误差和每一个可用测量都不相关。这为我们提供了列方程求解增益的基本工具。</p>
   </div>
@@ -87,58 +91,58 @@ lead-grid">
     <h2>2. 【课堂例题】线性测量模型</h2>
     <p>模型：</p>
     <div class="formula-box">
-      \[
+      $$
       y = Hx + v
-      \]
+      $$
     </div>
-    <p>假设 \(E[xv^T] = 0\)，已知：</p>
+    <p>假设 $E[xv^T] = 0$，已知：</p>
     <div class="grid-2">
       <div class="mini-card">
-        <h4>\(R_x\)</h4>
-        \[
+        <h4>$R_x$</h4>
+        $$
         R_x = E[xx^T]
-        \]
+        $$
       </div>
       <div class="mini-card">
-        <h4>\(R_v\)</h4>
-        \[
+        <h4>$R_v$</h4>
+        $$
         R_v = E[vv^T]
-        \]
+        $$
       </div>
     </div>
-    <p>求 \(x\) 给定 \(y\) 的 LMMSE 估计。</p>
+    <p>求 $x$ 给定 $y$ 的 LMMSE 估计。</p>
   </div>
 
   <!-- 3. 解题步骤 -->
   <div id="sec3" class="section-card">
     <h2>3. 解题步骤</h2>
-    <p>LMMSE 形式：\(\hat x = K^* y\)，公式 \(K^* = R_{xy}R_y^{-1}\)。</p>
+    <p>LMMSE 形式：$\hat x = K^* y$，公式 $K^* = R_{xy}R_y^{-1}$。</p>
 
-    <h3>步骤 1：计算 \(R_{xy}\)</h3>
+    <h3>步骤 1：计算 $R_{xy}$</h3>
     <div class="formula-box">
-      \[
+      $$
       R_{xy} = E[xy^T] = E[x(Hx+v)^T] = E[xx^T]H^T + E[xv^T]
-      \]
+      $$
     </div>
-    <p>由于 \(x\) 与 \(v\) 不相关：</p>
+    <p>由于 $x$ 与 $v$ 不相关：</p>
     <div class="formula-box">
-      \[
+      $$
       R_{xy} = R_x H^T
-      \]
+      $$
     </div>
 
-    <h3>步骤 2：计算 \(R_y\)</h3>
+    <h3>步骤 2：计算 $R_y$</h3>
     <div class="formula-box">
-      \[
+      $$
       R_y = E[yy^T] = E[(Hx+v)(Hx+v)^T] = H R_x H^T + R_v
-      \]
+      $$
     </div>
 
     <h3>步骤 3：代入</h3>
     <div class="formula-box" style="border-color: var(--accent); border-style: solid;">
-      \[
+      $$
       \hat x = R_x H^T (H R_x H^T + R_v)^{-1} y
-      \]
+      $$
     </div>
     <p>这就是线性测量模型下 LMMSE 的一般公式。</p>
   </div>
@@ -150,18 +154,18 @@ lead-grid">
     <div class="grid-2">
       <div class="mini-card">
         <h4>✅ 测量完美</h4>
-        <p>若 \(H=I,\; v=0\)，则 \(y=x\)：</p>
-        \[
+        <p>若 $H=I,\; v=0$，则 $y=x$：</p>
+        $$
         \hat x = y
-        \]
+        $$
         <p style="font-size:0.85rem;color:var(--text-secondary)">完全相信测量。</p>
       </div>
       <div class="mini-card">
         <h4>❌ 测量全是噪声</h4>
-        <p>若 \(y\) 和 \(x\) 无关：</p>
-        \[
+        <p>若 $y$ 和 $x$ 无关：</p>
+        $$
         \hat x = 0
-        \]
+        $$
         <p style="font-size:0.85rem;color:var(--text-secondary)">回到先验均值。</p>
       </div>
     </div>
@@ -174,24 +178,24 @@ lead-grid">
   <!-- 5. 随机过程积分估计 -->
   <div id="sec5" class="section-card">
     <h2>5. 【课堂例题】随机过程积分估计</h2>
-    <p>设 \(\{y(t)\}\) 是零均值平稳随机过程，自协方差：</p>
+    <p>设 $\{y(t)\}$ 是零均值平稳随机过程，自协方差：</p>
     <div class="formula-box">
-      \[
+      $$
       R_y(\tau) = E[y(t)\,y(t-\tau)]
-      \]
+      $$
     </div>
-    <p>目标：估计 \(X = \int_0^T y(t)dt\)，给定测量 \(y(0), y(T)\)。</p>
+    <p>目标：估计 $X = \int_0^T y(t)dt$，给定测量 $y(0), y(T)$。</p>
     <p>线性估计：</p>
     <div class="formula-box">
-      \[
+      $$
       \hat X = k_1 y(0) + k_2 y(T)
-      \]
+      $$
     </div>
     <p>根据正交原理，误差与每个测量正交：</p>
     <div class="flow-formula">
-      \[
+      $$
       X - \hat X \perp y(0), \qquad X - \hat X \perp y(T)
-      \]
+      $$
     </div>
   </div>
 
@@ -200,25 +204,25 @@ lead-grid">
     <h2>6. 列方程</h2>
     <p>第一个正交条件：</p>
     <div class="formula-box">
-      \[
+      $$
       \left\langle \int_0^T y(t)dt - k_1 y(0) - k_2 y(T),\; y(0) \right\rangle = 0
-      \]
+      $$
     </div>
     <p>得到：</p>
     <div class="formula-box">
-      \[
+      $$
       k_1 R_y(0) + k_2 R_y(T) = \int_0^T R_y(t) dt
-      \]
+      $$
     </div>
     <p>第二个正交条件：</p>
     <div class="formula-box">
-      \[
+      $$
       k_1 R_y(T) + k_2 R_y(0) = \int_0^T R_y(T-t) dt
-      \]
+      $$
     </div>
     <p>矩阵形式：</p>
     <div class="formula-box">
-      \[
+      $$
       \begin{bmatrix}
       k_1 \\ k_2
       \end{bmatrix}
@@ -228,10 +232,10 @@ lead-grid">
       R_y(T) & R_y(0)
       \end{bmatrix}^{-1}
       \begin{bmatrix}
-      \int_0^T R_y(t) dt \\[4pt]
+      \int_0^T R_y(t) dt \$$4pt]
       \int_0^T R_y(T-t) dt
       \end{bmatrix}
-      \]
+      $$
     </div>
     <p>这正是用正交原理列方程求解增益的典型过程。</p>
   </div>
@@ -239,7 +243,7 @@ lead-grid">
   <!-- 7. Gram-Schmidt -->
   <div id="sec7" class="section-card">
     <h2>7. Gram-Schmidt 正交化</h2>
-    <p>给定一组向量 \(v_1,\ldots,v_n\)，目标是构造一组正交向量 \(u_1,\ldots,u_n\)。</p>
+    <p>给定一组向量 $v_1,\ldots,v_n$，目标是构造一组正交向量 $u_1,\ldots,u_n$。</p>
     <div class="callout">
       <p><strong>🧠 核心思想</strong></p>
       <p>新向量减去它在旧方向上的投影，剩下的就是新的正交方向。</p>
@@ -249,23 +253,23 @@ lead-grid">
   <!-- 8. 投影公式 -->
   <div id="sec8" class="section-card">
     <h2>8. 投影公式</h2>
-    <p>向量 \(v\) 在 \(u\) 上的投影：</p>
+    <p>向量 $v$ 在 $u$ 上的投影：</p>
     <div class="formula-box">
-      \[
+      $$
       \operatorname{Proj}_u(v) = \frac{\langle v,u \rangle}{\langle u,u \rangle} u
-      \]
+      $$
     </div>
     <p>Gram-Schmidt 过程：</p>
     <div class="formula-box">
-      \[
+      $$
       \begin{aligned}
       u_1 &= v_1 \\
       u_2 &= v_2 - \operatorname{Proj}_{u_1}(v_2) \\
       u_3 &= v_3 - \operatorname{Proj}_{u_1}(v_3) - \operatorname{Proj}_{u_2}(v_3)
       \end{aligned}
-      \]
+      $$
     </div>
-    <p>归一化：\(e_i = \frac{u_i}{\|u_i\|}\)。</p>
+    <p>归一化：$e_i = \frac{u_i}{\|u_i\|}$。</p>
   </div>
 
   <!-- 9. 二维 Gram-Schmidt -->
@@ -273,60 +277,60 @@ lead-grid">
     <h2>9. 【补充例题】二维 Gram-Schmidt</h2>
     <p>设：</p>
     <div class="formula-box">
-      \[
+      $$
       v_1 = \begin{bmatrix}1 \\ 0\end{bmatrix},\quad
       v_2 = \begin{bmatrix}1 \\ 1\end{bmatrix}
-      \]
+      $$
     </div>
     <p>则：</p>
     <div class="formula-box">
-      \[
+      $$
       u_1 = v_1 = \begin{bmatrix}1 \\ 0\end{bmatrix}
-      \]
+      $$
     </div>
     <p>投影：</p>
     <div class="formula-box">
-      \[
+      $$
       \operatorname{Proj}_{u_1}(v_2) = \frac{v_2^T u_1}{u_1^T u_1} u_1 = 1 \cdot \begin{bmatrix}1 \\ 0\end{bmatrix}
-      \]
+      $$
     </div>
     <p>所以：</p>
     <div class="formula-box">
-      \[
+      $$
       u_2 = \begin{bmatrix}1 \\ 1\end{bmatrix} - \begin{bmatrix}1 \\ 0\end{bmatrix} = \begin{bmatrix}0 \\ 1\end{bmatrix}
-      \]
+      $$
     </div>
-    <p>得到正交方向 \((1,0)\) 和 \((0,1)\)。</p>
+    <p>得到正交方向 $(1,0)$ 和 $(0,1)$。</p>
   </div>
 
   <!-- 10. 三类估计问题 -->
   <div id="sec10" class="section-card">
     <h2>10. 三类估计问题</h2>
-    <p>考虑不可观测状态 \(x_1,x_2,\ldots\) 和观测 \(y_1,y_2,\ldots\)：</p>
+    <p>考虑不可观测状态 $x_1,x_2,\ldots$ 和观测 $y_1,y_2,\ldots$：</p>
 
     <div class="grid-3">
       <div class="mini-card" style="border-left: 4px solid var(--accent);">
         <h4>🔙 Smoothing</h4>
         <p>用未来和过去的测量估计过去状态：</p>
-        \[
+        $$
         \{y_1,\ldots,y_N\} \to x_t,\quad t < N
-        \]
+        $$
         <p style="font-size:0.85rem;color:var(--text-secondary)">平滑/后处理</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid var(--accent);">
         <h4>🔄 Filtering</h4>
         <p>用当前及过去测量估计当前状态：</p>
-        \[
+        $$
         \{y_1,\ldots,y_t\} \to x_t
-        \]
+        $$
         <p style="font-size:0.85rem;color:var(--text-secondary)">实时估计</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid var(--accent);">
         <h4>🔮 Prediction</h4>
         <p>用当前及过去测量预测未来状态：</p>
-        \[
+        $$
         \{y_1,\ldots,y_j\} \to x_t,\quad t > j
-        \]
+        $$
         <p style="font-size:0.85rem;color:var(--text-secondary)">预测/预报</p>
       </div>
     </div>
@@ -342,11 +346,11 @@ lead-grid">
 
     <div class="interactive-card">
       <h3>问题 1</h3>
-      <p>\(y = Hx + v\) 中为什么 \(R_y = H R_x H^T + R_v\)？</p>
+      <p>$y = Hx + v$ 中为什么 $R_y = H R_x H^T + R_v$？</p>
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>因为 \(y = Hx + v\)，且 \(x\) 与 \(v\) 不相关，所以 \(R_y = E[(Hx+v)(Hx+v)^T] = H E[xx^T] H^T + E[vv^T] = H R_x H^T + R_v\)。交叉项 \(E[xv^T]\) 和 \(E[vx^T]\) 为零。</p>
+          <p>因为 $y = Hx + v$，且 $x$ 与 $v$ 不相关，所以 $R_y = E[(Hx+v)(Hx+v)^T] = H E[xx^T] H^T + E[vv^T] = H R_x H^T + R_v$。交叉项 $E[xv^T]$ 和 $E[vx^T]$ 为零。</p>
         </div>
       </details>
     </div>

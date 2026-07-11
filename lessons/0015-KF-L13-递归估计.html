@@ -7,8 +7,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
 <link rel="stylesheet" href="assets/shiclass.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
 </head>
 <body>
 <div class="page">
@@ -72,44 +76,44 @@ lead-grid">
   <!-- 1. 直接 LMMSE 的计算问题 -->
   <div id="sec1" class="section-card">
     <h2>1. 直接 LMMSE 的计算问题</h2>
-    <p>假设用 \(y_1,\ldots,y_t\) 估计 \(X\)。堆叠测量：</p>
+    <p>假设用 $y_1,\ldots,y_t$ 估计 $X$。堆叠测量：</p>
     <div class="formula-box">
-      \[
+      $$
       Y_t = \begin{bmatrix} y_1 \\ y_2 \\ \vdots \\ y_t \end{bmatrix}
-      \]
+      $$
     </div>
     <p>LMMSE：</p>
     <div class="formula-box">
-      \[
+      $$
       \hat X_t = K_t Y_t,\quad K_t = R_{XY_t}R_{Y_t}^{-1}
-      \]
+      $$
     </div>
     <div class="callout" style="border-left-color: #ef4444;">
       <p><strong>⚠️ 计算瓶颈</strong></p>
-      <p>\(t\) 越大，\(R_{Y_t}\) 越大，求逆越来越贵，计算复杂度大约 \(O(t^3)\)。这就是为什么不能简单堆叠所有历史测量。</p>
+      <p>$t$ 越大，$R_{Y_t}$ 越大，求逆越来越贵，计算复杂度大约 $O(t^3)$。这就是为什么不能简单堆叠所有历史测量。</p>
     </div>
   </div>
 
   <!-- 2. 如果测量互相独立 -->
   <div id="sec2" class="section-card">
     <h2>2. 如果测量互相独立</h2>
-    <p>如果 \(y_1,\ldots,y_t\) 彼此不相关，\(R_{Y_t}\) 是块对角矩阵：</p>
+    <p>如果 $y_1,\ldots,y_t$ 彼此不相关，$R_{Y_t}$ 是块对角矩阵：</p>
     <div class="formula-box">
-      \[
+      $$
       R_{Y_t} = \begin{bmatrix}
       R_{Y_{t-1}} & 0 \\
       0 & R_t
       \end{bmatrix}
-      \]
+      $$
     </div>
     <p>求逆很简单：</p>
     <div class="formula-box">
-      \[
+      $$
       R_{Y_t}^{-1} = \begin{bmatrix}
       R_{Y_{t-1}}^{-1} & 0 \\
       0 & R_t^{-1}
       \end{bmatrix}
-      \]
+      $$
     </div>
     <p>但现实中测量往往相关，所以需要新技巧将相关测量转化为独立形式。</p>
   </div>
@@ -117,30 +121,30 @@ lead-grid">
   <!-- 3. 新息的想法 -->
   <div id="sec3" class="section-card">
     <h2>3. 新息（Innovation）的想法</h2>
-    <p>如果新测量 \(y_{k+1}\) 中有一部分已经能由旧测量解释，那么这部分不是真正的新信息。</p>
+    <p>如果新测量 $y_{k+1}$ 中有一部分已经能由旧测量解释，那么这部分不是真正的新信息。</p>
     <div class="callout">
       <p><strong>💡 定义</strong></p>
       <p>新息 = 新测量中，旧信息解释不了的部分。</p>
     </div>
     <p>公式：</p>
     <div class="formula-box">
-      \[
+      $$
       e_{k+1} = y_{k+1} - \operatorname{Proj}_{L_k}(y_{k+1})
-      \]
+      $$
     </div>
-    <p>其中 \(L_k = \operatorname{span}\{e_1,\ldots,e_k\}\)。</p>
+    <p>其中 $L_k = \operatorname{span}\{e_1,\ldots,e_k\}$。</p>
   </div>
 
   <!-- 4. Gram-Schmidt 生成新息 -->
   <div id="sec4" class="section-card">
     <h2>4. Gram-Schmidt 生成新息</h2>
-    <p>假设已有正交新息 \(e_1,\ldots,e_k\)，则：</p>
+    <p>假设已有正交新息 $e_1,\ldots,e_k$，则：</p>
     <div class="formula-box">
-      \[
+      $$
       e_{k+1} = y_{k+1} - \sum_{j=1}^k \langle y_{k+1}, e_j \rangle \|e_j\|^{-2} e_j
-      \]
+      $$
     </div>
-    <p>这样得到的 \(e_{k+1}\) 与所有旧 \(e_j\) 正交。</p>
+    <p>这样得到的 $e_{k+1}$ 与所有旧 $e_j$ 正交。</p>
     <div class="callout">
       <p><strong>📖 理解</strong></p>
       <p>这本质上就是 Gram-Schmidt 过程在随机变量空间中的应用。每一步都从新测量中减去它在旧信息空间上的投影。</p>
@@ -152,9 +156,9 @@ lead-grid">
     <h2>5. 为什么不丢信息</h2>
     <p>Gram-Schmidt 只是换基，不改变张成空间：</p>
     <div class="formula-box">
-      \[
+      $$
       \operatorname{span}\{y_1,\ldots,y_t\} = \operatorname{span}\{e_1,\ldots,e_t\}
-      \]
+      $$
     </div>
     <div class="callout">
       <p><strong>✅ 关键</strong></p>
@@ -167,21 +171,21 @@ lead-grid">
     <h2>6. 递归估计自然出现</h2>
     <p>投影到新息空间：</p>
     <div class="formula-box">
-      \[
+      $$
       \hat X_{k+1} = \sum_{j=1}^{k+1} \langle X, e_j \rangle \|e_j\|^{-2} e_j
-      \]
+      $$
     </div>
     <p>拆开最后一项：</p>
     <div class="formula-box">
-      \[
+      $$
       \hat X_{k+1} = \sum_{j=1}^{k} \langle X, e_j \rangle \|e_j\|^{-2} e_j + \langle X, e_{k+1} \rangle \|e_{k+1}\|^{-2} e_{k+1}
-      \]
+      $$
     </div>
-    <p>前半部分就是旧估计 \(\hat X_k\)，所以：</p>
+    <p>前半部分就是旧估计 $\hat X_k$，所以：</p>
     <div class="formula-box" style="border-color: var(--accent); border-style: solid;">
-      \[
+      $$
       \hat X_{k+1} = \hat X_k + \langle X, e_{k+1} \rangle \|e_{k+1}\|^{-2} e_{k+1}
-      \]
+      $$
     </div>
     <div class="callout">
       <p><strong>🔄 递归形式</strong></p>
@@ -194,9 +198,9 @@ lead-grid">
     <h2>7. 【补充例题】预测值和实际值</h2>
     <p>假设你预测今天温度是 25°C，传感器测到 27°C。</p>
     <div class="formula-box">
-      \[
+      $$
       e = 27 - 25 = 2
-      \]
+      $$
     </div>
     <div class="callout">
       <p><strong>🌡️ 直觉</strong></p>
@@ -207,11 +211,11 @@ lead-grid">
   <!-- 8. 随机变量空间增长 -->
   <div id="sec8" class="section-card">
     <h2>8. 随机变量空间为什么会增长</h2>
-    <p>不要把 \(y_k\) 的取值维度和随机变量空间维度混淆。即使每个 \(y_k\) 是标量，它们也是不同时间的随机变量：</p>
+    <p>不要把 $y_k$ 的取值维度和随机变量空间维度混淆。即使每个 $y_k$ 是标量，它们也是不同时间的随机变量：</p>
     <div class="flow-formula">
-      \[
+      $$
       y_1, y_2, \ldots
-      \]
+      $$
     </div>
     <div class="callout">
       <p><strong>💡 通俗解释</strong></p>
@@ -224,21 +228,21 @@ lead-grid">
     <h2>9. 新息和 Kalman Filter</h2>
     <p>Kalman Filter 中的新息写作：</p>
     <div class="formula-box">
-      \[
+      $$
       e_k = y_k - C\hat x_{k|k-1}
-      \]
+      $$
     </div>
     <p>其中：</p>
     <ul>
-      <li>\(y_k\) 是实际测量</li>
-      <li>\(C\hat x_{k|k-1}\) 是根据过去信息预测的测量</li>
-      <li>差值 \(e_k\) 是当前测量带来的<strong>新信息</strong></li>
+      <li>$y_k$ 是实际测量</li>
+      <li>$C\hat x_{k|k-1}$ 是根据过去信息预测的测量</li>
+      <li>差值 $e_k$ 是当前测量带来的<strong>新信息</strong></li>
     </ul>
     <p>更新形式：</p>
     <div class="formula-box">
-      \[
+      $$
       \hat x_{k|k} = \hat x_{k|k-1} + K_k e_k
-      \]
+      $$
     </div>
     <p>这正是"旧估计 + 新息修正"在 Kalman Filter 中的具体体现。</p>
   </div>
@@ -253,7 +257,7 @@ lead-grid">
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>因为每次需要计算 \(R_{Y_t}^{-1}\)，矩阵大小随测量数量增长，求逆复杂度为 \(O(t^3)\)。递归方法只需常数计算量，与历史长度无关。</p>
+          <p>因为每次需要计算 $R_{Y_t}^{-1}$，矩阵大小随测量数量增长，求逆复杂度为 $O(t^3)$。递归方法只需常数计算量，与历史长度无关。</p>
         </div>
       </details>
     </div>

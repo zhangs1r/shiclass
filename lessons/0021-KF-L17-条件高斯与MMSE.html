@@ -7,8 +7,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
 <link rel="stylesheet" href="assets/shiclass.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
 </head>
 <body>
 <div class="page">
@@ -76,7 +80,7 @@ lead-grid">
 
     <div class="callout">
       <p><strong>❓ 核心问题</strong></p>
-      <p>在线性高斯系统中，LMMSE 是否等于 MMSE（最小均方误差估计，即条件均值 \\(E[x_k | y_0, \\dots, y_k]\\)）？</p>
+      <p>在线性高斯系统中，LMMSE 是否等于 MMSE（最小均方误差估计，即条件均值 \$E[x_k | y_0, \\dots, y_k]\$）？</p>
     </div>
 
     <p>回答这个问题至关重要：</p>
@@ -85,66 +89,66 @@ lead-grid">
       <li>如果 <strong>否</strong>：那么我们可能需要寻找非线性方法来做更好的估计</li>
     </ul>
 
-    <p>本讲将用<strong>概率方法（条件高斯分布）</strong>来回答这个问题。顺便，我们也会在系统模型中引入<strong>控制输入</strong> \\(B u_k\\)。</p>
+    <p>本讲将用<strong>概率方法（条件高斯分布）</strong>来回答这个问题。顺便，我们也会在系统模型中引入<strong>控制输入</strong> \$B u_k\$。</p>
   </div>
 
   <!-- 2. 系统模型 -->
   <div id="sec2" class="section-card">
     <h2>2. 系统模型与符号体系（含控制输入）</h2>
 
-    <p>现在我们将控制输入 \\(u_k\\) 加入到系统模型中：</p>
+    <p>现在我们将控制输入 \$u_k\$ 加入到系统模型中：</p>
 
     <div class="grid-2">
       <div class="mini-card" style="border-left: 4px solid var(--accent);">
         <h4>状态方程</h4>
-        \\[
+        \$$
         x_{k+1} = A x_k + B u_k + w_k
-        \\]
-        <p style="font-size:0.85rem">\\(w_k \\sim N(0, Q)\\)，\\(x_0 \\sim N(\\bar x_0, \\Pi_0)\\)</p>
+        \$$
+        <p style="font-size:0.85rem">\$w_k \\sim N(0, Q)\$，\$x_0 \\sim N(\\bar x_0, \\Pi_0)\$</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid var(--accent);">
         <h4>测量方程</h4>
-        \\[
+        \$$
         y_k = C x_k + v_k
-        \\]
-        <p style="font-size:0.85rem">\\(v_k \\sim N(0, R)\\)，与 \\(w_k\\)、\\(x_0\\) 独立</p>
+        \$$
+        <p style="font-size:0.85rem">\$v_k \\sim N(0, R)\$，与 \$w_k\$、\$x_0\$ 独立</p>
       </div>
     </div>
 
     <h3>符号体系</h3>
     <p>定义信息集合：</p>
     <div class="formula-box">
-      \\[
+      \$$
       Y_k = \\{y_0, y_1, \\dots, y_k\\}, \\quad
       U_k = \\{u_0, u_1, \\dots, u_k\\}
-      \\]
+      \$$
     </div>
 
     <p>MMSE 估计定义为条件均值：</p>
     <div class="grid-2">
       <div class="mini-card">
         <h4>估计</h4>
-        \\[
+        \$$
         \\hat x_{k|k} = E[x_k \\mid Y_k, U_{k-1}]
-        \\]
-        \\[
+        \$$
+        \$$
         P_{k|k} = \\text{Cov}[x_k \\mid Y_k, U_{k-1}]
-        \\]
+        \$$
       </div>
       <div class="mini-card">
         <h4>预测</h4>
-        \\[
+        \$$
         \\hat x_{k|k-1} = E[x_k \\mid Y_{k-1}, U_{k-1}]
-        \\]
-        \\[
+        \$$
+        \$$
         P_{k|k-1} = \\text{Cov}[x_k \\mid Y_{k-1}, U_{k-1}]
-        \\]
+        \$$
       </div>
     </div>
 
     <div class="callout">
-      <p><strong>💡 关于 \\(U_{k-1}\\) 的说明</strong></p>
-      <p>为什么是 \\(U_{k-1}\\) 而不是 \\(U_k\\)？因为 \\(u_k\\) 是在估计 \\(x_k\\) 之后才施加的控制，它影响的是 \\(x_{k+1}\\)，而不是 \\(x_k\\)。所以估计 \\(x_k\\) 时只能用过去的控制输入。</p>
+      <p><strong>💡 关于 \$U_{k-1}\$ 的说明</strong></p>
+      <p>为什么是 \$U_{k-1}\$ 而不是 \$U_k\$？因为 \$u_k\$ 是在估计 \$x_k\$ 之后才施加的控制，它影响的是 \$x_{k+1}\$，而不是 \$x_k\$。所以估计 \$x_k\$ 时只能用过去的控制输入。</p>
     </div>
   </div>
 
@@ -155,47 +159,47 @@ lead-grid">
     <p>这是整个概率方法推导 KF 的核心定理：</p>
 
     <div class="formula-box">
-      <p><strong>定理：</strong>设 \\(X\\) 和 \\(Y\\) 联合高斯：</p>
-      \\[
+      <p><strong>定理：</strong>设 \$X\$ 和 \$Y\$ 联合高斯：</p>
+      \$$
       \\begin{bmatrix} X \\\\ Y \\end{bmatrix} \\sim N\\left(
       \\begin{bmatrix} \\bar x \\\\ \\bar y \\end{bmatrix},\\;
       \\begin{bmatrix} \\Sigma_x & \\Sigma_{xy} \\\\ \\Sigma_{yx} & \\Sigma_y \\end{bmatrix}
       \\right)
-      \\]
+      \$$
     </div>
 
-    <p>则在给定 \\(Y = y\\) 条件下，\\(X\\) 仍然是高斯分布：</p>
+    <p>则在给定 \$Y = y\$ 条件下，\$X\$ 仍然是高斯分布：</p>
 
     <div class="formula-box">
-      \\[
+      \$$
       \\boxed{\\mu_{x|y=y} = \\bar x + \\Sigma_{xy} \\Sigma_y^{-1} (y - \\bar y)}
-      \\]
-      \\[
+      \$$
+      \$$
       \\boxed{\\Sigma_{x|y=y} = \\Sigma_x - \\Sigma_{xy} \\Sigma_y^{-1} \\Sigma_{yx}}
-      \\]
+      \$$
     </div>
 
     <h3>特例验证</h3>
     <div class="grid-2">
       <div class="mini-card">
-        <h4>① \\(X = Y\\) 时</h4>
-        \\[
+        <h4>① \$X = Y\$ 时</h4>
+        \$$
         \\mu_{x|y=y} = y,\\quad \\Sigma_{x|y=y} = 0
-        \\]
+        \$$
         <p style="font-size:0.85rem">完全确定，不确定性降为零。</p>
       </div>
       <div class="mini-card">
-        <h4>② \\(X \\perp Y\\) 时</h4>
-        \\[
+        <h4>② \$X \\perp Y\$ 时</h4>
+        \$$
         \\mu_{x|y=y} = \\bar x,\\quad \\Sigma_{x|y=y} = \\Sigma_x
-        \\]
+        \$$
         <p style="font-size:0.85rem">Y 不提供 X 的任何信息。</p>
       </div>
     </div>
 
     <div class="callout">
       <p><strong>🎯 重要意义</strong></p>
-      <p>注意条件均值 \\(\\bar x + \\Sigma_{xy} \\Sigma_y^{-1} (y - \\bar y)\\) 是 \\(y\\) 的<strong>线性函数</strong>。而 LMMSE 是在所有线性估计器中最小化 MSE 的解——它就是那个线性函数！所以在线性高斯系统中，MMSE = LMMSE。</p>
+      <p>注意条件均值 \$\\bar x + \\Sigma_{xy} \\Sigma_y^{-1} (y - \\bar y)\$ 是 \$y\$ 的<strong>线性函数</strong>。而 LMMSE 是在所有线性估计器中最小化 MSE 的解——它就是那个线性函数！所以在线性高斯系统中，MMSE = LMMSE。</p>
     </div>
   </div>
 
@@ -203,38 +207,38 @@ lead-grid">
   <div id="sec4" class="section-card">
     <h2>4. Time Update（概率法）</h2>
 
-    <p>给定 \\(\\hat x_{k-1|k-1}\\) 和 \\(P_{k-1|k-1}\\)，计算预测：</p>
+    <p>给定 \$\\hat x_{k-1|k-1}\$ 和 \$P_{k-1|k-1}\$，计算预测：</p>
 
     <h3>预测均值</h3>
     <div class="formula-box">
-      \\[
+      \$$
       \\begin{aligned}
       \\hat x_{k|k-1} &= E[x_k \\mid Y_{k-1}, U_{k-1}] \\\\\\\\
       &= E[A x_{k-1} + B u_{k-1} + w_{k-1} \\mid Y_{k-1}, U_{k-1}] \\\\\\\\
       &= A E[x_{k-1} \\mid Y_{k-1}, U_{k-1}] + B u_{k-1} + E[w_{k-1} \\mid Y_{k-1}, U_{k-1}] \\\\\\\\
       &= A \\hat x_{k-1|k-1} + B u_{k-1}
       \\end{aligned}
-      \\]
+      \$$
     </div>
 
-    <p>其中 \\(E[w_{k-1} \\mid Y_{k-1}, U_{k-1}] = 0\\) 因为 \\(w_{k-1}\\) 与历史信息不相关（零均值高斯，且独立于所有历史信息）。</p>
+    <p>其中 \$E[w_{k-1} \\mid Y_{k-1}, U_{k-1}] = 0\$ 因为 \$w_{k-1}\$ 与历史信息不相关（零均值高斯，且独立于所有历史信息）。</p>
 
     <h3>预测协方差</h3>
     <div class="formula-box">
-      \\[
+      \$$
       \\begin{aligned}
       P_{k|k-1} &= E\\big[(x_k - \\hat x_{k|k-1})(x_k - \\hat x_{k|k-1})' \\mid Y_{k-1}, U_{k-1}\\big] \\\\\\\\
       &= E\\big[(A \\tilde x_{k-1|k-1} + w_{k-1})(A \\tilde x_{k-1|k-1} + w_{k-1})' \\mid Y_{k-1}, U_{k-1}\\big] \\\\\\\\
       &= A P_{k-1|k-1} A' + Q
       \\end{aligned}
-      \\]
+      \$$
     </div>
 
-    <p>交叉项 \\(E[\\tilde x_{k-1|k-1} w_{k-1}'] = 0\\) 因为 \\(w_{k-1}\\) 与历史信息独立。</p>
+    <p>交叉项 \$E[\\tilde x_{k-1|k-1} w_{k-1}'] = 0\$ 因为 \$w_{k-1}\$ 与历史信息独立。</p>
 
     <div class="callout">
       <p><strong>📌 关键观察</strong></p>
-      <p>控制输入 \\(B u_k\\) 只影响预测均值，不影响预测协方差。这意味着控制与估计可以<strong>分离</strong>（Separation Principle）——设计控制器时可以暂时忽略估计误差。</p>
+      <p>控制输入 \$B u_k\$ 只影响预测均值，不影响预测协方差。这意味着控制与估计可以<strong>分离</strong>（Separation Principle）——设计控制器时可以暂时忽略估计误差。</p>
     </div>
   </div>
 
@@ -242,13 +246,13 @@ lead-grid">
   <div id="sec5" class="section-card">
     <h2>5. Measurement Update（概率法）</h2>
 
-    <p>给定 \\(\\hat x_{k|k-1}\\) 和 \\(P_{k|k-1}\\)，新的测量 \\(y_k\\) 到来。我们需要找到 \\(E[x_k \\mid Y_k, U_{k-1}]\\)。</p>
+    <p>给定 \$\\hat x_{k|k-1}\$ 和 \$P_{k|k-1}\$，新的测量 \$y_k\$ 到来。我们需要找到 \$E[x_k \\mid Y_k, U_{k-1}]\$。</p>
 
     <h3>步骤 1：构造联合高斯分布</h3>
-    <p>在给定 \\(Y_{k-1}, U_{k-1}\\) 的条件下，\\(x_k\\) 和 \\(y_k\\) 是联合高斯的：</p>
+    <p>在给定 \$Y_{k-1}, U_{k-1}\$ 的条件下，\$x_k\$ 和 \$y_k\$ 是联合高斯的：</p>
 
     <div class="formula-box">
-      \\[
+      \$$
       \\begin{aligned}
       E[x_k \\mid \\cdot] &= \\hat x_{k|k-1} \\\\
       E[y_k \\mid \\cdot] &= C \\hat x_{k|k-1} \\\\
@@ -256,17 +260,17 @@ lead-grid">
       \\text{Cov}[y_k \\mid \\cdot] &= C P_{k|k-1} C' + R \\\\
       \\text{Cov}[x_k, y_k \\mid \\cdot] &= P_{k|k-1} C'
       \\end{aligned}
-      \\]
+      \$$
     </div>
 
     <h3>步骤 2：代入条件高斯公式</h3>
     <div class="formula-box">
-      \\[
+      \$$
       \\begin{aligned}
       \\hat x_{k|k} &= \\hat x_{k|k-1} + P_{k|k-1} C' [C P_{k|k-1} C' + R]^{-1} (y_k - C \\hat x_{k|k-1}) \\\\\\\\
       P_{k|k} &= P_{k|k-1} - P_{k|k-1} C' [C P_{k|k-1} C' + R]^{-1} C P_{k|k-1}
       \\end{aligned}
-      \\]
+      \$$
     </div>
 
     <p>与几何方法得到的表达式完全一致！</p>
@@ -290,7 +294,7 @@ lead-grid">
 
     <h3>证明思路</h3>
     <ol>
-      <li><strong>MMSE 定义</strong>：\\(\\hat x_{k|k}^{\\text{MMSE}} = E[x_k \\mid Y_k, U_{k-1}]\\)，即条件均值</li>
+      <li><strong>MMSE 定义</strong>：\$\\hat x_{k|k}^{\\text{MMSE}} = E[x_k \\mid Y_k, U_{k-1}]\$，即条件均值</li>
       <li><strong>条件高斯公式</strong>告诉我们，条件均值是测量的<strong>线性函数</strong></li>
       <li><strong>LMMSE 定义</strong>：在所有的<strong>线性</strong>估计器中找均方误差最小的那个</li>
       <li>既然 MMSE 本身（条件均值）已经是线性函数，那么它恰好就是 LMMSE 的最优解</li>
@@ -315,7 +319,7 @@ lead-grid">
 
     <div class="callout">
       <p><strong>🎯 所以结论是</strong></p>
-      <p>在线性高斯情况下，\\[\\hat x_{k|k}^{\\text{LMMSE}} = \\hat x_{k|k}^{\\text{MMSE}}\\]两者完美重合。这在非高斯系统中一般不成立——非高斯条件下 MMSE 通常严格小于 LMMSE（因为 MMSE 在所有估计器中最优，而 LMMSE 只在线性估计器中最优）。这就是为什么 KF 在高斯假设下如此强大的原因。</p>
+      <p>在线性高斯情况下，\$$\\hat x_{k|k}^{\\text{LMMSE}} = \\hat x_{k|k}^{\\text{MMSE}}\$$两者完美重合。这在非高斯系统中一般不成立——非高斯条件下 MMSE 通常严格小于 LMMSE（因为 MMSE 在所有估计器中最优，而 LMMSE 只在线性估计器中最优）。这就是为什么 KF 在高斯假设下如此强大的原因。</p>
     </div>
   </div>
 
@@ -332,23 +336,23 @@ lead-grid">
         <li><strong>估计器设计</strong>：设计 KF 估计状态（不依赖于控制目标）</li>
         <li><strong>控制器设计</strong>：假设状态完全已知，设计反馈控制器（不依赖于噪声统计）</li>
       </ol>
-      <p>两者结合即为最优：\\(u_k = -F \\hat x_{k|k}\\)</p>
+      <p>两者结合即为最优：\$u_k = -F \\hat x_{k|k}\$</p>
     </div>
 
-    <p>为什么控制输入不影响协方差？因为在给定 \\(U_{k-1}\\) 条件下，\\(B u_{k-1}\\) 是<strong>确定性的</strong>确定量——它不引入随机性，不影响误差和协方差。</p>
+    <p>为什么控制输入不影响协方差？因为在给定 \$U_{k-1}\$ 条件下，\$B u_{k-1}\$ 是<strong>确定性的</strong>确定量——它不引入随机性，不影响误差和协方差。</p>
 
     <div class="grid-2">
       <div class="mini-card" style="border-left: 4px solid #22c55e;">
         <h4>🧠 估计器</h4>
-        <p>KF 处理不确定性，提供最优状态估计 \\(\\hat x_{k|k}\\)</p>
+        <p>KF 处理不确定性，提供最优状态估计 \$\\hat x_{k|k}\$</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #3b82f6;">
         <h4>🎮 控制器</h4>
-        <p>LQR 等控制器假定状态已知，设计最优反馈 \\(u_k = -F x_k\\)</p>
+        <p>LQR 等控制器假定状态已知，设计最优反馈 \$u_k = -F x_k\$</p>
       </div>
     </div>
 
-    <p>结合时，将估计值代入控制器：\\(u_k = -F \\hat x_{k|k}\\)。这就是 <strong>LQG 控制（Linear Quadratic Gaussian control）</strong>的核心结构。</p>
+    <p>结合时，将估计值代入控制器：\$u_k = -F \\hat x_{k|k}\$。这就是 <strong>LQG 控制（Linear Quadratic Gaussian control）</strong>的核心结构。</p>
   </div>
 
   <!-- 自测题 -->
@@ -368,11 +372,11 @@ lead-grid">
 
     <div class="interactive-card">
       <h3>问题 2</h3>
-      <p>控制输入 \\(B u_k\\) 对 KF 的协方差 \\(P_{k|k}\\) 有影响吗？为什么？</p>
+      <p>控制输入 \$B u_k\$ 对 KF 的协方差 \$P_{k|k}\$ 有影响吗？为什么？</p>
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>没有影响。控制输入 \\(B u_k\\) 在给定 \\(U_{k-1}\\) 条件下是确定量，它只影响预测均值，不影响误差和协方差。这是 Separation Principle 的基础——控制律设计和估计器设计可以独立进行。</p>
+          <p>没有影响。控制输入 \$B u_k\$ 在给定 \$U_{k-1}\$ 条件下是确定量，它只影响预测均值，不影响误差和协方差。这是 Separation Principle 的基础——控制律设计和估计器设计可以独立进行。</p>
         </div>
       </details>
     </div>
