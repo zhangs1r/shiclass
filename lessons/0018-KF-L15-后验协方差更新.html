@@ -58,7 +58,7 @@ lead-grid">
     </div>
     <div class="callout">
       <p><strong>🔑 核心思想</strong></p>
-      <p>将状态 $x_{k}$ 投影到 $\mathcal{L}_k$ 上，利用 $\mathcal{L}_k = \\mathcal{L}_{k-1} \\oplus \\text{span}\\{e_{k}\\}$ 的直和分解，将投影分解为历史投影 + 新息方向上的修正。</p>
+      <p>将状态 $x_{k}$ 投影到 $\mathcal{L}_k$ 上，利用 $\mathcal{L}_k = \mathcal{L}_{k-1} \oplus \text{span}\{e_{k}\}$ 的直和分解，将投影分解为历史投影 + 新息方向上的修正。</p>
     </div>
   </div>
 
@@ -68,7 +68,7 @@ lead-grid">
     <ul>
       <li><a href="#sec1">1. 回顾：新息与新息协方差</a></li>
       <li><a href="#sec2">2. ③ - ④ 状态更新与 Kalman 增益证明</a></li>
-      <li><a href="#sec3">3. 交叉协方差 $\\langle x_{k}, e_{k} \\rangle$ 的计算</a></li>
+      <li><a href="#sec3">3. 交叉协方差 $\langle x_{k}, e_{k} \rangle$ 的计算</a></li>
       <li><a href="#sec4">4. Kalman 增益的几何解释</a></li>
       <li><a href="#sec5">5. ⑤ 后验协方差更新公式推导</a></li>
       <li><a href="#sec6">6. 后验协方差的紧凑形式</a></li>
@@ -87,7 +87,7 @@ lead-grid">
       <div class="mini-card" style="border-left: 4px solid #3b82f6;">
         <h4>① 新息</h4>
         $$
-        $e_{k} = y_{k} - C \\hat x_{k|k-1}$
+        $e_{k} = y_{k} - C \hat x_{k|k-1}$
         $$
         <p style="font-size:0.85rem">测量中的全新信息，正交于 $\mathcal{L}_{k-1}$</p>
       </div>
@@ -111,8 +111,8 @@ lead-grid">
 
     <div class="formula-box">
       $$
-      $\\boxed{\\hat x_{k|k} = \\hat x_{k|k-1} + K_{k} e_k}, \\qquad$
-      \\boxed{K_{k} = P_{k|k-1} C' R_{e,k}^{-1}}
+      $\boxed{\hat x_{k|k} = \hat x_{k|k-1} + K_{k} e_k}, \qquad$
+      \boxed{K_{k} = P_{k|k-1} C' R_{e,k}^{-1}}
       $$
     </div>
 
@@ -120,13 +120,13 @@ lead-grid">
     <p>新息 $e_{k}$ 与 $\mathcal{L}_{k-1}$ 正交，所以测量空间可以分解为直和：</p>
     <div class="formula-box">
       $$
-      $\\mathcal{L}_k = \\mathcal{L}_{k-1} \\oplus \\text{span}\\{e_{k}\\}$
+      $\mathcal{L}_k = \mathcal{L}_{k-1} \oplus \text{span}\{e_{k}\}$
       $$
     </div>
     <p>这意味着更新后的估计（投影到 $\mathcal{L}_k$ 上）可以拆成两部分之和：</p>
     <div class="formula-box">
       $$
-      $\\hat x_{k|k} = \\underbrace{\\text{proj}\\{x_{k} \\mid \\mathcal{L}_{k-1}\\}}_{\\hat x_{k|k-1}} + \\underbrace{\\text{proj}\\{x_{k} \\mid \\text{span}\\{e_{k}\\}\\}}_{\\text{新息修正}}$
+      $\hat x_{k|k} = \underbrace{\text{proj}\{x_{k} \mid \mathcal{L}_{k-1}\}}_{\hat x_{k|k-1}} + \underbrace{\text{proj}\{x_{k} \mid \text{span}\{e_{k}\}\}}_{\text{新息修正}}$
       $$
     </div>
 
@@ -138,36 +138,36 @@ lead-grid">
 
   <!-- 3. 交叉协方差 -->
   <div id="sec3" class="section-card">
-    <h2>3. 交叉协方差 $\\langle x_{k}, e_{k} \\rangle$ 的计算</h2>
+    <h2>3. 交叉协方差 $\langle x_{k}, e_{k} \rangle$ 的计算</h2>
 
     <p>为了计算 $x_{k}$ 在 $e_{k}$ 方向上的投影，我们需要知道 $x_{k}$ 与 $e_{k}$ 的交叉协方差：</p>
 
     <div class="formula-box">
       $$
-      \\begin{aligned}
-      $\\langle x_{k}, e_{k} \\rangle &= \\langle x_{k},\\; y_{k} - C \\hat x_{k|k-1} \\rangle \\\\\\\\$
-      $&= \\langle x_{k},\\; C \\tilde x_{k|k-1} + v_{k} \\rangle \\\\\\\\$
-      $&= \\langle x_{k}, C \\tilde x_{k|k-1} \\rangle + \\cancel{\\langle x_{k}, v_{k} \\rangle}$
-      \\end{aligned}
+      \begin{aligned}
+      $\langle x_{k}, e_{k} \rangle &= \langle x_{k},\\; y_{k} - C \hat x_{k|k-1} \rangle \\\\\\\\$
+      $&= \langle x_{k},\\; C \tilde x_{k|k-1} + v_{k} \rangle \\\\\\\\$
+      $&= \langle x_{k}, C \tilde x_{k|k-1} \rangle + \cancel{\langle x_{k}, v_{k} \rangle}$
+      \end{aligned}
       $$
     </div>
 
-    <p>将 $x_{k} = \\hat x_{k|k-1} + \\tilde x_{k|k-1}$ 代入：</p>
+    <p>将 $x_{k} = \hat x_{k|k-1} + \tilde x_{k|k-1}$ 代入：</p>
 
     <div class="formula-box">
       $$
-      \\begin{aligned}
-      $\\langle x_{k}, e_{k} \\rangle &= \\langle \\hat x_{k|k-1} + \\tilde x_{k|k-1},\\; C \\tilde x_{k|k-1} \\rangle \\\\\\\\$
-      $&= \\cancel{\\langle \\hat x_{k|k-1}, C \\tilde x_{k|k-1} \\rangle} + \\langle \\tilde x_{k|k-1}, C \\tilde x_{k|k-1} \\rangle$
-      \\end{aligned}
+      \begin{aligned}
+      $\langle x_{k}, e_{k} \rangle &= \langle \hat x_{k|k-1} + \tilde x_{k|k-1},\\; C \tilde x_{k|k-1} \rangle \\\\\\\\$
+      $&= \cancel{\langle \hat x_{k|k-1}, C \tilde x_{k|k-1} \rangle} + \langle \tilde x_{k|k-1}, C \tilde x_{k|k-1} \rangle$
+      \end{aligned}
       $$
     </div>
 
-    <p>其中 $\\langle \\hat x_{k|k-1}, \\tilde x_{k|k-1} \\rangle = 0$ 正是<strong>正交原理（Orthogonality Principle）</strong>——最优线性估计的误差与估计本身正交。</p>
+    <p>其中 $\langle \hat x_{k|k-1}, \tilde x_{k|k-1} \rangle = 0$ 正是<strong>正交原理（Orthogonality Principle）</strong>——最优线性估计的误差与估计本身正交。</p>
 
     <div class="formula-box">
       $$
-      $\\boxed{\\langle x_{k}, e_{k} \\rangle = P_{k|k-1} C'}$
+      $\boxed{\langle x_{k}, e_{k} \rangle = P_{k|k-1} C'}$
       $$
     </div>
 
@@ -182,12 +182,12 @@ lead-grid">
 
     <div class="formula-box">
       $$
-      \\begin{aligned}
-      $\\hat x_{k|k} &= \\text{proj}\\{x_{k} \\mid \\mathcal{L}_k\\} \\\\\\\\$
-      $&= \\sum_{j=0}^{k} \\langle x_{k}, e_{j} \\rangle \\|e_{j}\\|^{-2} e_{j} \\\\\\\\$
-      $&= \\underbrace{\\sum_{j=0}^{k-1} \\langle x_{k}, e_{j} \\rangle \\|e_{j}\\|^{-2} e_j}_{\\hat x_{k|k-1}} + \\langle x_{k}, e_{k} \\rangle \\|e_{k}\\|^{-2} e_{k} \\\\\\\\$
-      $&= \\hat x_{k|k-1} + P_{k|k-1} C' \\cdot R_{e,k}^{-1} \\cdot e_{k}$
-      \\end{aligned}
+      \begin{aligned}
+      $\hat x_{k|k} &= \text{proj}\{x_{k} \mid \mathcal{L}_k\} \\\\\\\\$
+      $&= \sum_{j=0}^{k} \langle x_{k}, e_{j} \rangle \\|e_{j}\\|^{-2} e_{j} \\\\\\\\$
+      $&= \underbrace{\sum_{j=0}^{k-1} \langle x_{k}, e_{j} \rangle \\|e_{j}\\|^{-2} e_j}_{\hat x_{k|k-1}} + \langle x_{k}, e_{k} \rangle \\|e_{k}\\|^{-2} e_{k} \\\\\\\\$
+      $&= \hat x_{k|k-1} + P_{k|k-1} C' \cdot R_{e,k}^{-1} \cdot e_{k}$
+      \end{aligned}
       $$
     </div>
 
@@ -195,7 +195,7 @@ lead-grid">
 
     <div class="formula-box">
       $$
-      \\boxed{K_{k} \\triangleq P_{k|k-1} C' R_{e,k}^{-1}}
+      \boxed{K_{k} \triangleq P_{k|k-1} C' R_{e,k}^{-1}}
       $$
     </div>
 
@@ -203,7 +203,7 @@ lead-grid">
 
     <div class="formula-box">
       $$
-      $\\boxed{\\hat x_{k|k} = \\hat x_{k|k-1} + K_{k} e_k}$
+      $\boxed{\hat x_{k|k} = \hat x_{k|k-1} + K_{k} e_k}$
       $$
     </div>
 
@@ -248,42 +248,42 @@ lead-grid">
     <h3>步骤 1：写出估计误差</h3>
     <div class="formula-box">
       $$
-      $\\tilde x_{k|k} = x_{k} - \\hat x_{k|k}$
-      $= x_{k} - (\\hat x_{k|k-1} + K_{k} e_{k})$
-      $= \\tilde x_{k|k-1} - K_{k} e_{k}$
+      $\tilde x_{k|k} = x_{k} - \hat x_{k|k}$
+      $= x_{k} - (\hat x_{k|k-1} + K_{k} e_{k})$
+      $= \tilde x_{k|k-1} - K_{k} e_{k}$
       $$
     </div>
 
     <h3>步骤 2：计算内积</h3>
     <div class="formula-box">
       $$
-      \\begin{aligned}
-      $P_{k|k} &= \\langle \\tilde x_{k|k},\\; \\tilde x_{k|k} \\rangle \\\\\\\\$
-      $&= \\langle \\tilde x_{k|k-1} - K_{k} e_{k},\\; \\tilde x_{k|k-1} - K_{k} e_{k} \\rangle \\\\\\\\$
-      $&= P_{k|k-1} - K_{k} \\langle e_{k}, \\tilde x_{k|k-1} \\rangle - \\langle \\tilde x_{k|k-1}, e_{k} \\rangle K_{k}' + K_{k} \\langle e_{k}, e_{k} \\rangle K_{k}'$
-      \\end{aligned}
+      \begin{aligned}
+      $P_{k|k} &= \langle \tilde x_{k|k},\\; \tilde x_{k|k} \rangle \\\\\\\\$
+      $&= \langle \tilde x_{k|k-1} - K_{k} e_{k},\\; \tilde x_{k|k-1} - K_{k} e_{k} \rangle \\\\\\\\$
+      $&= P_{k|k-1} - K_{k} \langle e_{k}, \tilde x_{k|k-1} \rangle - \langle \tilde x_{k|k-1}, e_{k} \rangle K_{k}' + K_{k} \langle e_{k}, e_{k} \rangle K_{k}'$
+      \end{aligned}
       $$
     </div>
 
     <h3>步骤 3：计算交叉项</h3>
     <div class="formula-box">
       $$
-      \\begin{aligned}
-      $\\langle \\tilde x_{k|k-1}, e_{k} \\rangle &= \\langle \\tilde x_{k|k-1},\\; C \\tilde x_{k|k-1} + v_{k} \\rangle = P_{k|k-1} C' \\\\\\\\$
-      $\\langle e_{k}, \\tilde x_{k|k-1} \\rangle &= C P_{k|k-1}$
-      \\end{aligned}
+      \begin{aligned}
+      $\langle \tilde x_{k|k-1}, e_{k} \rangle &= \langle \tilde x_{k|k-1},\\; C \tilde x_{k|k-1} + v_{k} \rangle = P_{k|k-1} C' \\\\\\\\$
+      $\langle e_{k}, \tilde x_{k|k-1} \rangle &= C P_{k|k-1}$
+      \end{aligned}
       $$
     </div>
 
     <h3>步骤 4：代入并化简</h3>
     <div class="formula-box">
       $$
-      \\begin{aligned}
-      $P_{k|k} &= P_{k|k-1} - K_{k} \\cdot C P_{k|k-1} - P_{k|k-1} C' \\cdot K_{k}' + K_{k} \\cdot R_{e,k} \\cdot K_{k}' \\\\\\\\$
+      \begin{aligned}
+      $P_{k|k} &= P_{k|k-1} - K_{k} \cdot C P_{k|k-1} - P_{k|k-1} C' \cdot K_{k}' + K_{k} \cdot R_{e,k} \cdot K_{k}' \\\\\\\\$
       &= P_{k|k-1} - P_{k|k-1} C' R_{e,k}^{-1} C P_{k|k-1} - P_{k|k-1} C' R_{e,k}^{-1} C P_{k|k-1} \\\\\\\\
-      $&\\quad + P_{k|k-1} C' R_{e,k}^{-1} \\cdot R_{e,k} \\cdot R_{e,k}^{-1} C P_{k|k-1} \\\\\\\\$
+      $&\quad + P_{k|k-1} C' R_{e,k}^{-1} \cdot R_{e,k} \cdot R_{e,k}^{-1} C P_{k|k-1} \\\\\\\\$
       &= P_{k|k-1} - P_{k|k-1} C' R_{e,k}^{-1} C P_{k|k-1}
-      \\end{aligned}
+      \end{aligned}
       $$
     </div>
 
@@ -301,11 +301,11 @@ lead-grid">
 
     <div class="formula-box">
       $$
-      \\begin{aligned}
+      \begin{aligned}
       P_{k|k} &= P_{k|k-1} - K_{k} C P_{k|k-1} \\\\\\\\
               &= (I - K_{k} C) P_{k|k-1} \\\\\\\\
               &= P_{k|k-1} - P_{k|k-1} C' [C P_{k|k-1} C' + R]^{-1} C P_{k|k-1}
-      \\end{aligned}
+      \end{aligned}
       $$
     </div>
 
@@ -333,7 +333,7 @@ lead-grid">
     <p>至此我们完成了全部五个等式的几何证明。整个证明过程的脉络：</p>
 
     <div class="flow-formula">
-      新息定义 ① → 新息协方差 ② → 交叉协方差 $\\langle x_{k}, e_{k} \\rangle$ → Kalman 增益 ④ → 状态更新 ③ → 后验协方差 ⑤
+      新息定义 ① → 新息协方差 ② → 交叉协方差 $\langle x_{k}, e_{k} \rangle$ → Kalman 增益 ④ → 状态更新 ③ → 后验协方差 ⑤
     </div>
 
     <p>完整的 KF 测量更新流程：</p>
@@ -342,7 +342,7 @@ lead-grid">
       <div class="mini-card">
         <h4>① 新息</h4>
         $$
-        $e_{k} = y_{k} - C \\hat x_{k|k-1}$
+        $e_{k} = y_{k} - C \hat x_{k|k-1}$
         $$
       </div>
       <div class="mini-card">
@@ -360,7 +360,7 @@ lead-grid">
       <div class="mini-card">
         <h4>④ 状态更新</h4>
         $$
-        $\\hat x_{k|k} = \\hat x_{k|k-1} + K_{k} e_{k}$
+        $\hat x_{k|k} = \hat x_{k|k-1} + K_{k} e_{k}$
         $$
       </div>
       <div class="mini-card">
@@ -374,7 +374,7 @@ lead-grid">
     <p>在证明过程中，我们反复用到了以下技巧：</p>
     <ol>
       <li><strong>分解技巧</strong>：将状态拆成预测 + 预测误差，利用正交原理消掉交叉项</li>
-      <li><strong>空间论证</strong>：利用 $v_{k} \\perp \\mathcal{L}_{k-1}$ 消去含 $v_{k}$ 的交叉项</li>
+      <li><strong>空间论证</strong>：利用 $v_{k} \perp \mathcal{L}_{k-1}$ 消去含 $v_{k}$ 的交叉项</li>
       <li><strong>投影展开</strong>：将 $\mathcal{L}_k$ 上的投影拆成 $\mathcal{L}_{k-1}$ 投影 + 新息方向投影</li>
     </ol>
 
@@ -390,21 +390,21 @@ lead-grid">
 
     <div class="interactive-card">
       <h3>问题 1</h3>
-      <p>为什么 $\\langle \\hat x_{k|k-1}, \\tilde x_{k|k-1} \\rangle = 0$？</p>
+      <p>为什么 $\langle \hat x_{k|k-1}, \tilde x_{k|k-1} \rangle = 0$？</p>
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>这是正交原理的体现：最优线性估计的误差与估计本身正交。$\\hat x_{k|k-1}$ 是 $x_{k}$ 在 $\mathcal{L}_{k-1}$ 上的投影，而 $\\tilde x_{k|k-1}$ 是投影残差，二者必然正交。</p>
+          <p>这是正交原理的体现：最优线性估计的误差与估计本身正交。$\hat x_{k|k-1}$ 是 $x_{k}$ 在 $\mathcal{L}_{k-1}$ 上的投影，而 $\tilde x_{k|k-1}$ 是投影残差，二者必然正交。</p>
         </div>
       </details>
     </div>
 
     <div class="interactive-card">
       <h3>问题 2</h3>
-      <p>如果测量噪声协方差 $R \\to 0$，Kalman 增益 $K_{k}$ 会怎样？后验协方差 $P_{k|k}$ 呢？</p>
+      <p>如果测量噪声协方差 $R \to 0$，Kalman 增益 $K_{k}$ 会怎样？后验协方差 $P_{k|k}$ 呢？</p>
       <div class="quiz-options">
-        <button onclick="lessonKit.answer(this, 'q2-feedback')" data-correct="yes" data-explanation="正确！当 R→0 时，R_{e,k}→CPC'，K_k→PC'(CPC')^{-1}，这是完美的测量更新——后验协方差会降为零（在可观测方向上）。">$K_{k} \\to P_{k|k-1}C'[C P_{k|k-1}C']^{-1}$，$P_{k|k} \\to 0$</button>
-        <button onclick="lessonKit.answer(this, 'q2-feedback')" data-correct="no" data-explanation="再想想？当测量噪声为零时，测量就是完美的，Kalman 增益应该最大化，后验不确定性应该降为零。">$K_{k} \\to 0$，$P_{k|k} \\to P_{k|k-1}$</button>
+        <button onclick="lessonKit.answer(this, 'q2-feedback')" data-correct="yes" data-explanation="正确！当 R→0 时，R_{e,k}→CPC'，K_k→PC'(CPC')^{-1}，这是完美的测量更新——后验协方差会降为零（在可观测方向上）。">$K_{k} \to P_{k|k-1}C'[C P_{k|k-1}C']^{-1}$，$P_{k|k} \to 0$</button>
+        <button onclick="lessonKit.answer(this, 'q2-feedback')" data-correct="no" data-explanation="再想想？当测量噪声为零时，测量就是完美的，Kalman 增益应该最大化，后验不确定性应该降为零。">$K_{k} \to 0$，$P_{k|k} \to P_{k|k-1}$</button>
       </div>
       <div id="q2-feedback" class="quiz-feedback"></div>
     </div>
@@ -415,7 +415,7 @@ lead-grid">
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>$P_{k|k}$ 的更新只依赖于 $P_{k|k-1}$、$C$ 和 $R$，这些都不包含 $y_{k}$。测量值只影响状态估计 $\\hat x_{k|k}$ 的轨迹，不影响不确定性。这种可离线计算特性是 KF 工程实用性的关键之一。</p>
+          <p>$P_{k|k}$ 的更新只依赖于 $P_{k|k-1}$、$C$ 和 $R$，这些都不包含 $y_{k}$。测量值只影响状态估计 $\hat x_{k|k}$ 的轨迹，不影响不确定性。这种可离线计算特性是 KF 工程实用性的关键之一。</p>
         </div>
       </details>
     </div>

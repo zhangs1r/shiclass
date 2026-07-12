@@ -202,21 +202,21 @@ lead-grid">
 
     <div class="formula-box">
       $$
-      $e(p) = [n_{\\text{success}}(p),\\; n_{\\text{fail}}(p),\\; \\bar r(p)]$
+      $e(p) = [n_{\text{success}}(p),\\; n_{\text{fail}}(p),\\; \bar r(p)]$
       $$
     </div>
 
     <div class="grid-3">
       <div class="mini-card">
-        <h4>$n_{\\text{success}}(p)$</h4>
+        <h4>$n_{\text{success}}(p)$</h4>
         <p>在位置 $p$ 执行任务的成功次数。例如通过该区域时没有碰撞，或在该位置成功完成了抓取。</p>
       </div>
       <div class="mini-card">
-        <h4>$n_{\\text{fail}}(p)$</h4>
+        <h4>$n_{\text{fail}}(p)$</h4>
         <p>在位置 $p$ 执行任务的失败次数。例如在该区域发生碰撞、卡住、或抓取失败。</p>
       </div>
       <div class="mini-card">
-        <h4>$\\bar r(p)$</h4>
+        <h4>$\bar r(p)$</h4>
         <p>平均累积奖励，综合反映该位置的"收益"水平。奖励函数可以由任务设计者定义。</p>
       </div>
     </div>
@@ -225,7 +225,7 @@ lead-grid">
     <p>假如机器人 10 次经过客厅地毯区域，其中 3 次被绊倒，7 次安全通过。那么：</p>
     <div class="formula-box">
       $$
-      $e(\\text{客厅地毯}) = [n_{\\text{success}}=7,\\; n_{\\text{fail}}=3,\\; \\bar r = 0.7]$
+      $e(\text{客厅地毯}) = [n_{\text{success}}=7,\\; n_{\text{fail}}=3,\\; \bar r = 0.7]$
       $$
     </div>
     <p>这个经验向量将告诉规划器：这个区域有 30% 的风险——是否值得冒险，由后续的代价函数决定。</p>
@@ -239,15 +239,15 @@ lead-grid">
 
     <div class="formula-box">
       $$
-      \\begin{aligned}
-      $n_{\\text{success}}(p) &\\leftarrow n_{\\text{success}}(p) + \\mathbb{1}_{\\text{success}} \\\\$
-      $n_{\\text{fail}}(p) &\\leftarrow n_{\\text{fail}}(p) + \\mathbb{1}_{\\text{fail}} \\\\$
-      $\\bar r(p) &\\leftarrow \\frac{n_{\\text{success}} \\cdot \\bar r_{\\text{old}} + r_{\\text{new}}}{n_{\\text{success}} + 1}$
-      \\end{aligned}
+      \begin{aligned}
+      $n_{\text{success}}(p) &\leftarrow n_{\text{success}}(p) + \mathbb{1}_{\text{success}} \\\\$
+      $n_{\text{fail}}(p) &\leftarrow n_{\text{fail}}(p) + \mathbb{1}_{\text{fail}} \\\\$
+      $\bar r(p) &\leftarrow \frac{n_{\text{success}} \cdot \bar r_{\text{old}} + r_{\text{new}}}{n_{\text{success}} + 1}$
+      \end{aligned}
       $$
     </div>
 
-    <p>其中 $\\mathbb{1}_{\\text{success}}$ 和 $\\mathbb{1}_{\\text{fail}}$ 是指示函数，每次任务结束时判断成功或失败。</p>
+    <p>其中 $\mathbb{1}_{\text{success}}$ 和 $\mathbb{1}_{\text{fail}}$ 是指示函数，每次任务结束时判断成功或失败。</p>
 
     <h3>在线增量更新</h3>
     <p>E2Map 支持在线更新，无需重新建图：</p>
@@ -270,13 +270,13 @@ lead-grid">
     <div class="grid-2">
       <div class="mini-card" style="border-left: 4px solid #3b82f6;">
         <h4>📊 大数定律</h4>
-        <p>随着交互次数增加，失败率 $\\frac{n_{\\text{fail}}}{n_{\\text{success}} + n_{\\text{fail}}}$ 会收敛到真实概率。经验场的统计可靠性随使用次数而提升。</p>
+        <p>随着交互次数增加，失败率 $\frac{n_{\text{fail}}}{n_{\text{success}} + n_{\text{fail}}}$ 会收敛到真实概率。经验场的统计可靠性随使用次数而提升。</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #f59e0b;">
         <h4>📉 衰减机制</h4>
         <p>旧经验的权重随时间衰减：</p>
         $$
-        $w(t) = \\exp(-\\gamma \\cdot \\Delta t)$
+        $w(t) = \exp(-\gamma \cdot \Delta t)$
         $$
         <p>确保地图能反映环境变化，避免"过时经验"误导规划。</p>
       </div>
@@ -306,7 +306,7 @@ lead-grid">
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>$e(p) = [n_{\\text{success}}(p),\\; n_{\\text{fail}}(p),\\; \\bar r(p)]$。分别为位置 p 的交互成功次数、失败次数和平均累积奖励。</p>
+          <p>$e(p) = [n_{\text{success}}(p),\\; n_{\text{fail}}(p),\\; \bar r(p)]$。分别为位置 p 的交互成功次数、失败次数和平均累积奖励。</p>
         </div>
       </details>
     </div>

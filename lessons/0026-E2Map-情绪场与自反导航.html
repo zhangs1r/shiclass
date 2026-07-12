@@ -84,7 +84,7 @@ lead-grid">
     <p>上一讲我们定义了经验场 $e(p)$：</p>
     <div class="formula-box">
       $$
-      $e(p) = [n_{\\text{success}}(p),\\; n_{\\text{fail}}(p),\\; \\bar r(p)]$
+      $e(p) = [n_{\text{success}}(p),\\; n_{\text{fail}}(p),\\; \bar r(p)]$
       $$
     </div>
     <p>经验场记录了每个位置的历史交互统计。但原始的经验向量——成功/失败次数——并不能直接用于路径规划。我们需要将其转化为一个统一的、可比较的代价指标。</p>
@@ -96,11 +96,11 @@ lead-grid">
   <div id="sec2" class="section-card">
     <h2>2. 情绪场（Emotion Field）定义</h2>
 
-    <p>情绪值 $s(p) \\in [-1, 1]$ 综合反映位置 $p$ 的情感效价：</p>
+    <p>情绪值 $s(p) \in [-1, 1]$ 综合反映位置 $p$ 的情感效价：</p>
 
     <div class="formula-box">
       $$
-      $\\boxed{s(p) = \\tanh\\left(\\alpha \\cdot \\frac{n_{\\text{success}} - n_{\\text{fail}}}{n_{\\text{success}} + n_{\\text{fail}} + \\epsilon} + \\beta \\cdot \\bar r(p)\\right)}$
+      $\boxed{s(p) = \tanh\left(\alpha \cdot \frac{n_{\text{success}} - n_{\text{fail}}}{n_{\text{success}} + n_{\text{fail}} + \epsilon} + \beta \cdot \bar r(p)\right)}$
       $$
     </div>
 
@@ -126,14 +126,14 @@ lead-grid">
     <h3>公式详解</h3>
     <div class="formula-box">
       $$
-      $s(p) = \\tanh(\\alpha \\cdot \\text{成功率偏差} + \\beta \\cdot \\text{平均奖励})$
+      $s(p) = \tanh(\alpha \cdot \text{成功率偏差} + \beta \cdot \text{平均奖励})$
       $$
     </div>
     <ul>
-      <li>$\\frac{n_{\\text{success}} - n_{\\text{fail}}}{n_{\\text{success}} + n_{\\text{fail}} + \\epsilon}$：取值范围 [-1, 1]，度量成功率偏差</li>
-      <li>$\\bar r(p)$：平均累积奖励，可以反映更细致的任务反馈</li>
-      <li>$\\tanh(\\cdot)$：将结果压缩到 [-1, 1] 区间，避免极端值</li>
-      <li>$\\alpha, \\beta$：调节两个因素的相对重要性</li>
+      <li>$\frac{n_{\text{success}} - n_{\text{fail}}}{n_{\text{success}} + n_{\text{fail}} + \epsilon}$：取值范围 [-1, 1]，度量成功率偏差</li>
+      <li>$\bar r(p)$：平均累积奖励，可以反映更细致的任务反馈</li>
+      <li>$\tanh(\cdot)$：将结果压缩到 [-1, 1] 区间，避免极端值</li>
+      <li>$\alpha, \beta$：调节两个因素的相对重要性</li>
     </ul>
 
     <div class="callout">
@@ -150,16 +150,16 @@ lead-grid">
 
     <div class="formula-box">
       $$
-      $s_{\\text{smooth}}(p) = \\frac{\\sum_{q \\in \\mathcal{N}(p)} K_\\sigma(\\|p - q\\|) \\cdot s(q)}{\\sum_{q \\in \\mathcal{N}(p)} K_\\sigma(\\|p - q\\|)}$
+      $s_{\text{smooth}}(p) = \frac{\sum_{q \in \mathcal{N}(p)} K_\sigma(\\|p - q\\|) \cdot s(q)}{\sum_{q \in \mathcal{N}(p)} K_\sigma(\\|p - q\\|)}$
       $$
     </div>
 
-    <p>其中 $K_\\sigma(d) = \\exp(-d^2 / 2\\sigma^2)$ 是高斯核，$\\mathcal{N}(p)$ 是 $p$ 的邻域。</p>
+    <p>其中 $K_\sigma(d) = \exp(-d^2 / 2\sigma^2)$ 是高斯核，$\mathcal{N}(p)$ 是 $p$ 的邻域。</p>
 
     <div class="grid-2">
       <div class="mini-card" style="border-left: 4px solid #3b82f6;">
-        <h4>📏 传播半径 $\\sigma$</h4>
-        <p>$\\sigma$ 控制情绪影响的空间范围。$\\sigma$ 越大，一个点的负面情绪会影响越广的区域，机器人会从更远的地方就开始绕路。</p>
+        <h4>📏 传播半径 $\sigma$</h4>
+        <p>$\sigma$ 控制情绪影响的空间范围。$\sigma$ 越大，一个点的负面情绪会影响越广的区域，机器人会从更远的地方就开始绕路。</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #f59e0b;">
         <h4>🔄 传播效果</h4>
@@ -176,15 +176,15 @@ lead-grid">
 
     <div class="formula-box">
       $$
-      $\\boxed{J(\\tau) = \\underbrace{\\int_\\tau w_{\\text{geo}} \\, ds}_{\\text{几何距离}} \\;+\\; \\lambda_{e} \\underbrace{\\int_\\tau \\phi(e(p)) \\, ds}_{\\text{经验代价}} \\;+\\; \\lambda_{s} \\underbrace{\\int_\\tau \\psi(s(p)) \\, ds}_{\\text{情绪代价}}}$
+      $\boxed{J(\tau) = \underbrace{\int_\tau w_{\text{geo}} \\, ds}_{\text{几何距离}} \\;+\\; \lambda_{e} \underbrace{\int_\tau \phi(e(p)) \\, ds}_{\text{经验代价}} \\;+\\; \lambda_{s} \underbrace{\int_\tau \psi(s(p)) \\, ds}_{\text{情绪代价}}}$
       $$
     </div>
 
     <p>其中：</p>
     <ul>
-      <li>$\\phi(e(p)) = 1 - \\frac{n_{\\text{success}}}{n_{\\text{success}} + n_{\\text{fail}} + \\epsilon}$ —— 失败率越高代价越大</li>
-      <li>$\\psi(s(p)) = 1 - \\frac{s(p) + 1}{2}$ —— 负面情绪区域代价高（$s=-1$ 时代价=1，$s=+1$ 时代价=0）</li>
-      <li>$\\lambda_{e}, \\lambda_{s}$ 为调节权重</li>
+      <li>$\phi(e(p)) = 1 - \frac{n_{\text{success}}}{n_{\text{success}} + n_{\text{fail}} + \epsilon}$ —— 失败率越高代价越大</li>
+      <li>$\psi(s(p)) = 1 - \frac{s(p) + 1}{2}$ —— 负面情绪区域代价高（$s=-1$ 时代价=1，$s=+1$ 时代价=0）</li>
+      <li>$\lambda_{e}, \lambda_{s}$ 为调节权重</li>
     </ul>
 
     <h3>传统 vs 自反式</h3>
@@ -231,7 +231,7 @@ lead-grid">
     <h3>时空衰减函数</h3>
     <div class="formula-box">
       $$
-      $w(t, d) = \\exp\\left(-\\gamma_{t} \\cdot \\Delta t - \\gamma_{d} \\cdot \\Delta d\\right)$
+      $w(t, d) = \exp\left(-\gamma_{t} \cdot \Delta t - \gamma_{d} \cdot \Delta d\right)$
       $$
     </div>
     <p>时间越久、距离越远的经验对当前情绪值的贡献越小。衰减机制确保地图能适应环境变化——如果某个区域之前经常出问题，但环境改变后再也没出过问题，它的负面情绪会逐渐衰退。</p>
@@ -328,7 +328,7 @@ lead-grid">
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>不需要人工标注。情绪场通过机器人自身的交互经验自动生成：成功次数多积累正面情绪，失败次数多积累负面情绪。公式 $s(p) = \\tanh(\\alpha \\cdot \\frac{n_{\\text{success}} - n_{\\text{fail}}}{n_{\\text{success}} + n_{\\text{fail}} + \\epsilon} + \\beta \\cdot \\bar r(p))$ 将统计数据映射为情感标量。</p>
+          <p>不需要人工标注。情绪场通过机器人自身的交互经验自动生成：成功次数多积累正面情绪，失败次数多积累负面情绪。公式 $s(p) = \tanh(\alpha \cdot \frac{n_{\text{success}} - n_{\text{fail}}}{n_{\text{success}} + n_{\text{fail}} + \epsilon} + \beta \cdot \bar r(p))$ 将统计数据映射为情感标量。</p>
         </div>
       </details>
     </div>
