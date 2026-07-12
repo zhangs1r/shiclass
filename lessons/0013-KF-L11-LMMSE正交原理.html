@@ -22,7 +22,10 @@ window.MathJax = {
   svg: { fontCache: 'global' }
 };
 </script>
-<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
 </head>
 <body>
 <div class="page">
@@ -58,11 +61,11 @@ window.MathJax = {
 lead-grid">
     <div class="callout">
       <p><strong>🎯 本讲目标</strong></p>
-      <p>掌握线性估计器的形式、LMMSE 正规方程、正交原理、以及为什么 Kalman gain 具有 $R_{xy}R_y^{-1}$ 的形式。</p>
+      <p>掌握线性估计器的形式、LMMSE 正规方程、正交原理、以及为什么 Kalman gain 具有 $R_{xy}R_{y}^{-1}$ 的形式。</p>
     </div>
     <div class="callout">
       <p><strong>🔑 核心公式</strong></p>
-      <p>$K^* = R_{xy}R_y^{-1}$ 与 $X-\hat X \perp Y$ —— 这就是 Kalman Filter 测量更新背后的数学灵魂。</p>
+      <p>$K^* = R_{xy}R_{y}^{-1}$ 与 $X-\hat X \perp Y$ —— 这就是 Kalman Filter 测量更新背后的数学灵魂。</p>
     </div>
   </div>
 
@@ -88,10 +91,10 @@ lead-grid">
   <!-- 1. 线性估计器 -->
   <div id="sec1" class="section-card">
     <h2>1. 线性估计器</h2>
-    <p><strong>【课堂例题】</strong> 估计房间温度 $T$，有两个测量 $y_1, y_2$：</p>
+    <p><strong>【课堂例题】</strong> 估计房间温度 $T$，有两个测量 $y_{1}, y_{2}$：</p>
     <div class="flow-formula">
       $$
-      \hat T = k_1 y_1 + k_2 y_2
+      \hat T = k_{1} y_{1} + k_{2} y_{2}
       $$
     </div>
     <p>矩阵形式：</p>
@@ -102,7 +105,7 @@ lead-grid">
     </div>
     <div class="callout">
       <p><strong>📌 注意</strong></p>
-      <p>非线性估计器例如 $\hat T = \sin(y_1) + \sin(y_2)$。LMMSE 只考虑线性形式，因为线性估计便于分析和计算。</p>
+      <p>非线性估计器例如 $\hat T = \sin(y_{1}) + \sin(y_{2})$。LMMSE 只考虑线性形式，因为线性估计便于分析和计算。</p>
     </div>
   </div>
 
@@ -148,15 +151,15 @@ lead-grid">
     <p>课堂暂时假设所有随机变量零均值。定义协方差矩阵：</p>
     <div class="grid-3">
       <div class="mini-card">
-        <h4>$R_x$</h4>
+        <h4>$R_{x}$</h4>
         $$
-        R_x = E[xx^T]
+        R_{x} = E[xx^T]
         $$
       </div>
       <div class="mini-card">
-        <h4>$R_y$</h4>
+        <h4>$R_{y}$</h4>
         $$
-        R_y = E[yy^T]
+        R_{y} = E[yy^T]
         $$
       </div>
       <div class="mini-card">
@@ -178,13 +181,13 @@ lead-grid">
     <p>核心结论：</p>
     <div class="formula-box">
       $$
-      K^* R_y = R_{xy}
+      K^* R_{y} = R_{xy}
       $$
     </div>
-    <p>若 $R_y$ 可逆：</p>
+    <p>若 $R_{y}$ 可逆：</p>
     <div class="formula-box" style="border-color: var(--accent); border-style: solid;">
       $$
-      K^* = R_{xy}R_y^{-1}
+      K^* = R_{xy}R_{y}^{-1}
       $$
     </div>
     <p>这就是 LMMSE 的核心公式，也是贯穿整个 Kalman Filter 理论的基础。</p>
@@ -202,7 +205,7 @@ lead-grid">
     <p>展开后会得到一个关于 $K$ 的二次型。像第 06 讲（二次型优化）一样配方，最小点满足：</p>
     <div class="formula-box">
       $$
-      K R_y = R_{xy}
+      K R_{y} = R_{xy}
       $$
     </div>
     <p>这本质上是一个无约束二次优化问题，梯度为零给出正规方程。</p>
@@ -214,7 +217,7 @@ lead-grid">
     <p>从正规方程出发：</p>
     <div class="formula-box">
       $$
-      K R_y = R_{xy} \;\Longrightarrow\; K E[YY^T] = E[XY^T]
+      K R_{y} = R_{xy} \;\Longrightarrow\; K E[YY^T] = E[XY^T]
       $$
     </div>
     <p>移项：</p>
@@ -270,15 +273,15 @@ lead-grid">
   <!-- 10. 最优误差协方差 -->
   <div id="sec10" class="section-card">
     <h2>10. 最优误差协方差</h2>
-    <p>若 $R_y$ 可逆：</p>
+    <p>若 $R_{y}$ 可逆：</p>
     <div class="formula-box">
       $$
-      P(K^*) = R_x - R_{xy}R_y^{-1}R_{yx}
+      P(K^*) = R_{x} - R_{xy}R_{y}^{-1}R_{yx}
       $$
     </div>
     <div class="callout">
       <p><strong>📖 解释</strong></p>
-      <p>原始不确定性 $R_x$ 减去测量解释掉的部分 $R_{xy}R_y^{-1}R_{yx}$。测量越有用，这部分越大，最终误差越小。</p>
+      <p>原始不确定性 $R_{x}$ 减去测量解释掉的部分 $R_{xy}R_{y}^{-1}R_{yx}$。测量越有用，这部分越大，最终误差越小。</p>
     </div>
   </div>
 
@@ -288,13 +291,13 @@ lead-grid">
     <p>Kalman Filter 的增益有形式：</p>
     <div class="formula-box">
       $$
-      K_k = P_{k|k-1}C^T(CP_{k|k-1}C^T + R)^{-1}
+      K_{k} = P_{k|k-1}C^T(CP_{k|k-1}C^T + R)^{-1}
       $$
     </div>
-    <p>这其实就是 $R_{xy}R_y^{-1}$ 在特定模型下的结果：</p>
+    <p>这其实就是 $R_{xy}R_{y}^{-1}$ 在特定模型下的结果：</p>
     <ul>
       <li>$P_{k|k-1}C^T$ 对应 $R_{xy}$（状态预测误差与测量的互协方差）</li>
-      <li>$CP_{k|k-1}C^T + R$ 对应 $R_y$（测量协方差）</li>
+      <li>$CP_{k|k-1}C^T + R$ 对应 $R_{y}$（测量协方差）</li>
     </ul>
   </div>
 
@@ -315,11 +318,11 @@ lead-grid">
 
     <div class="interactive-card">
       <h3>问题 2</h3>
-      <p>$R_y$ 不可逆时会发生什么？</p>
+      <p>$R_{y}$ 不可逆时会发生什么？</p>
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>如果 $R_y$ 不可逆，说明测量之间线性相关（有冗余），或者某个测量方向方差为零。此时 $R_y^{-1}$ 不存在，但正规方程 $K R_y = R_{xy}$ 仍然有解（多解），可以用伪逆处理。</p>
+          <p>如果 $R_{y}$ 不可逆，说明测量之间线性相关（有冗余），或者某个测量方向方差为零。此时 $R_{y}^{-1}$ 不存在，但正规方程 $K R_{y} = R_{xy}$ 仍然有解（多解），可以用伪逆处理。</p>
         </div>
       </details>
     </div>

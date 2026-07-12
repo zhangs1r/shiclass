@@ -22,7 +22,10 @@ window.MathJax = {
   svg: { fontCache: 'global' }
 };
 </script>
-<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
 </head>
 <body>
 <div class="page">
@@ -87,10 +90,10 @@ lead-grid">
   <!-- 1. 正交原理的推论 -->
   <div id="sec1" class="section-card">
     <h2>1. 正交原理的推论</h2>
-    <p>若 $\hat X$ 是基于 $y_1,\ldots,y_N$ 的 LMMSE 估计，则：</p>
+    <p>若 $\hat X$ 是基于 $y_{1},\ldots,y_{N}$ 的 LMMSE 估计，则：</p>
     <div class="formula-box">
       $$
-      X - \hat X \perp y_i,\quad i=1,\ldots,N
+      X - \hat X \perp y_{i},\quad i=1,\ldots,N
       $$
     </div>
     <p>也就是说，误差和每一个可用测量都不相关。这为我们提供了列方程求解增益的基本工具。</p>
@@ -108,15 +111,15 @@ lead-grid">
     <p>假设 $E[xv^T] = 0$，已知：</p>
     <div class="grid-2">
       <div class="mini-card">
-        <h4>$R_x$</h4>
+        <h4>$R_{x}$</h4>
         $$
-        R_x = E[xx^T]
+        R_{x} = E[xx^T]
         $$
       </div>
       <div class="mini-card">
-        <h4>$R_v$</h4>
+        <h4>$R_{v}$</h4>
         $$
-        R_v = E[vv^T]
+        R_{v} = E[vv^T]
         $$
       </div>
     </div>
@@ -126,7 +129,7 @@ lead-grid">
   <!-- 3. 解题步骤 -->
   <div id="sec3" class="section-card">
     <h2>3. 解题步骤</h2>
-    <p>LMMSE 形式：$\hat x = K^* y$，公式 $K^* = R_{xy}R_y^{-1}$。</p>
+    <p>LMMSE 形式：$\hat x = K^* y$，公式 $K^* = R_{xy}R_{y}^{-1}$。</p>
 
     <h3>步骤 1：计算 $R_{xy}$</h3>
     <div class="formula-box">
@@ -137,21 +140,21 @@ lead-grid">
     <p>由于 $x$ 与 $v$ 不相关：</p>
     <div class="formula-box">
       $$
-      R_{xy} = R_x H^T
+      R_{xy} = R_{x} H^T
       $$
     </div>
 
-    <h3>步骤 2：计算 $R_y$</h3>
+    <h3>步骤 2：计算 $R_{y}$</h3>
     <div class="formula-box">
       $$
-      R_y = E[yy^T] = E[(Hx+v)(Hx+v)^T] = H R_x H^T + R_v
+      R_{y} = E[yy^T] = E[(Hx+v)(Hx+v)^T] = H R_{x} H^T + R_{v}
       $$
     </div>
 
     <h3>步骤 3：代入</h3>
     <div class="formula-box" style="border-color: var(--accent); border-style: solid;">
       $$
-      \hat x = R_x H^T (H R_x H^T + R_v)^{-1} y
+      \hat x = R_{x} H^T (H R_{x} H^T + R_{v})^{-1} y
       $$
     </div>
     <p>这就是线性测量模型下 LMMSE 的一般公式。</p>
@@ -191,14 +194,14 @@ lead-grid">
     <p>设 $\{y(t)\}$ 是零均值平稳随机过程，自协方差：</p>
     <div class="formula-box">
       $$
-      R_y(\tau) = E[y(t)\,y(t-\tau)]
+      R_{y}(\tau) = E[y(t)\,y(t-\tau)]
       $$
     </div>
-    <p>目标：估计 $X = \int_0^T y(t)dt$，给定测量 $y(0), y(T)$。</p>
+    <p>目标：估计 $X = \int_{0}^T y(t)dt$，给定测量 $y(0), y(T)$。</p>
     <p>线性估计：</p>
     <div class="formula-box">
       $$
-      \hat X = k_1 y(0) + k_2 y(T)
+      \hat X = k_{1} y(0) + k_{2} y(T)
       $$
     </div>
     <p>根据正交原理，误差与每个测量正交：</p>
@@ -215,34 +218,34 @@ lead-grid">
     <p>第一个正交条件：</p>
     <div class="formula-box">
       $$
-      \left\langle \int_0^T y(t)dt - k_1 y(0) - k_2 y(T),\; y(0) \right\rangle = 0
+      \left\langle \int_{0}^T y(t)dt - k_{1} y(0) - k_{2} y(T),\; y(0) \right\rangle = 0
       $$
     </div>
     <p>得到：</p>
     <div class="formula-box">
       $$
-      k_1 R_y(0) + k_2 R_y(T) = \int_0^T R_y(t) dt
+      k_{1} R_{y}(0) + k_{2} R_{y}(T) = \int_{0}^T R_{y}(t) dt
       $$
     </div>
     <p>第二个正交条件：</p>
     <div class="formula-box">
       $$
-      k_1 R_y(T) + k_2 R_y(0) = \int_0^T R_y(T-t) dt
+      k_{1} R_{y}(T) + k_{2} R_{y}(0) = \int_{0}^T R_{y}(T-t) dt
       $$
     </div>
     <p>矩阵形式：</p>
     <div class="formula-box">
       $$
       \begin{bmatrix}
-      k_1 \\ k_2
+      k_{1} \\ k_{2}
       \end{bmatrix}
       =
       \begin{bmatrix}
-      R_y(0) & R_y(T) \\
-      R_y(T) & R_y(0)
+      R_{y}(0) & R_{y}(T) \\
+      R_{y}(T) & R_{y}(0)
       \end{bmatrix}^{-1}
       \begin{bmatrix}
-      \int_0^T R_y(t) dt \$$4pt]
+      \int_{0}^T R_{y}(t) dt \$$4pt]
       \int_0^T R_y(T-t) dt
       \end{bmatrix}
       $$
@@ -253,7 +256,7 @@ lead-grid">
   <!-- 7. Gram-Schmidt -->
   <div id="sec7" class="section-card">
     <h2>7. Gram-Schmidt 正交化</h2>
-    <p>给定一组向量 $v_1,\ldots,v_n$，目标是构造一组正交向量 $u_1,\ldots,u_n$。</p>
+    <p>给定一组向量 $v_{1},\ldots,v_{n}$，目标是构造一组正交向量 $u_{1},\ldots,u_{n}$。</p>
     <div class="callout">
       <p><strong>🧠 核心思想</strong></p>
       <p>新向量减去它在旧方向上的投影，剩下的就是新的正交方向。</p>
@@ -279,7 +282,7 @@ lead-grid">
       \end{aligned}
       $$
     </div>
-    <p>归一化：$e_i = \frac{u_i}{\|u_i\|}$。</p>
+    <p>归一化：$e_{i} = \frac{u_i}{\|u_{i}\|}$。</p>
   </div>
 
   <!-- 9. 二维 Gram-Schmidt -->
@@ -316,7 +319,7 @@ lead-grid">
   <!-- 10. 三类估计问题 -->
   <div id="sec10" class="section-card">
     <h2>10. 三类估计问题</h2>
-    <p>考虑不可观测状态 $x_1,x_2,\ldots$ 和观测 $y_1,y_2,\ldots$：</p>
+    <p>考虑不可观测状态 $x_{1},x_{2},\ldots$ 和观测 $y_{1},y_{2},\ldots$：</p>
 
     <div class="grid-3">
       <div class="mini-card" style="border-left: 4px solid var(--accent);">
@@ -356,11 +359,11 @@ lead-grid">
 
     <div class="interactive-card">
       <h3>问题 1</h3>
-      <p>$y = Hx + v$ 中为什么 $R_y = H R_x H^T + R_v$？</p>
+      <p>$y = Hx + v$ 中为什么 $R_{y} = H R_{x} H^T + R_{v}$？</p>
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>因为 $y = Hx + v$，且 $x$ 与 $v$ 不相关，所以 $R_y = E[(Hx+v)(Hx+v)^T] = H E[xx^T] H^T + E[vv^T] = H R_x H^T + R_v$。交叉项 $E[xv^T]$ 和 $E[vx^T]$ 为零。</p>
+          <p>因为 $y = Hx + v$，且 $x$ 与 $v$ 不相关，所以 $R_{y} = E[(Hx+v)(Hx+v)^T] = H E[xx^T] H^T + E[vv^T] = H R_{x} H^T + R_{v}$。交叉项 $E[xv^T]$ 和 $E[vx^T]$ 为零。</p>
         </div>
       </details>
     </div>

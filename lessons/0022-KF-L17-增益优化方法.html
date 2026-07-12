@@ -22,7 +22,10 @@ window.MathJax = {
   svg: { fontCache: 'global' }
 };
 </script>
-<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
 </head>
 <body>
 <div class="page">
@@ -31,7 +34,7 @@ window.MathJax = {
   <div class="hero">
     <div class="eyebrow">研讨会系列 · KF L17 · 第二部分</div>
     <h1>Kalman 增益优化与三种方法对比</h1>
-    <p class="subtitle">从优化角度重新推导 Kalman 增益——将 \$P_k\$ 写成 \$K_k\$ 的二次型，通过 Completion of Squares 求最优解</p>
+    <p class="subtitle">从优化角度重新推导 Kalman 增益——将 \$P_{k}\$ 写成 \$K_{k}\$ 的二次型，通过 Completion of Squares 求最优解</p>
     <div class="hero-meta">
       <span>📅 2026-05-30</span>
       <span>⚡ 优化方法</span>
@@ -122,11 +125,11 @@ lead-grid">
 
     <div class="formula-box">
       \$$
-      $\\hat x_{k+1} = A \\hat x_k + K_{k+1} (y_{k+1} - C A \\hat x_k)$
+      $\\hat x_{k+1} = A \\hat x_{k} + K_{k+1} (y_{k+1} - C A \\hat x_{k})$
       \$$
     </div>
 
-    <p>其中初始条件 \$\\hat x_0 = 0\$。这是一个"预测 + 修正"结构的线性估计器，但增益 \$K_{k+1}\$ 尚未确定。</p>
+    <p>其中初始条件 \$\\hat x_{0} = 0\$。这是一个"预测 + 修正"结构的线性估计器，但增益 \$K_{k+1}\$ 尚未确定。</p>
 
     <p>我们的目标：找到 \$K_{k+1}\$ 使得后验误差协方差最小化。</p>
 
@@ -144,24 +147,24 @@ lead-grid">
     <h2>3. 误差协方差的二次型表达</h2>
 
     <h3>步骤 1：计算预测误差</h3>
-    <p>预测阶段：\$\\hat x_{k+1|k} = A \\hat x_k\$</p>
+    <p>预测阶段：\$\\hat x_{k+1|k} = A \\hat x_{k}\$</p>
     <div class="formula-box">
       \$$
       \\begin{aligned}
-      $\\tilde x_{k+1|k} &= x_{k+1} - A \\hat x_k \\\\\\\\$
-      $&= (A x_k + w_k) - A \\hat x_k \\\\\\\\$
-      $&= A \\tilde x_k + w_k$
+      $\\tilde x_{k+1|k} &= x_{k+1} - A \\hat x_{k} \\\\\\\\$
+      $&= (A x_{k} + w_{k}) - A \\hat x_{k} \\\\\\\\$
+      $&= A \\tilde x_{k} + w_{k}$
       \\end{aligned}
       \$$
     </div>
-    <p>预测协方差：\$P_{k+1|k} = A P_k A' + Q\$</p>
+    <p>预测协方差：\$P_{k+1|k} = A P_{k} A' + Q\$</p>
 
     <h3>步骤 2：计算后验误差</h3>
     <div class="formula-box">
       \$$
       \\begin{aligned}
       $\\tilde x_{k+1} &= x_{k+1} - \\hat x_{k+1} \\\\\\\\$
-      $&= x_{k+1} - [A \\hat x_k + K_{k+1} (y_{k+1} - C A \\hat x_k)] \\\\\\\\$
+      $&= x_{k+1} - [A \\hat x_{k} + K_{k+1} (y_{k+1} - C A \\hat x_{k})] \\\\\\\\$
       $&= \\tilde x_{k+1|k} - K_{k+1} (C \\tilde x_{k+1|k} + v_{k+1})$
       \\end{aligned}
       \$$
@@ -254,15 +257,15 @@ lead-grid">
     <div class="grid-3">
       <div class="mini-card" style="border-left: 4px solid var(--accent);">
         <h4>📐 几何法视角</h4>
-        <p>\$K_k\$ 是投影系数——将状态\$x_k\$投影到新息方向上。</p>
+        <p>\$K_{k}\$ 是投影系数——将状态\$x_{k}\$投影到新息方向上。</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #3b82f6;">
         <h4>📊 概率法视角</h4>
-        <p>\$K_k\$ 是回归系数——\$\\Sigma_{xy} \\Sigma_y^{-1}\$的自然产物。</p>
+        <p>\$K_{k}\$ 是回归系数——\$\\Sigma_{xy} \\Sigma_{y}^{-1}\$的自然产物。</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #22c55e;">
         <h4>⚡ 优化法视角</h4>
-        <p>\$K_k\$ 是优化变量——使协方差二次型最小的唯一解。</p>
+        <p>\$K_{k}\$ 是优化变量——使协方差二次型最小的唯一解。</p>
       </div>
     </div>
 
@@ -270,7 +273,7 @@ lead-grid">
     <p>三种方法得到的 Kalman 增益表达式完全一致：</p>
     <div class="formula-box">
       \$$
-      \\boxed{K_k = P_{k|k-1} C' [C P_{k|k-1} C' + R]^{-1}}
+      \\boxed{K_{k} = P_{k|k-1} C' [C P_{k|k-1} C' + R]^{-1}}
       \$$
     </div>
 

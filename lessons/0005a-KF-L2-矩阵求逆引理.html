@@ -17,7 +17,10 @@ window.MathJax = {
   svg: { fontCache: 'global' }
 };
 </script>
-<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
 </head>
 <body>
 <div class="page">
@@ -209,7 +212,7 @@ window.MathJax = {
         <p>利用 MIL 从协方差形式推出！当 $m > n$ 时更高效</p>
       </div>
     </div>
-    <p>信息形式在传感器融合（KF L16 固定增益）中极为重要——多传感器时，只需叠加 $H_i^T R_i^{-1} H_i$ 项，即插即用。</p>
+    <p>信息形式在传感器融合（KF L16 固定增益）中极为重要——多传感器时，只需叠加 $H_{i}^T R_{i}^{-1} H_{i}$ 项，即插即用。</p>
   </section>
 
   <section id="exercise" class="section-card">

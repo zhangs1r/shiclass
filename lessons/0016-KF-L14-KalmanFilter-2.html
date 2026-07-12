@@ -22,7 +22,10 @@ window.MathJax = {
   svg: { fontCache: 'global' }
 };
 </script>
-<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
 </head>
 <body>
 <div class="page">
@@ -62,7 +65,7 @@ lead-grid">
     </div>
     <div class="callout">
       <p><strong>🔑 核心公式</strong></p>
-      <p>$\hat x_{k|k} = \hat x_{k|k-1} + K_k e_k$ —— 新估计 = 旧预测 + 增益 × 新息。本质就是对新息做 LMMSE 投影。</p>
+      <p>$\hat x_{k|k} = \hat x_{k|k-1} + K_{k} e_{k}$ —— 新估计 = 旧预测 + 增益 × 新息。本质就是对新息做 LMMSE 投影。</p>
     </div>
   </div>
 
@@ -87,15 +90,15 @@ lead-grid">
   <!-- 1. 测量更新的输入 -->
   <div id="sec1" class="section-card">
     <h2>1. 测量更新的输入</h2>
-    <p>假设当前已经有预测 $\hat x_{k|k-1}$ 和预测误差协方差 $P_{k|k-1}$。现在测量 $y_k$ 到来，需要更新成 $\hat x_{k|k}$ 和 $P_{k|k}$。</p>
+    <p>假设当前已经有预测 $\hat x_{k|k-1}$ 和预测误差协方差 $P_{k|k-1}$。现在测量 $y_{k}$ 到来，需要更新成 $\hat x_{k|k}$ 和 $P_{k|k}$。</p>
     <div class="flow-formula">
       $$
-      \underbrace{\hat x_{k|k-1},\; P_{k|k-1}}_{\text{预测}} \;\xrightarrow{\;y_k\text{ 到来}\;}\; \underbrace{\hat x_{k|k},\; P_{k|k}}_{\text{更新}}
+      \underbrace{\hat x_{k|k-1},\; P_{k|k-1}}_{\text{预测}} \;\xrightarrow{\;y_{k}\text{ 到来}\;}\; \underbrace{\hat x_{k|k},\; P_{k|k}}_{\text{更新}}
       $$
     </div>
     <div class="callout">
       <p><strong>💡 核心问题</strong></p>
-      <p>如何把新测量 $y_k$ 的信息融入当前估计，得到更准确的估计？</p>
+      <p>如何把新测量 $y_{k}$ 的信息融入当前估计，得到更准确的估计？</p>
     </div>
   </div>
 
@@ -111,13 +114,13 @@ lead-grid">
     <p>实际测量：</p>
     <div class="formula-box">
       $$
-      y_k = C x_k + v_k
+      y_{k} = C x_{k} + v_{k}
       $$
     </div>
     <p>新息 = 实际看到的一我以为会看到的：</p>
     <div class="formula-box" style="border-color: var(--accent); border-style: solid;">
       $$
-      e_k = y_k - C \hat x_{k|k-1}
+      e_{k} = y_{k} - C \hat x_{k|k-1}
       $$
     </div>
     <div class="callout">
@@ -132,21 +135,21 @@ lead-grid">
     <p>新息协方差：</p>
     <div class="formula-box">
       $$
-      R_{e,k} = E[e_k e_k^T]
+      R_{e,k} = E[e_{k} e_{k}^T]
       $$
     </div>
     <p>推导：</p>
     <div class="formula-box">
       $$
       \begin{aligned}
-      e_k &= y_k - C \hat x_{k|k-1} \\
-          &= C x_k + v_k - C \hat x_{k|k-1} \\
-          &= C (x_k - \hat x_{k|k-1}) + v_k \\
-          &= C \tilde x_{k|k-1} + v_k
+      e_{k} &= y_{k} - C \hat x_{k|k-1} \\
+          &= C x_{k} + v_{k} - C \hat x_{k|k-1} \\
+          &= C (x_{k} - \hat x_{k|k-1}) + v_{k} \\
+          &= C \tilde x_{k|k-1} + v_{k}
       \end{aligned}
       $$
     </div>
-    <p>由于预测误差 $\tilde x_{k|k-1}$ 与 $v_k$ 不相关：</p>
+    <p>由于预测误差 $\tilde x_{k|k-1}$ 与 $v_{k}$ 不相关：</p>
     <div class="formula-box" style="border-color: var(--accent); border-style: solid;">
       $$
       R_{e,k} = C P_{k|k-1} C^T + R
@@ -160,13 +163,13 @@ lead-grid">
     <h2>4. Kalman Gain</h2>
     <div class="formula-box" style="border-color: var(--accent); border-style: solid;">
       $$
-      K_k = P_{k|k-1} C^T R_{e,k}^{-1}
+      K_{k} = P_{k|k-1} C^T R_{e,k}^{-1}
       $$
     </div>
     <p>等价形式：</p>
     <div class="formula-box">
       $$
-      K_k = P_{k|k-1} C^T (C P_{k|k-1} C^T + R)^{-1}
+      K_{k} = P_{k|k-1} C^T (C P_{k|k-1} C^T + R)^{-1}
       $$
     </div>
     <p>Kalman gain 决定新息要被转化成多大的状态修正。</p>
@@ -174,8 +177,8 @@ lead-grid">
     <div class="callout">
       <p><strong>🧠 直觉</strong></p>
       <ul>
-        <li>如果预测很不准（$P_{k|k-1}$ 大），更愿意信测量 → $K_k$ 大</li>
-        <li>如果测量噪声很大（$R$ 大），更不愿意信测量 → $K_k$ 小</li>
+        <li>如果预测很不准（$P_{k|k-1}$ 大），更愿意信测量 → $K_{k}$ 大</li>
+        <li>如果测量噪声很大（$R$ 大），更不愿意信测量 → $K_{k}$ 小</li>
         <li>所以 Kalman gain 是在"模型信任度"和"测量信任度"之间做最优权衡</li>
       </ul>
     </div>
@@ -187,7 +190,7 @@ lead-grid">
     <p>状态更新：</p>
     <div class="formula-box" style="border-color: var(--accent); border-style: solid;">
       $$
-      \hat x_{k|k} = \hat x_{k|k-1} + K_k e_k
+      \hat x_{k|k} = \hat x_{k|k-1} + K_{k} e_{k}
       $$
     </div>
     <p>也就是：</p>
@@ -208,10 +211,10 @@ lead-grid">
     <p>测量更新后，不确定性会减少：</p>
     <div class="formula-box" style="border-color: var(--accent); border-style: solid;">
       $$
-      P_{k|k} = P_{k|k-1} - K_k R_{e,k} K_k^T
+      P_{k|k} = P_{k|k-1} - K_{k} R_{e,k} K_{k}^T
       $$
     </div>
-    <p>等价写法（代入 $K_k$ 和 $R_{e,k}$）：</p>
+    <p>等价写法（代入 $K_{k}$ 和 $R_{e,k}$）：</p>
     <div class="formula-box">
       $$
       P_{k|k} = P_{k|k-1} - P_{k|k-1} C^T R_{e,k}^{-1} C P_{k|k-1}
@@ -226,12 +229,12 @@ lead-grid">
   <!-- 7. 补充例题 -->
   <div id="sec7" class="section-card">
     <h2>7. 【补充例题】一维 Kalman 更新直觉</h2>
-    <p>设预测状态 $\hat x_{k|k-1} = 10$，测量 $y_k = 12$，$C = 1$。</p>
+    <p>设预测状态 $\hat x_{k|k-1} = 10$，测量 $y_{k} = 12$，$C = 1$。</p>
 
     <div class="grid-2">
       <div class="mini-card">
-        <h4>情况 A：$K_k = 0.25$</h4>
-        <p>新息：$e_k = 12 - 10 = 2$</p>
+        <h4>情况 A：$K_{k} = 0.25$</h4>
+        <p>新息：$e_{k} = 12 - 10 = 2$</p>
         <div class="formula-box">
           $$
           \hat x_{k|k} = 10 + 0.25 \times 2 = 10.5
@@ -240,8 +243,8 @@ lead-grid">
         <p style="font-size:0.85rem;color:var(--text-secondary)">更相信预测，小幅修正</p>
       </div>
       <div class="mini-card">
-        <h4>情况 B：$K_k = 0.9$</h4>
-        <p>新息：$e_k = 12 - 10 = 2$</p>
+        <h4>情况 B：$K_{k} = 0.9$</h4>
+        <p>新息：$e_{k} = 12 - 10 = 2$</p>
         <div class="formula-box">
           $$
           \hat x_{k|k} = 10 + 0.9 \times 2 = 11.8
@@ -260,7 +263,7 @@ lead-grid">
       <div class="mini-card">
         <h4>📊 $R \to \infty$（测量完全不可信）</h4>
         $$
-        K_k \to 0
+        K_{k} \to 0
         $$
         $$
         \hat x_{k|k} \approx \hat x_{k|k-1}
@@ -270,10 +273,10 @@ lead-grid">
       <div class="mini-card">
         <h4>📊 $P_{k|k-1} \to \infty$（预测完全不可信）</h4>
         $$
-        K_k \to C^{-1}
+        K_{k} \to C^{-1}
         $$
         $$
-        \hat x_{k|k} \approx C^{-1} y_k
+        \hat x_{k|k} \approx C^{-1} y_{k}
         $$
         <p>完全相信测量（若 $C$ 可逆）。</p>
       </div>
@@ -287,19 +290,19 @@ lead-grid">
     <p>LMMSE 公式：</p>
     <div class="formula-box">
       $$
-      K = R_{xy} R_y^{-1}
+      K = R_{xy} R_{y}^{-1}
       $$
     </div>
     <p>Kalman Filter 中：</p>
     <div class="formula-box">
       $$
-      K_k = P_{k|k-1} C^T (C P_{k|k-1} C^T + R)^{-1}
+      K_{k} = P_{k|k-1} C^T (C P_{k|k-1} C^T + R)^{-1}
       $$
     </div>
     <p>对应关系：</p>
     <ul>
       <li>$P_{k|k-1} C^T$ 对应 $R_{xy}$：状态预测误差与新息的互协方差</li>
-      <li>$C P_{k|k-1} C^T + R$ 对应 $R_y$：新息协方差</li>
+      <li>$C P_{k|k-1} C^T + R$ 对应 $R_{y}$：新息协方差</li>
     </ul>
     <div class="callout">
       <p><strong>🧠 本质</strong></p>
@@ -314,7 +317,7 @@ lead-grid">
     <h3>初始化</h3>
     <div class="formula-box">
       $$
-      \hat x_{0|-1} = 0,\quad P_{0|-1} = \Pi_0
+      \hat x_{0|-1} = 0,\quad P_{0|-1} = \Pi_{0}
       $$
     </div>
 
@@ -333,19 +336,19 @@ lead-grid">
       <div class="mini-card" style="border-left: 4px solid var(--accent);">
         <h4>📏 测量更新（修正）</h4>
         $$
-        e_k = y_k - C \hat x_{k|k-1}
+        e_{k} = y_{k} - C \hat x_{k|k-1}
         $$
         $$
         R_{e,k} = C P_{k|k-1} C^T + R
         $$
         $$
-        K_k = P_{k|k-1} C^T R_{e,k}^{-1}
+        K_{k} = P_{k|k-1} C^T R_{e,k}^{-1}
         $$
         $$
-        \hat x_{k|k} = \hat x_{k|k-1} + K_k e_k
+        \hat x_{k|k} = \hat x_{k|k-1} + K_{k} e_{k}
         $$
         $$
-        P_{k|k} = P_{k|k-1} - K_k R_{e,k} K_k^T
+        P_{k|k} = P_{k|k-1} - K_{k} R_{e,k} K_{k}^T
         $$
       </div>
     </div>
@@ -362,11 +365,11 @@ lead-grid">
 
     <div class="interactive-card">
       <h3>问题 1</h3>
-      <p>新息 $e_k$ 表示什么？它可以为零吗？</p>
+      <p>新息 $e_{k}$ 表示什么？它可以为零吗？</p>
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>新息 $e_k = y_k - C\hat x_{k|k-1}$ 是实际测量与预测测量之差。它可以为零——当预测完美匹配实际测量时，意味着当前测量不包含新信息，估计不需要修正。</p>
+          <p>新息 $e_{k} = y_{k} - C\hat x_{k|k-1}$ 是实际测量与预测测量之差。它可以为零——当预测完美匹配实际测量时，意味着当前测量不包含新信息，估计不需要修正。</p>
         </div>
       </details>
     </div>
@@ -387,7 +390,7 @@ lead-grid">
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>$P_{k|k} = P_{k|k-1} - K_k R_{e,k} K_k^T$。由于 $K_k R_{e,k} K_k^T \ge 0$（半正定），第二项总是不小于零的"减少量"，所以协方差只减不增。测量总是携带信息的，因此不确定性降低或至少不增。</p>
+          <p>$P_{k|k} = P_{k|k-1} - K_{k} R_{e,k} K_{k}^T$。由于 $K_{k} R_{e,k} K_{k}^T \ge 0$（半正定），第二项总是不小于零的"减少量"，所以协方差只减不增。测量总是携带信息的，因此不确定性降低或至少不增。</p>
         </div>
       </details>
     </div>

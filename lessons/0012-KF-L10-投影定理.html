@@ -22,7 +22,10 @@ window.MathJax = {
   svg: { fontCache: 'global' }
 };
 </script>
-<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
 </head>
 <body>
 <div class="page">
@@ -88,16 +91,16 @@ lead-grid">
   <!-- 1. 投影定理 -->
   <div id="sec1" class="section-card">
     <h2>1. 投影定理</h2>
-    <p>设 $L$ 是内积空间 $V$ 的线性子空间。对任意 $y\in V$，存在唯一 $\hat y_L\in L$，使：</p>
+    <p>设 $L$ 是内积空间 $V$ 的线性子空间。对任意 $y\in V$，存在唯一 $\hat y_{L}\in L$，使：</p>
     <div class="formula-box">
       $$
-      \langle y-\hat y_L,a\rangle=0,\quad\forall a\in L
+      \langle y-\hat y_{L},a\rangle=0,\quad\forall a\in L
       $$
     </div>
     <p>也就是：</p>
     <div class="formula-box">
       $$
-      y-\hat y_L\perp L
+      y-\hat y_{L}\perp L
       $$
     </div>
     <p>这就是<strong>投影定理</strong>的核心内容。</p>
@@ -130,20 +133,20 @@ lead-grid">
   <!-- 3. 证明思路：存在性 -->
   <div id="sec3" class="section-card">
     <h2>3. 证明思路：存在性</h2>
-    <p>取 $L$ 的正交基 $v_1,\ldots,v_m$，扩展成 $V$ 的正交基 $v_1,\ldots,v_m,v_{m+1},\ldots,v_N$。</p>
+    <p>取 $L$ 的正交基 $v_{1},\ldots,v_{m}$，扩展成 $V$ 的正交基 $v_{1},\ldots,v_{m},v_{m+1},\ldots,v_{N}$。</p>
     <p>任意 $y$ 可写成：</p>
     <div class="formula-box">
       $$
-      y=\sum_{i=1}^N\alpha_iv_i
+      y=\sum_{i=1}^N\alpha_{i}v_{i}
       $$
     </div>
     <p>定义投影：</p>
     <div class="formula-box">
       $$
-      \hat y_L=\sum_{i=1}^m\alpha_iv_i
+      \hat y_{L}=\sum_{i=1}^m\alpha_{i}v_{i}
       $$
     </div>
-    <p>也就是只保留属于 $L$ 的分量。这天然保证了 $\hat y_L \in L$。</p>
+    <p>也就是只保留属于 $L$ 的分量。这天然保证了 $\hat y_{L} \in L$。</p>
   </div>
 
   <!-- 4. 证明思路：正交性 -->
@@ -152,13 +155,13 @@ lead-grid">
     <p>误差：</p>
     <div class="formula-box">
       $$
-      y-\hat y_L=\sum_{i=m+1}^N\alpha_iv_i
+      y-\hat y_{L}=\sum_{i=m+1}^N\alpha_{i}v_{i}
       $$
     </div>
-    <p>任意 $a\in L$，$a=\sum_{j=1}^m\beta_jv_j$。由于正交基之间内积为 0：</p>
+    <p>任意 $a\in L$，$a=\sum_{j=1}^m\beta_{j}v_{j}$。由于正交基之间内积为 0：</p>
     <div class="formula-box">
       $$
-      \langle y-\hat y_L,a\rangle=0
+      \langle y-\hat y_{L},a\rangle=0
       $$
     </div>
     <p>这就证明了误差与子空间正交。</p>
@@ -167,16 +170,16 @@ lead-grid">
   <!-- 5. 证明思路：唯一性 -->
   <div id="sec5" class="section-card">
     <h2>5. 证明思路：唯一性</h2>
-    <p>假设有两个投影 $\hat y_1,\hat y_2$，二者都在 $L$ 中，所以：</p>
+    <p>假设有两个投影 $\hat y_{1},\hat y_{2}$，二者都在 $L$ 中，所以：</p>
     <div class="formula-box">
       $$
-      \hat y_1-\hat y_2\in L
+      \hat y_{1}-\hat y_{2}\in L
       $$
     </div>
     <p>利用正交条件可证明：</p>
     <div class="formula-box">
       $$
-      \|\hat y_1-\hat y_2\|^2=0 \quad\Rightarrow\quad \hat y_1=\hat y_2
+      \|\hat y_{1}-\hat y_{2}\|^2=0 \quad\Rightarrow\quad \hat y_{1}=\hat y_{2}
       $$
     </div>
     <p>因此投影点唯一确定。</p>
@@ -345,7 +348,7 @@ lead-grid">
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>正交条件 $\langle y-\hat y_L, a\rangle = 0$ 对任意 $a\in L$ 成立，意味着误差向量与整个子空间 $L$ 正交。这是"最近点"的几何特征：连接点到子空间的垂线垂直于子空间。</p>
+          <p>正交条件 $\langle y-\hat y_{L}, a\rangle = 0$ 对任意 $a\in L$ 成立，意味着误差向量与整个子空间 $L$ 正交。这是"最近点"的几何特征：连接点到子空间的垂线垂直于子空间。</p>
         </div>
       </details>
     </div>
@@ -367,7 +370,7 @@ lead-grid">
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>LMMSE 只需要一阶矩和二阶矩（均值、协方差），不需要完整的条件分布。它避免了高维积分，只需要解一个线性方程 $K R_y = R_{xy}$，计算量远小于 MMSE。</p>
+          <p>LMMSE 只需要一阶矩和二阶矩（均值、协方差），不需要完整的条件分布。它避免了高维积分，只需要解一个线性方程 $K R_{y} = R_{xy}$，计算量远小于 MMSE。</p>
         </div>
       </details>
     </div>

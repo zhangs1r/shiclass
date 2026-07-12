@@ -22,7 +22,10 @@ window.MathJax = {
   svg: { fontCache: 'global' }
 };
 </script>
-<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
 </head>
 <body>
 <div class="page">
@@ -132,7 +135,7 @@ section-card">
       <div class="mini-card">
         <h4>📐 线性</h4>
         <div class="formula-box" style="margin:8px 0;font-size:0.85rem">
-          $$ \langle \alpha_1 u_1 + \alpha_2 u_2, v \rangle = \alpha_1 \langle u_1, v \rangle + \alpha_2 \langle u_2, v \rangle $$
+          $$ \langle \alpha_{1} u_{1} + \alpha_{2} u_{2}, v \rangle = \alpha_{1} \langle u_{1}, v \rangle + \alpha_{2} \langle u_{2}, v \rangle $$
         </div>
       </div>
       <div class="mini-card">
@@ -203,7 +206,7 @@ section-card">
     <h2>8. 【课堂例题】函数空间内积</h2>
     <p>考虑连续函数空间 $C[0,1]$，定义：</p>
     <div class="formula-box">
-      $$ \langle f, g \rangle = \int_0^1 f(t) g(t) \, dt $$
+      $$ \langle f, g \rangle = \int_{0}^1 f(t) g(t) \, dt $$
     </div>
     <p>这也是内积。</p>
 
@@ -217,9 +220,9 @@ section-card">
 
   <section id="non-degen" class="section-card">
     <h2>9. 函数内积的非退化性</h2>
-    <p>若 $\langle f, f \rangle = \int_0^1 f(t)^2 dt = 0$，由于 $f(t)^2 \ge 0$，积分为 0 意味着 $f(t)$ 在整个区间上为 0。</p>
+    <p>若 $\langle f, f \rangle = \int_{0}^1 f(t)^2 dt = 0$，由于 $f(t)^2 \ge 0$，积分为 0 意味着 $f(t)$ 在整个区间上为 0。</p>
     <div class="callout">
-      <p><strong>📝 证明思路：</strong> 如果某点 $f(t_1) \ne 0$，由连续性可知附近一小段也不为 0，积分就会大于 0，矛盾。</p>
+      <p><strong>📝 证明思路：</strong> 如果某点 $f(t_{1}) \ne 0$，由连续性可知附近一小段也不为 0，积分就会大于 0，矛盾。</p>
     </div>
   </section>
 

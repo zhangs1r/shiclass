@@ -22,7 +22,10 @@ window.MathJax = {
   svg: { fontCache: 'global' }
 };
 </script>
-<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
 </head>
 <body>
 <div class="page">
@@ -106,7 +109,7 @@ lead-grid">
 
     <div class="callout">
       <p><strong>💡 关键设定</strong></p>
-      <p>定义条件 \$C = \\{ \\text{Image}, \\text{State}, \\text{Language} \\}\$，目标是生成动作序列 \$A = \\{a_0, a_1, \\dots, a_H\\}\$。生成式模型要建模的是<strong>条件分布 \$p(A|C)\$</strong>，而非确定性映射。</p>
+      <p>定义条件 \$C = \\{ \\text{Image}, \\text{State}, \\text{Language} \\}\$，目标是生成动作序列 \$A = \\{a_{0}, a_{1}, \\dots, a_{H}\\}\$。生成式模型要建模的是<strong>条件分布 \$p(A|C)\$</strong>，而非确定性映射。</p>
     </div>
   </div>
 
@@ -156,17 +159,17 @@ lead-grid">
     <div class="grid-2">
       <div class="mini-card" style="border-left: 4px solid #f59e0b;">
         <h4>🔁 正向过程（加噪）</h4>
-        <p>从干净的动作分布 \$x_0\$ 开始，逐步添加高斯噪声：</p>
+        <p>从干净的动作分布 \$x_{0}\$ 开始，逐步添加高斯噪声：</p>
         \$$
-        $x_t = \\sqrt{\\bar\\alpha_t}\\, x_0 + \\sqrt{1 - \\bar\\alpha_t}\\,\\epsilon$
+        $x_{t} = \\sqrt{\\bar\\alpha_t}\\, x_{0} + \\sqrt{1 - \\bar\\alpha_t}\\,\\epsilon$
         \$$
-        <p>经过足够多步（通常 \$T=50\\sim1000\$），\$x_T\$ 接近纯高斯噪声。</p>
+        <p>经过足够多步（通常 \$T=50\\sim1000\$），\$x_{T}\$ 接近纯高斯噪声。</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #3b82f6;">
         <h4>🔃 反向过程（去噪）</h4>
-        <p>从纯噪声 \$x_T\$ 出发，学习一个神经网络 \$\\epsilon_\\theta\$ 预测噪声，逐步去噪恢复原始动作：</p>
+        <p>从纯噪声 \$x_{T}\$ 出发，学习一个神经网络 \$\\epsilon_\\theta\$ 预测噪声，逐步去噪恢复原始动作：</p>
         \$$
-        $x_{t-1} = \\frac{1}{\\sqrt{\\alpha_t}}\\left(x_t - \\frac{1-\\alpha_t}{\\sqrt{1-\\bar\\alpha_t}}\\epsilon_\\theta(x_t, t, C)\\right) + \\sigma_t z$
+        $x_{t-1} = \\frac{1}{\\sqrt{\\alpha_t}}\\left(x_{t} - \\frac{1-\\alpha_t}{\\sqrt{1-\\bar\\alpha_t}}\\epsilon_\\theta(x_{t}, t, C)\\right) + \\sigma_{t} z$
         \$$
       </div>
     </div>
@@ -174,7 +177,7 @@ lead-grid">
     <h3>训练目标</h3>
     <div class="formula-box">
       \$$
-      $\\mathcal{L}_{\\text{DDPM}} = \\mathbb{E}_{t, x_0, \\epsilon} \\left[ \\| \\epsilon - \\epsilon_\\theta(x_t, t, C) \\|^2 \\right]$
+      $\\mathcal{L}_{\\text{DDPM}} = \\mathbb{E}_{t, x_{0}, \\epsilon} \\left[ \\| \\epsilon - \\epsilon_\\theta(x_{t}, t, C) \\|^2 \\right]$
       \$$
       <p style="margin-top:8px;font-size:0.9rem">网络学会预测添加的噪声，而不是直接预测动作。</p>
     </div>
@@ -207,10 +210,10 @@ lead-grid">
     <p>2023 年提出的 Flow Matching 采用了一种不同的思路：不去预测噪声，而是学习一个<strong>速度场（velocity field）</strong>，把噪声"流"到数据分布。</p>
 
     <h3>基本思想</h3>
-    <p>定义一条从噪声 \$x_0 \\sim \\mathcal{N}(0, I)\$ 到数据 \$x_1 \\sim p_{\\text{data}}\$ 的概率路径：</p>
+    <p>定义一条从噪声 \$x_{0} \\sim \\mathcal{N}(0, I)\$ 到数据 \$x_{1} \\sim p_{\\text{data}}\$ 的概率路径：</p>
     <div class="formula-box">
       \$$
-      $x_t = (1 - t) x_0 + t x_1, \\quad t \\in [0, 1]$
+      $x_{t} = (1 - t) x_{0} + t x_{1}, \\quad t \\in [0, 1]$
       \$$
       <p style="margin-top:8px;font-size:0.9rem">线性插值路径——简单而高效</p>
     </div>
@@ -218,15 +221,15 @@ lead-grid">
     <p>速度场就是路径对时间的导数：</p>
     <div class="formula-box">
       \$$
-      $\\dot{x}_t = v_t(x_t) = x_1 - x_0$
+      $\\dot{x}_t = v_{t}(x_{t}) = x_{1} - x_{0}$
       \$$
     </div>
 
     <h3>目标函数</h3>
-    <p>学习一个参数化的速度场 \$v_\\theta(x_t, t, C)\$ 来拟合真实速度：</p>
+    <p>学习一个参数化的速度场 \$v_\\theta(x_{t}, t, C)\$ 来拟合真实速度：</p>
     <div class="formula-box">
       \$$
-      $\\mathcal{L}_{\\text{FM}} = \\mathbb{E}_{t, x_0, x_1} \\left[ \\| v_\\theta(x_t, t, C) - (x_1 - x_0) \\|^2 \\right]$
+      $\\mathcal{L}_{\\text{FM}} = \\mathbb{E}_{t, x_{0}, x_1} \\left[ \\| v_\\theta(x_{t}, t, C) - (x_{1} - x_{0}) \\|^2 \\right]$
       \$$
     </div>
 
@@ -239,7 +242,7 @@ lead-grid">
     <p>通过求解常微分方程（ODE）将噪声搬运到动作分布：</p>
     <div class="formula-box">
       \$$
-      $x_{t+\\Delta t} = x_t + \\Delta t \\cdot v_\\theta(x_t, t, C)$
+      $x_{t+\\Delta t} = x_{t} + \\Delta t \\cdot v_\\theta(x_{t}, t, C)$
       \$$
     </div>
     <p>通常只需 <strong>10~20 步 ODE 求解</strong> 就能得到高质量结果，比 DDPM 的 50~1000 步大幅降低。</p>
@@ -305,7 +308,7 @@ lead-grid">
         <tr>
           <td><strong>代表应用</strong></td>
           <td>扩散策略（Diffusion Policy）</td>
-          <td>\$\\pi_0\$、RDT 等 VLA 模型</td>
+          <td>\$\\pi_{0}\$、RDT 等 VLA 模型</td>
         </tr>
       </tbody>
     </table>

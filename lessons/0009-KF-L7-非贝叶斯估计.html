@@ -22,7 +22,10 @@ window.MathJax = {
   svg: { fontCache: 'global' }
 };
 </script>
-<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
 </head>
 <body>
 <div class="page">
@@ -106,14 +109,14 @@ section-card">
 
   <section id="ml" class="section-card">
     <h2>3. 最大似然估计 ML</h2>
-    <p>观测 $x_1, \ldots, x_n$，联合概率或密度写成：</p>
+    <p>观测 $x_{1}, \ldots, x_{n}$，联合概率或密度写成：</p>
     <div class="formula-box">
-      $$ p(x_1, \ldots, x_n; \theta) $$
+      $$ p(x_{1}, \ldots, x_{n}; \theta) $$
     </div>
     <p>分号表示 $\theta$ 是<strong>参数</strong>，不是随机变量。</p>
     <p>最大似然估计：</p>
     <div class="formula-box">
-      $$ \hat\theta_{\text{ML}} = \arg\max_\theta p(x_1, \ldots, x_n; \theta) $$
+      $$ \hat\theta_{\text{ML}} = \arg\max_\theta p(x_{1}, \ldots, x_{n}; \theta) $$
     </div>
     <div class="callout">
       <p><strong>💡 通俗解释：</strong> 已经看到这些数据了。ML 问：哪个 $\theta$ 会让这些数据最容易发生？</p>
@@ -122,13 +125,13 @@ section-card">
 
   <section id="loglikelihood" class="section-card">
     <h2>4. 独立样本和 log-likelihood</h2>
-    <p>若 $X_i$ 独立：</p>
+    <p>若 $X_{i}$ 独立：</p>
     <div class="formula-box">
-      $$ p(x_1, \ldots, x_n; \theta) = \prod_{i=1}^n p(x_i; \theta) $$
+      $$ p(x_{1}, \ldots, x_{n}; \theta) = \prod_{i=1}^n p(x_{i}; \theta) $$
     </div>
     <p>取 log（单调递增，不改变最大点）：</p>
     <div class="formula-box">
-      $$ \log p(x_1, \ldots, x_n; \theta) = \sum_{i=1}^n \log p(x_i; \theta) $$
+      $$ \log p(x_{1}, \ldots, x_{n}; \theta) = \sum_{i=1}^n \log p(x_{i}; \theta) $$
     </div>
 
     <div class="summary-grid">
@@ -143,11 +146,11 @@ section-card">
     <h2>5. 【课堂例题】偏硬币估计</h2>
     <p>硬币正面概率为 $\theta$。第 $i$ 次投掷：</p>
     <div class="formula-box">
-      $$ X_i = \begin{cases} 1, & \text{正面} \\ 0, & \text{反面} \end{cases} $$
+      $$ X_{i} = \begin{cases} 1, & \text{正面} \\ 0, & \text{反面} \end{cases} $$
     </div>
     <p>一个直观估计器：</p>
     <div class="formula-box">
-      $$ \hat\theta_n = \frac1n \sum_{i=1}^n X_i $$
+      $$ \hat\theta_{n} = \frac1n \sum_{i=1}^n X_{i} $$
     </div>
     <p>如果 100 次中 70 次正面，则 $\hat\theta = 0.7$。</p>
     <div class="callout">
@@ -157,14 +160,14 @@ section-card">
 
   <section id="temp-ml" class="section-card">
     <h2>6. 【课堂例题】温度的 ML 直觉</h2>
-    <p>若观测到多个温度读数 $x_1, \ldots, x_n$，且噪声是高斯：</p>
+    <p>若观测到多个温度读数 $x_{1}, \ldots, x_{n}$，且噪声是高斯：</p>
     <div class="formula-box">
-      $$ X_i \sim N(T, 1) $$
+      $$ X_{i} \sim N(T, 1) $$
     </div>
     <p>当 $T$ 靠近观测数据中心时，所有观测同时出现的概率最大。</p>
     <p>在独立同方差高斯噪声下，ML 会给出样本均值：</p>
     <div class="formula-box">
-      $$ \hat T_{\text{ML}} = \frac1n \sum_i x_i $$
+      $$ \hat T_{\text{ML}} = \frac1n \sum_{i} x_{i} $$
     </div>
     <div class="callout">
       <p><strong>📊 直觉：</strong> 高斯噪声下，最大化似然等价于最小化残差平方和——这是通向最小二乘的桥梁。</p>
@@ -202,17 +205,17 @@ section-card">
 
   <section id="nonuniform" class="section-card">
     <h2>8. 【补充例题】非均匀先验下 MAP 和 ML 不同</h2>
-    <p>假设两个候选参数 $\theta_1, \theta_2$：</p>
+    <p>假设两个候选参数 $\theta_{1}, \theta_{2}$：</p>
     <div class="formula-box">
-      $$ P(x|\theta_1) = 0.6,\quad P(x|\theta_2) = 0.8 $$
-      $$ P(\theta_1) = 0.9,\quad P(\theta_2) = 0.1 $$
+      $$ P(x|\theta_{1}) = 0.6,\quad P(x|\theta_{2}) = 0.8 $$
+      $$ P(\theta_{1}) = 0.9,\quad P(\theta_{2}) = 0.1 $$
     </div>
-    <p><strong>ML</strong> 选 $\theta_2$，因为 0.8 更大。</p>
+    <p><strong>ML</strong> 选 $\theta_{2}$，因为 0.8 更大。</p>
     <p><strong>MAP</strong> 比较：</p>
     <div class="formula-box">
       $$ 0.9 \times 0.6 = 0.54 \quad\text{vs}\quad 0.1 \times 0.8 = 0.08 $$
     </div>
-    <p>所以 MAP 选 $\theta_1$。</p>
+    <p>所以 MAP 选 $\theta_{1}$。</p>
     <div class="callout" style="border-left-color: var(--accent-light);">
       <p><strong>📝 要点：</strong> 先验信息强烈时，MAP 和 ML 可能分歧很大。ML 完全由数据驱动，MAP 则在先验和数据之间做权衡。</p>
     </div>

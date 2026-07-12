@@ -22,7 +22,10 @@ window.MathJax = {
   svg: { fontCache: 'global' }
 };
 </script>
-<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
 </head>
 <body>
 <div class="page">
@@ -148,7 +151,7 @@ section-card">
     <h3>MMSE</h3>
     <p>后验均值：</p>
     <div class="formula-box">
-      $$ \hat\theta_{\text{MMSE}} = E[\theta|x] = \int_x^1 \theta \cdot \frac{1}{\theta |\log x|} d\theta = \frac{1-x}{|\log x|} $$
+      $$ \hat\theta_{\text{MMSE}} = E[\theta|x] = \int_{x}^1 \theta \cdot \frac{1}{\theta |\log x|} d\theta = \frac{1-x}{|\log x|} $$
     </div>
 
     <div class="callout">
@@ -184,40 +187,40 @@ section-card">
 
   <section id="hypothesis" class="section-card">
     <h2>7. 假设检验</h2>
-    <p>如果 $\theta$ 只能取 $\theta_1, \ldots, \theta_m$，每个取值对应一个假设：</p>
+    <p>如果 $\theta$ 只能取 $\theta_{1}, \ldots, \theta_{m}$，每个取值对应一个假设：</p>
     <div class="formula-box">
-      $$ H_i: \theta = \theta_i $$
+      $$ H_{i}: \theta = \theta_{i} $$
     </div>
-    <p><strong>MAP 规则</strong>：选择使 $P(\theta_i|x)$ 最大的假设。</p>
+    <p><strong>MAP 规则</strong>：选择使 $P(\theta_{i}|x)$ 最大的假设。</p>
     <p>利用 Bayes rule：</p>
     <div class="formula-box">
-      $$ P(\theta_i|x) = \frac{P(\theta_i) P(x|\theta_i)}{P(x)} $$
+      $$ P(\theta_{i}|x) = \frac{P(\theta_{i}) P(x|\theta_{i})}{P(x)} $$
     </div>
     <p>因为 $P(x)$ 对所有假设一样，比较时只需比较 <strong>先验 × 似然</strong>：</p>
     <div class="formula-box">
-      $$ P(\theta_i) P(x|\theta_i) $$
+      $$ P(\theta_{i}) P(x|\theta_{i}) $$
     </div>
   </section>
 
   <section id="coins" class="section-card">
     <h2>8. 【课堂例题】两枚偏硬币</h2>
-    <p>有两枚硬币：硬币 1 正面概率 $p_1$，硬币 2 正面概率 $p_2$。随机等概率选一枚，投一次，观测到反面。</p>
+    <p>有两枚硬币：硬币 1 正面概率 $p_{1}$，硬币 2 正面概率 $p_{2}$。随机等概率选一枚，投一次，观测到反面。</p>
     <div class="formula-box">
-      $$ H_1: \text{选中硬币 1},\quad H_2: \text{选中硬币 2} $$
+      $$ H_{1}: \text{选中硬币 1},\quad H_{2}: \text{选中硬币 2} $$
     </div>
     <p>观测反面 $x=0$。比较：</p>
     <div class="formula-box">
-      $$ P(H_1)P(x=0|H_1) = 0.5(1-p_1) $$
-      $$ P(H_2)P(x=0|H_2) = 0.5(1-p_2) $$
+      $$ P(H_{1})P(x=0|H_{1}) = 0.5(1-p_{1}) $$
+      $$ P(H_{2})P(x=0|H_{2}) = 0.5(1-p_{2}) $$
     </div>
-    <p>如果 $p_1 &lt; p_2$，则 $1-p_1 &gt; 1-p_2$，所以更可能是硬币 1。</p>
+    <p>如果 $p_{1} &lt; p_{2}$，则 $1-p_{1} &gt; 1-p_{2}$，所以更可能是硬币 1。</p>
     <div class="callout">
       <p><strong>💡 通俗解释：</strong> 看到反面，更支持"更容易出反面"的那枚硬币。</p>
     </div>
 
     <div class="interactive-card">
       <h3>🧪 试试看</h3>
-      <p>假设 $p_1=0.3, p_2=0.8$，观测到反面。你选哪个假设？</p>
+      <p>假设 $p_{1}=0.3, p_{2}=0.8$，观测到反面。你选哪个假设？</p>
       <div class="quiz-options">
         <button onclick="lessonKit.answer(this, 'quiz-coins')" data-correct="yes" data-explanation="0.5×0.7=0.35 > 0.5×0.2=0.1，硬币 1 更可能。">
           🪙 选硬币 1
@@ -261,7 +264,7 @@ section-card">
       </div>
       <div class="mini-card">
         <h4>🧪 假设检验</h4>
-        <p>MAP 规则：选择 $P(\theta_i)P(x|\theta_i)$ 最大的假设</p>
+        <p>MAP 规则：选择 $P(\theta_{i})P(x|\theta_{i})$ 最大的假设</p>
       </div>
     </div>
   </section>
@@ -278,7 +281,7 @@ section-card">
       <div class="content">
         <p><strong>1.</strong> MAP 最大化后验概率（0-1 损失下最优）；MMSE 最小化均方误差（平方损失下最优），结果为后验均值。</p>
         <p><strong>2.</strong> 均值可以不是离散取值集合中的元素。例如离散后验均值 1.1 不在 {0,1,2} 中。</p>
-        <p><strong>3.</strong> 看到正面应更支持正面概率更大的那枚硬币。若 $p_1 > p_2$ 则更支持硬币 1。</p>
+        <p><strong>3.</strong> 看到正面应更支持正面概率更大的那枚硬币。若 $p_{1} > p_{2}$ 则更支持硬币 1。</p>
       </div>
     </details>
   </div>

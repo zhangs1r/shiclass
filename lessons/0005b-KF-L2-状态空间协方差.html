@@ -17,7 +17,10 @@ window.MathJax = {
   svg: { fontCache: 'global' }
 };
 </script>
-<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
 </head>
 <body>
 <div class="page">
@@ -72,32 +75,32 @@ window.MathJax = {
     <p>状态空间模型是将动态系统写成一组一阶差分/微分方程的标准方法。离散形式：</p>
     <div class="formula-box">
       $$ \begin{aligned}
-      \text{状态方程:}\quad & x_{k+1} = A x_k + B u_k + w_k \\
-      \text{测量方程:}\quad & y_k = C x_k + v_k
+      \text{状态方程:}\quad & x_{k+1} = A x_{k} + B u_{k} + w_{k} \\
+      \text{测量方程:}\quad & y_{k} = C x_{k} + v_{k}
       \end{aligned} $$
     </div>
 
     <div class="grid-2">
       <div class="mini-card">
-        <h4>$x_k$</h4>
+        <h4>$x_{k}$</h4>
         <p>状态向量（我们想估计的东西）</p>
       </div>
       <div class="mini-card">
-        <h4>$u_k$</h4>
+        <h4>$u_{k}$</h4>
         <p>控制输入（已知的）</p>
       </div>
       <div class="mini-card">
-        <h4>$w_k$</h4>
+        <h4>$w_{k}$</h4>
         <p>过程噪声（随机）</p>
       </div>
       <div class="mini-card">
-        <h4>$y_k$</h4>
+        <h4>$y_{k}$</h4>
         <p>测量输出（我们能观测的）</p>
       </div>
     </div>
 
     <div class="callout">
-      <p><strong>💡 为什么叫"状态空间"？</strong>状态向量 $x_k$ 的取值空间就是"状态空间"。系统的全部过去信息压缩在 $x_k$ 中——知道 $x_k$ 和输入，就能预测未来。</p>
+      <p><strong>💡 为什么叫"状态空间"？</strong>状态向量 $x_{k}$ 的取值空间就是"状态空间"。系统的全部过去信息压缩在 $x_{k}$ 中——知道 $x_{k}$ 和输入，就能预测未来。</p>
     </div>
   </section>
 
@@ -117,24 +120,24 @@ window.MathJax = {
     <div class="formula-box">
       $$ \begin{bmatrix} x_{k+1} \\ v_{k+1}^x \\ y_{k+1} \\ v_{k+1}^y \end{bmatrix}
       = \begin{bmatrix} 1 & \Delta t & 0 & 0 \\ 0 & 1 & 0 & 0 \\ 0 & 0 & 1 & \Delta t \\ 0 & 0 & 0 & 1 \end{bmatrix}
-      \begin{bmatrix} x_k \\ v_k^x \\ y_k \\ v_k^y \end{bmatrix}
+      \begin{bmatrix} x_{k} \\ v_{k}^x \\ y_{k} \\ v_{k}^y \end{bmatrix}
       + \begin{bmatrix} 0 & 0 \\ \Delta t & 0 \\ 0 & 0 \\ 0 & \Delta t \end{bmatrix}
-      \begin{bmatrix} u_k^x \\ u_k^y \end{bmatrix}
-      + w_k $$
+      \begin{bmatrix} u_{k}^x \\ u_{k}^y \end{bmatrix}
+      + w_{k} $$
     </div>
 
     <h3>测量方程（GPS 观测）</h3>
     <div class="formula-box">
       $$ \begin{bmatrix} \tilde{x}_k \\ \tilde{y}_k \end{bmatrix}
       = \begin{bmatrix} 1 & 0 & 0 & 0 \\ 0 & 0 & 1 & 0 \end{bmatrix}
-      \begin{bmatrix} x_k \\ v_k^x \\ y_k \\ v_k^y \end{bmatrix}
-      + v_k $$
+      \begin{bmatrix} x_{k} \\ v_{k}^x \\ y_{k} \\ v_{k}^y \end{bmatrix}
+      + v_{k} $$
     </div>
 
     <div class="callout">
       <p><strong>🔍 关键解读：</strong></p>
       <ul>
-        <li>$A$ 矩阵：位置由速度积分得到（$x_{k+1} = x_k + \Delta t \cdot v_k^x$）</li>
+        <li>$A$ 矩阵：位置由速度积分得到（$x_{k+1} = x_{k} + \Delta t \cdot v_{k}^x$）</li>
         <li>$B$ 矩阵：加速度直接改变速度，而不是位置</li>
         <li>$C$ 矩阵：只能测量位置，无法直接测量速度</li>
         <li>这就是经典的"你需要从带噪位置观测中推断速度和位置"——KF 要解决的问题</li>
@@ -144,25 +147,25 @@ window.MathJax = {
 
   <section id="covariance" class="section-card">
     <h2>3. 协方差矩阵的定义与性质</h2>
-    <p>设 $x = (x_1, \dots, x_n)^T$ 是一个 $n$ 维随机向量，均值 $\mu_i = E[x_i]$。</p>
+    <p>设 $x = (x_{1}, \dots, x_{n})^T$ 是一个 $n$ 维随机向量，均值 $\mu_{i} = E[x_{i}]$。</p>
 
     <h3>方差（对角元）</h3>
     <div class="formula-box">
-      $$ \sigma_i^2 = E[(x_i - \mu_i)^2] $$
+      $$ \sigma_{i}^2 = E[(x_{i} - \mu_{i})^2] $$
     </div>
 
     <h3>协方差（非对角元）</h3>
     <div class="formula-box">
-      $$ \sigma_{ij} = E[(x_i - \mu_i)(x_j - \mu_j)], \quad i \neq j $$
+      $$ \sigma_{ij} = E[(x_{i} - \mu_{i})(x_{j} - \mu_{j})], \quad i \neq j $$
     </div>
 
     <h3>协方差矩阵</h3>
     <div class="formula-box">
       $$ \Sigma = \begin{bmatrix}
-      \sigma_1^2 & \sigma_{12} & \cdots & \sigma_{1n} \\
-      \sigma_{21} & \sigma_2^2 & \cdots & \sigma_{2n} \\
+      \sigma_{1}^2 & \sigma_{12} & \cdots & \sigma_{1n} \\
+      \sigma_{21} & \sigma_{2}^2 & \cdots & \sigma_{2n} \\
       \vdots & \vdots & \ddots & \vdots \\
-      \sigma_{n1} & \sigma_{n2} & \cdots & \sigma_n^2
+      \sigma_{n1} & \sigma_{n2} & \cdots & \sigma_{n}^2
       \end{bmatrix}
       = E[(x - \mu)(x - \mu)^T] $$
     </div>
@@ -170,30 +173,30 @@ window.MathJax = {
     <div class="callout">
       <p><strong>💡 关键性质：协方差矩阵一定是半正定的。</strong></p>
       <p>对任意 $y \neq 0$：$y^T \Sigma y = E[y^T (x-\mu)(x-\mu)^T y] = E[(y^T(x-\mu))^2] \ge 0$。</p>
-      <p>这就是为什么 KF 中的 $P_k$（估计误差协方差）始终是半正定的——它本质上就是一个协方差矩阵。</p>
+      <p>这就是为什么 KF 中的 $P_{k}$（估计误差协方差）始终是半正定的——它本质上就是一个协方差矩阵。</p>
     </div>
 
     <h3>相关性与独立性</h3>
-    <p>$\sigma_{ij} = 0$ 意味着 $x_i$ 和 $x_j$ 不相关。对于高斯分布，不相关等价于独立。</p>
+    <p>$\sigma_{ij} = 0$ 意味着 $x_{i}$ 和 $x_{j}$ 不相关。对于高斯分布，不相关等价于独立。</p>
   </section>
 
   <section id="linear-transform" class="section-card">
     <h2>4. 线性变换后的协方差传播</h2>
     <p>这是 KF 中协方差更新<strong>最核心的公式</strong>。</p>
 
-    <p>设 $y$ 是 $n$ 维随机向量，均值 $\mu_y$，协方差 $\Sigma_y$。对 $y$ 做线性变换：</p>
+    <p>设 $y$ 是 $n$ 维随机向量，均值 $\mu_{y}$，协方差 $\Sigma_{y}$。对 $y$ 做线性变换：</p>
     <div class="formula-box">
       $$ x = A y + b, \quad A \in \mathbb{R}^{m \times n},\; b \in \mathbb{R}^m $$
     </div>
 
     <h3>均值传播</h3>
     <div class="formula-box">
-      $$ \mu_x = E[x] = E[Ay + b] = A \mu_y + b $$
+      $$ \mu_{x} = E[x] = E[Ay + b] = A \mu_{y} + b $$
     </div>
 
     <h3>协方差传播</h3>
     <div class="formula-box">
-      $$ \Sigma_x = E[(x - \mu_x)(x - \mu_x)^T] = A \Sigma_y A^T $$
+      $$ \Sigma_{x} = E[(x - \mu_{x})(x - \mu_{x})^T] = A \Sigma_{y} A^T $$
     </div>
 
     <div class="callout">
@@ -201,18 +204,18 @@ window.MathJax = {
       <div class="formula-box">
         $$ P_{k+1|k} = A P_{k|k} A^T + Q $$
       </div>
-      <p>其中 $Q$ 是过程噪声 $w_k$ 的协方差。你看——就是协方差传播公式加上噪声项！</p>
+      <p>其中 $Q$ 是过程噪声 $w_{k}$ 的协方差。你看——就是协方差传播公式加上噪声项！</p>
     </div>
 
     <h3>【数值例子】</h3>
-    <p>假设位置估计误差方差 $\sigma_x^2 = 4$，速度估计误差方差 $\sigma_v^2 = 1$，两者独立：</p>
+    <p>假设位置估计误差方差 $\sigma_{x}^2 = 4$，速度估计误差方差 $\sigma_{v}^2 = 1$，两者独立：</p>
     <div class="formula-box">
-      $$ \Sigma_y = \begin{bmatrix} 4 & 0 \\ 0 & 1 \end{bmatrix},\quad
+      $$ \Sigma_{y} = \begin{bmatrix} 4 & 0 \\ 0 & 1 \end{bmatrix},\quad
       A = \begin{bmatrix} 1 & \Delta t \end{bmatrix} $$
     </div>
     <p>如果 $\Delta t = 0.1$，预测位置的方差为：</p>
     <div class="formula-box">
-      $$ \Sigma_x = A \Sigma_y A^T = \begin{bmatrix} 1 & 0.1 \end{bmatrix}
+      $$ \Sigma_{x} = A \Sigma_{y} A^T = \begin{bmatrix} 1 & 0.1 \end{bmatrix}
       \begin{bmatrix} 4 & 0 \\ 0 & 1 \end{bmatrix}
       \begin{bmatrix} 1 \\ 0.1 \end{bmatrix}
       = 4 + 0.01 = 4.01 $$
@@ -226,10 +229,10 @@ window.MathJax = {
       <p><strong>完整的 KF 建模框架：</strong></p>
       <div class="formula-box">
         $$ \begin{aligned}
-        x_{k+1} &= A x_k + B u_k + w_k, \quad w_k \sim \mathcal{N}(0, Q) \\
-        y_k &= C x_k + v_k, \quad v_k \sim \mathcal{N}(0, R) \\
-        E[w_k w_j^T] &= Q \delta_{kj}, \quad E[v_k v_j^T] = R \delta_{kj} \\
-        E[w_k v_j^T] &= 0 \quad \forall k,j
+        x_{k+1} &= A x_{k} + B u_{k} + w_{k}, \quad w_{k} \sim \mathcal{N}(0, Q) \\
+        y_{k} &= C x_{k} + v_{k}, \quad v_{k} \sim \mathcal{N}(0, R) \\
+        E[w_{k} w_{j}^T] &= Q \delta_{kj}, \quad E[v_{k} v_{j}^T] = R \delta_{kj} \\
+        E[w_{k} v_{j}^T] &= 0 \quad \forall k,j
         \end{aligned} $$
       </div>
     </div>
@@ -253,7 +256,7 @@ window.MathJax = {
       </div>
     </div>
 
-    <p><strong>问题：</strong>我们只有带噪的 $y_k$，想估计真实状态 $x_k$。</p>
+    <p><strong>问题：</strong>我们只有带噪的 $y_{k}$，想估计真实状态 $x_{k}$。</p>
     <p><strong>答案：</strong>Kalman Filter 在每一步做两件事：</p>
     <ol>
       <li><strong>时间更新（预测）</strong>：用 $A$ 和 $B$ 预测下一时刻的状态，用 $A \Sigma A^T + Q$ 传播协方差</li>
@@ -269,7 +272,7 @@ window.MathJax = {
       <h3>📝 课后练习</h3>
       <ol>
         <li>
-          <p><strong>【数值计算】</strong>考虑标量系统 $x_{k+1} = 0.9 x_k + w_k$，$w_k \sim \mathcal{N}(0, 1)$。若 $P_{0|0} = 1$，求 $P_{1|0}$（时间更新后的协方差）。</p>
+          <p><strong>【数值计算】</strong>考虑标量系统 $x_{k+1} = 0.9 x_{k} + w_{k}$，$w_{k} \sim \mathcal{N}(0, 1)$。若 $P_{0|0} = 1$，求 $P_{1|0}$（时间更新后的协方差）。</p>
           <details class="exercise-answer">
             <summary>查看答案</summary>
             <div class="content">
@@ -278,22 +281,22 @@ window.MathJax = {
           </details>
         </li>
         <li>
-          <p><strong>【协方差传播】</strong>二维随机向量 $y$ 的协方差 $\Sigma_y = \begin{bmatrix} 2 & 0.5 \\ 0.5 & 3 \end{bmatrix}$。线性变换 $A = \begin{bmatrix} 1 & -1 \\ 2 & 0 \end{bmatrix}$，求 $\Sigma_x = A \Sigma_y A^T$。</p>
+          <p><strong>【协方差传播】</strong>二维随机向量 $y$ 的协方差 $\Sigma_{y} = \begin{bmatrix} 2 & 0.5 \\ 0.5 & 3 \end{bmatrix}$。线性变换 $A = \begin{bmatrix} 1 & -1 \\ 2 & 0 \end{bmatrix}$，求 $\Sigma_{x} = A \Sigma_{y} A^T$。</p>
           <details class="exercise-answer">
             <summary>查看答案</summary>
             <div class="content">
-              <p>先算 $A \Sigma_y = \begin{bmatrix} 1 & -1 \\ 2 & 0 \end{bmatrix} \begin{bmatrix} 2 & 0.5 \\ 0.5 & 3 \end{bmatrix} = \begin{bmatrix} 1.5 & -2.5 \\ 4 & 1 \end{bmatrix}$</p>
-              <p>再乘 $A^T$: $\Sigma_x = \begin{bmatrix} 1.5 & -2.5 \\ 4 & 1 \end{bmatrix} \begin{bmatrix} 1 & 2 \\ -1 & 0 \end{bmatrix} = \begin{bmatrix} 4 & 3 \\ 3 & 8 \end{bmatrix}$</p>
+              <p>先算 $A \Sigma_{y} = \begin{bmatrix} 1 & -1 \\ 2 & 0 \end{bmatrix} \begin{bmatrix} 2 & 0.5 \\ 0.5 & 3 \end{bmatrix} = \begin{bmatrix} 1.5 & -2.5 \\ 4 & 1 \end{bmatrix}$</p>
+              <p>再乘 $A^T$: $\Sigma_{x} = \begin{bmatrix} 1.5 & -2.5 \\ 4 & 1 \end{bmatrix} \begin{bmatrix} 1 & 2 \\ -1 & 0 \end{bmatrix} = \begin{bmatrix} 4 & 3 \\ 3 & 8 \end{bmatrix}$</p>
             </div>
           </details>
         </li>
         <li>
-          <p><strong>【推导】</strong>证明协方差传播公式 $\Sigma_x = A \Sigma_y A^T$。</p>
+          <p><strong>【推导】</strong>证明协方差传播公式 $\Sigma_{x} = A \Sigma_{y} A^T$。</p>
           <details class="exercise-answer">
             <summary>查看提示</summary>
             <div class="content">
-              <p>$x - \mu_x = Ay + b - (A\mu_y + b) = A(y - \mu_y)$</p>
-              <p>$\Sigma_x = E[(x-\mu_x)(x-\mu_x)^T] = E[A(y-\mu_y)(y-\mu_y)^T A^T] = A E[(y-\mu_y)(y-\mu_y)^T] A^T = A \Sigma_y A^T$</p>
+              <p>$x - \mu_{x} = Ay + b - (A\mu_{y} + b) = A(y - \mu_{y})$</p>
+              <p>$\Sigma_{x} = E[(x-\mu_{x})(x-\mu_{x})^T] = E[A(y-\mu_{y})(y-\mu_{y})^T A^T] = A E[(y-\mu_{y})(y-\mu_{y})^T] A^T = A \Sigma_{y} A^T$</p>
             </div>
           </details>
         </li>
@@ -316,11 +319,11 @@ window.MathJax = {
     <div class="summary-grid">
       <div class="mini-card">
         <h4>🏗️ 状态空间</h4>
-        <p>$x_{k+1} = A x_k + B u_k + w_k$，$y_k = C x_k + v_k$。任何线性系统都可这样表示。</p>
+        <p>$x_{k+1} = A x_{k} + B u_{k} + w_{k}$，$y_{k} = C x_{k} + v_{k}$。任何线性系统都可这样表示。</p>
       </div>
       <div class="mini-card">
         <h4>📊 协方差传播</h4>
-        <p>$x = Ay + b \Rightarrow \Sigma_x = A \Sigma_y A^T$。KF 时间更新的数学基础。</p>
+        <p>$x = Ay + b \Rightarrow \Sigma_{x} = A \Sigma_{y} A^T$。KF 时间更新的数学基础。</p>
       </div>
       <div class="mini-card">
         <h4>🔗 下节预告</h4>

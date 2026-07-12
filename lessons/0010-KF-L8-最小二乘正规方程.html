@@ -22,7 +22,10 @@ window.MathJax = {
   svg: { fontCache: 'global' }
 };
 </script>
-<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
 </head>
 <body>
 <div class="page">
@@ -74,34 +77,34 @@ section-card">
     <h2>1. 【课堂例题】偏硬币的 ML 推导</h2>
     <p>硬币正面概率为 $\theta$。第 $i$ 次投掷：</p>
     <div class="formula-box">
-      $$ X_i = \begin{cases} 1, & \text{正面} \\ 0, & \text{反面} \end{cases} $$
+      $$ X_{i} = \begin{cases} 1, & \text{正面} \\ 0, & \text{反面} \end{cases} $$
     </div>
     <p>单次观测概率：</p>
     <div class="formula-box">
-      $$ p(x_i; \theta) = \theta^{x_i} (1-\theta)^{1-x_i} $$
+      $$ p(x_{i}; \theta) = \theta^{x_i} (1-\theta)^{1-x_i} $$
     </div>
     <div class="callout">
-      <p><strong>🔍 为什么这个式子成立？</strong> 如果 $x_i=1$：$\theta^1(1-\theta)^0 = \theta$；如果 $x_i=0$：$\theta^0(1-\theta)^1 = 1-\theta$。一个式子覆盖两种情况。</p>
+      <p><strong>🔍 为什么这个式子成立？</strong> 如果 $x_{i}=1$：$\theta^1(1-\theta)^0 = \theta$；如果 $x_{i}=0$：$\theta^0(1-\theta)^1 = 1-\theta$。一个式子覆盖两种情况。</p>
     </div>
   </section>
 
   <section id="likelihood" class="section-card">
     <h2>2. 联合似然</h2>
-    <p>假设 $X_i$ 独立同分布：</p>
+    <p>假设 $X_{i}$ 独立同分布：</p>
     <div class="formula-box">
       $$ p(x; \theta) = \prod_{i=1}^n \theta^{x_i} (1-\theta)^{1-x_i} $$
     </div>
     <p>取 log：</p>
     <div class="formula-box">
-      $$ \ell(\theta) = \sum_{i=1}^n x_i \log \theta + \sum_{i=1}^n (1-x_i) \log(1-\theta) $$
+      $$ \ell(\theta) = \sum_{i=1}^n x_{i} \log \theta + \sum_{i=1}^n (1-x_{i}) \log(1-\theta) $$
     </div>
     <p>求导：</p>
     <div class="formula-box">
-      $$ \frac{d\ell}{d\theta} = \frac{1}{\theta} \sum_{i=1}^n x_i - \frac{1}{1-\theta} \sum_{i=1}^n (1-x_i) $$
+      $$ \frac{d\ell}{d\theta} = \frac{1}{\theta} \sum_{i=1}^n x_{i} - \frac{1}{1-\theta} \sum_{i=1}^n (1-x_{i}) $$
     </div>
     <p>令导数为 0：</p>
     <div class="formula-box">
-      $$ \frac{1}{\theta} \sum x_i = \frac{1}{1-\theta} \sum (1-x_i) $$
+      $$ \frac{1}{\theta} \sum x_{i} = \frac{1}{1-\theta} \sum (1-x_{i}) $$
     </div>
     <p>化简得到：</p>
     <div class="formula-box">
@@ -116,7 +119,7 @@ section-card">
     <h2>3. 大数定律带来的收敛</h2>
     <p>如果真实正面概率是 $\theta$，则样本均值会随着 $n$ 增大收敛到 $\theta$：</p>
     <div class="formula-box">
-      $$ \frac1n \sum_{i=1}^n X_i \xrightarrow{n\to\infty} \theta $$
+      $$ \frac1n \sum_{i=1}^n X_{i} \xrightarrow{n\to\infty} \theta $$
     </div>
     <div class="callout">
       <p><strong>📊 意义：</strong> ML 估计在这个例子里是合理的——样本越多，估计越准。</p>
@@ -161,7 +164,7 @@ section-card">
     <h2>6. 最小二乘定义</h2>
     <p>若没有精确解，定义：</p>
     <div class="formula-box">
-      $$ \hat x = \arg\min_x \|y - Hx\|^2 $$
+      $$ \hat x = \arg\min_{x} \|y - Hx\|^2 $$
     </div>
     <p>残差：</p>
     <div class="formula-box">
@@ -201,10 +204,10 @@ section-card">
 
   <section id="rank-deficient" class="section-card">
     <h2>9. 不满秩时发生什么</h2>
-    <p>如果 $H$ 不满列秩，存在非零 $x_c$ 使得 $H x_c = 0$。</p>
-    <p>若 $\hat x$ 是一个最小二乘解，那么 $\hat x + x_c$ 也是解，因为：</p>
+    <p>如果 $H$ 不满列秩，存在非零 $x_{c}$ 使得 $H x_{c} = 0$。</p>
+    <p>若 $\hat x$ 是一个最小二乘解，那么 $\hat x + x_{c}$ 也是解，因为：</p>
     <div class="formula-box">
-      $$ H(\hat x + x_c) = H\hat x $$
+      $$ H(\hat x + x_{c}) = H\hat x $$
     </div>
     <div class="callout" style="border-left-color: #ef4444;">
       <p><strong>⚠️ 重要：</strong> 不满秩时，解不唯一。需要额外的约束（如最小范数解）来选出特定的解。</p>
@@ -228,7 +231,7 @@ section-card">
     <div class="summary-grid">
       <div class="mini-card">
         <h4>🪙 硬币 ML</h4>
-        <p>$\hat\theta_{\text{ML}} = \frac1n \sum x_i$<br>样本均值 = 最大似然</p>
+        <p>$\hat\theta_{\text{ML}} = \frac1n \sum x_{i}$<br>样本均值 = 最大似然</p>
       </div>
       <div class="mini-card">
         <h4>📐 正规方程</h4>

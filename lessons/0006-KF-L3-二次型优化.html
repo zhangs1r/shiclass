@@ -22,7 +22,10 @@ window.MathJax = {
   svg: { fontCache: 'global' }
 };
 </script>
-<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
 </head>
 <body>
 <div class="page">
@@ -76,7 +79,7 @@ section-card">
     <h2>1. 二次型优化：为什么要先学这个</h2>
     <p>Kalman Filter 和最小二乘里经常出现这种目标：</p>
     <div class="formula-box">
-      $$ \min_x \frac12 x^T Q x + b^T x $$
+      $$ \min_{x} \frac12 x^T Q x + b^T x $$
     </div>
     <p>其中 $Q &gt; 0$ 是正定矩阵。你可以把它想象成一个<strong>多维的碗</strong>。正定表示这个碗是向上开的，所以有唯一碗底，也就是最小值。</p>
     <div class="callout">
@@ -134,16 +137,16 @@ section-card">
     <h2>4. 离散线性系统稳定性</h2>
     <p>考虑无输入系统：</p>
     <div class="formula-box">
-      $$ x_{k+1} = A x_k $$
+      $$ x_{k+1} = A x_{k} $$
     </div>
-    <p>给定初值 $x_0$：</p>
+    <p>给定初值 $x_{0}$：</p>
     <div class="formula-box">
-      $$ x_k = A^k x_0 $$
+      $$ x_{k} = A^k x_{0} $$
     </div>
     <h3>稳定的定义</h3>
     <p>系统稳定指：</p>
     <div class="formula-box">
-      $$ \lim_{k\to\infty} \|x_k\| = 0, \quad \forall x_0 $$
+      $$ \lim_{k\to\infty} \|x_{k}\| = 0, \quad \forall x_{0} $$
     </div>
     <div class="callout">
       <p><strong>🌰 通俗说：</strong>不管一开始偏到哪里，系统都会慢慢回到 0。</p>
@@ -154,31 +157,31 @@ section-card">
     <h2>5. 为什么稳定性看特征值</h2>
     <p>如果 $A$ 可对角化：$A = P D P^{-1}$，则：</p>
     <div class="formula-box">
-      $$ A^k = P D^k P^{-1},\quad D^k = \operatorname{diag}(\lambda_1^k, \ldots, \lambda_n^k) $$
+      $$ A^k = P D^k P^{-1},\quad D^k = \operatorname{diag}(\lambda_{1}^k, \ldots, \lambda_{n}^k) $$
     </div>
-    <p>所以 $x_k$ 是否趋于 0，关键看每个 $\lambda_i^k$ 是否趋于 0。</p>
+    <p>所以 $x_{k}$ 是否趋于 0，关键看每个 $\lambda_{i}^k$ 是否趋于 0。</p>
     <div class="formula-box">
-      $$ \lambda_i^k \to 0 \Longleftrightarrow |\lambda_i| &lt; 1 $$
+      $$ \lambda_{i}^k \to 0 \Longleftrightarrow |\lambda_{i}| &lt; 1 $$
     </div>
     <p>因此稳定条件为 <strong>谱半径</strong>：</p>
     <div class="formula-box">
-      $$ \rho(A) = \max_i |\lambda_i(A)| &lt; 1 $$
+      $$ \rho(A) = \max_{i} |\lambda_{i}(A)| &lt; 1 $$
     </div>
 
     <h3>【补充例题】一维系统稳定性</h3>
-    <p>系统 $x_{k+1}=0.8 x_k$，若 $x_0=10$，则 $x_k = 0.8^k \cdot 10$。因为 $0.8^k \to 0$，系统稳定。</p>
-    <p>若 $x_{k+1}=1.2 x_k$，则 $1.2^k$ 越来越大，系统不稳定。</p>
+    <p>系统 $x_{k+1}=0.8 x_{k}$，若 $x_{0}=10$，则 $x_{k} = 0.8^k \cdot 10$。因为 $0.8^k \to 0$，系统稳定。</p>
+    <p>若 $x_{k+1}=1.2 x_{k}$，则 $1.2^k$ 越来越大，系统不稳定。</p>
   </section>
 
   <section id="controllability" class="section-card">
     <h2>6. 能控性：输入能否把系统推到目标</h2>
     <p>加入控制输入：</p>
     <div class="formula-box">
-      $$ x_{k+1} = A x_k + B u_k $$
+      $$ x_{k+1} = A x_{k} + B u_{k} $$
     </div>
     <p>系统 $(A,B)$ <strong>能控</strong>，意思是：</p>
     <div class="callout">
-      <p>🎯 对任意初始状态 $x_0$ 和任意目标状态 $x_d$，总能找到有限步输入，把系统从 $x_0$ 送到 $x_d$。</p>
+      <p>🎯 对任意初始状态 $x_{0}$ 和任意目标状态 $x_{d}$，总能找到有限步输入，把系统从 $x_{0}$ 送到 $x_{d}$。</p>
     </div>
     <div class="callout" style="border-left-color: var(--accent-light);">
       <p><strong>🚗 通俗故事：</strong>想象开车。方向盘和油门就是输入。如果车只能前后动，不能左右转，那二维平面上并不是每个目标都能到达。能控性就是问：你的输入到底能影响多少状态方向？</p>
@@ -189,20 +192,20 @@ section-card">
     <h2>7. 能控性矩阵</h2>
     <p>对 $n$ 维系统，定义：</p>
     <div class="formula-box">
-      $$ M_C = [B,\; AB,\; A^2B,\; \ldots,\; A^{n-1}B] $$
+      $$ M_{C} = [B,\; AB,\; A^2B,\; \ldots,\; A^{n-1}B] $$
     </div>
     <p>系统能控当且仅当：</p>
     <div class="formula-box">
-      $$ \operatorname{rank}(M_C) = n $$
+      $$ \operatorname{rank}(M_{C}) = n $$
     </div>
 
     <h3>为什么这个矩阵合理</h3>
     <p>展开系统：</p>
     <div class="formula-box">
-      $$ x_1 = A x_0 + B u_0 $$
-      $$ x_2 = A^2 x_0 + A B u_0 + B u_1 $$
+      $$ x_{1} = A x_{0} + B u_{0} $$
+      $$ x_{2} = A^2 x_{0} + A B u_{0} + B u_{1} $$
     </div>
-    <p>输入 $u_0$ 不只通过 $B$ 影响下一步，还会被 $A$ 传播成 $AB, A^2B, \ldots$ 的方向。</p>
+    <p>输入 $u_{0}$ 不只通过 $B$ 影响下一步，还会被 $A$ 传播成 $AB, A^2B, \ldots$ 的方向。</p>
     <p>所以 $B, AB, \ldots, A^{n-1}B$ 这些列<strong>张成了输入能够影响的所有方向</strong>。</p>
   </section>
 
@@ -210,11 +213,11 @@ section-card">
     <h2>8. 能控 Gramian</h2>
     <p>另一种判据：</p>
     <div class="formula-box">
-      $$ W_c(n) = \sum_{k=0}^{n-1} A^k B B^T (A^T)^k $$
+      $$ W_{c}(n) = \sum_{k=0}^{n-1} A^k B B^T (A^T)^k $$
     </div>
     <p>系统能控当且仅当：</p>
     <div class="formula-box">
-      $$ \operatorname{rank}(W_c(n)) = n $$
+      $$ \operatorname{rank}(W_{c}(n)) = n $$
     </div>
     <div class="callout">
       <p><strong>💡 延伸：</strong> Gramian 还和"最小能量控制"有关——到达某个方向如果需要很大能量，Gramian 会反映出来，体现在其特征值上。</p>
@@ -259,23 +262,23 @@ section-card">
   </section>
 
   <section id="exercise" class="section-card">
-    <h2>12. 【课堂练习】从 $x_0$ 到 $x_d$ 的控制输入</h2>
-    <p>假设系统能控，给定 $x_0$ 和 $x_d$，找输入 $u_0,\ldots,u_{n-1}$ 使 $x_n = x_d$。</p>
+    <h2>12. 【课堂练习】从 $x_{0}$ 到 $x_{d}$ 的控制输入</h2>
+    <p>假设系统能控，给定 $x_{0}$ 和 $x_{d}$，找输入 $u_{0},\ldots,u_{n-1}$ 使 $x_{n} = x_{d}$。</p>
     <p>这个问题下一讲会展开。核心思路是展开 $n$ 步动态方程，构造线性方程组来求解。</p>
 
     <div class="exercise-box">
       <h3>📝 自测题</h3>
       <ol>
         <li>为什么 $Q&gt;0$ 时二次型有唯一最小点？</li>
-        <li>离散系统稳定为什么要求 $|\lambda_i|&lt;1$？</li>
+        <li>离散系统稳定为什么要求 $|\lambda_{i}|&lt;1$？</li>
         <li>如果 $B$ 的某个方向永远影响不到状态，能控矩阵会出现什么问题？</li>
       </ol>
       <details class="exercise-answer">
         <summary>查看答案提示</summary>
         <div class="content">
           <p><strong>1.</strong> 正定矩阵保证函数是严格凸的（向上的碗），所以有唯一全局最小值。</p>
-          <p><strong>2.</strong> 因为 $x_k = A^k x_0$，$A$ 可对角化时 $A^k$ 的对角元是 $\lambda_i^k$，$|\lambda_i|&lt;1$ 时 $\lambda_i^k \to 0$。</p>
-          <p><strong>3.</strong> 如果某个方向不受输入影响，能控矩阵 $M_C$ 的列就无法张成全空间，所以 $\operatorname{rank}(M_C) &lt; n$。</p>
+          <p><strong>2.</strong> 因为 $x_{k} = A^k x_{0}$，$A$ 可对角化时 $A^k$ 的对角元是 $\lambda_{i}^k$，$|\lambda_{i}|&lt;1$ 时 $\lambda_{i}^k \to 0$。</p>
+          <p><strong>3.</strong> 如果某个方向不受输入影响，能控矩阵 $M_{C}$ 的列就无法张成全空间，所以 $\operatorname{rank}(M_{C}) &lt; n$。</p>
         </div>
       </details>
     </div>

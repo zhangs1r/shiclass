@@ -22,7 +22,10 @@ window.MathJax = {
   svg: { fontCache: 'global' }
 };
 </script>
-<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
 </head>
 <body>
 <div class="page">
@@ -100,16 +103,16 @@ lead-grid">
       <div class="mini-card" style="border-left: 4px solid var(--accent);">
         <h4>📏 Measurement Update（更新步）</h4>
         \$$
-        $e_k = y_k - C \\hat x_{k|k-1}$
+        $e_{k} = y_{k} - C \\hat x_{k|k-1}$
         \$$
         \$$
-        K_k = P_{k|k-1} C' [C P_{k|k-1} C' + R]^{-1}
+        K_{k} = P_{k|k-1} C' [C P_{k|k-1} C' + R]^{-1}
         \$$
         \$$
-        $\\hat x_{k|k} = \\hat x_{k|k-1} + K_k e_k$
+        $\\hat x_{k|k} = \\hat x_{k|k-1} + K_{k} e_{k}$
         \$$
         \$$
-        P_{k|k} = P_{k|k-1} - K_k C P_{k|k-1}
+        P_{k|k} = P_{k|k-1} - K_{k} C P_{k|k-1}
         \$$
       </div>
     </div>
@@ -138,15 +141,15 @@ lead-grid">
       \$$
       \\begin{aligned}
       $\\hat x_{k+1|k} &= \\text{proj}\\{x_{k+1} \\mid \\mathcal{L}_k\\} \\\\\\\\$
-      $&= \\text{proj}\\{A x_k + w_k \\mid \\mathcal{L}_k\\} \\\\\\\\$
-      $&= \\text{proj}\\{A x_k \\mid \\mathcal{L}_k\\} + \\text{proj}\\{w_k \\mid \\mathcal{L}_k\\} \\\\\\\\$
-      $&= A \\cdot \\text{proj}\\{x_k \\mid \\mathcal{L}_k\\} + 0 \\\\\\\\$
+      $&= \\text{proj}\\{A x_{k} + w_{k} \\mid \\mathcal{L}_k\\} \\\\\\\\$
+      $&= \\text{proj}\\{A x_{k} \\mid \\mathcal{L}_k\\} + \\text{proj}\\{w_{k} \\mid \\mathcal{L}_k\\} \\\\\\\\$
+      $&= A \\cdot \\text{proj}\\{x_{k} \\mid \\mathcal{L}_k\\} + 0 \\\\\\\\$
       $&= A \\hat x_{k|k}$
       \\end{aligned}
       \$$
     </div>
 
-    <p>其中 \$\\text{proj}\\{w_k \\mid \\mathcal{L}_k\\} = 0\$ 因为 \$w_k\$ 与所有历史测量不相关——\$w_k\$ 只影响未来的状态，不影响当前及过去的测量。</p>
+    <p>其中 \$\\text{proj}\\{w_{k} \\mid \\mathcal{L}_k\\} = 0\$ 因为 \$w_{k}\$ 与所有历史测量不相关——\$w_{k}\$ 只影响未来的状态，不影响当前及过去的测量。</p>
 
     <h3>证明：预测误差协方差 \$P_{k+1|k}\$</h3>
     <p>首先计算预测误差：</p>
@@ -154,8 +157,8 @@ lead-grid">
       \$$
       \\begin{aligned}
       $\\tilde x_{k+1|k} &= x_{k+1} - \\hat x_{k+1|k} \\\\\\\\$
-      $&= (A x_k + w_k) - A \\hat x_{k|k} \\\\\\\\$
-      $&= A \\tilde x_{k|k} + w_k$
+      $&= (A x_{k} + w_{k}) - A \\hat x_{k|k} \\\\\\\\$
+      $&= A \\tilde x_{k|k} + w_{k}$
       \\end{aligned}
       \$$
     </div>
@@ -165,15 +168,15 @@ lead-grid">
       \$$
       \\begin{aligned}
       $P_{k+1|k} &= \\langle \\tilde x_{k+1|k},\\; \\tilde x_{k+1|k} \\rangle \\\\\\\\$
-      $&= \\langle A \\tilde x_{k|k} + w_k,\\; A \\tilde x_{k|k} + w_k \\rangle \\\\\\\\$
-      $&= A \\underbrace{\\langle \\tilde x_{k|k}, \\tilde x_{k|k} \\rangle}_{P_{k|k}} A' + \\underbrace{\\langle w_k, w_k \\rangle}_{Q} \\\\\\\\$
-      $&\\quad + \\underbrace{A \\langle \\tilde x_{k|k}, w_k \\rangle}_{=0} + \\underbrace{\\langle w_k, \\tilde x_{k|k} \\rangle A'}_{=0} \\\\\\\\$
+      $&= \\langle A \\tilde x_{k|k} + w_{k},\\; A \\tilde x_{k|k} + w_{k} \\rangle \\\\\\\\$
+      $&= A \\underbrace{\\langle \\tilde x_{k|k}, \\tilde x_{k|k} \\rangle}_{P_{k|k}} A' + \\underbrace{\\langle w_{k}, w_{k} \\rangle}_{Q} \\\\\\\\$
+      $&\\quad + \\underbrace{A \\langle \\tilde x_{k|k}, w_{k} \\rangle}_{=0} + \\underbrace{\\langle w_{k}, \\tilde x_{k|k} \\rangle A'}_{=0} \\\\\\\\$
       &= A P_{k|k} A' + Q
       \\end{aligned}
       \$$
     </div>
 
-    <p>交叉项为零是因为 \$w_k \\perp \\mathcal{L}_k\$，而 \$\\tilde x_{k|k} \\in \\mathcal{L}_k\$。</p>
+    <p>交叉项为零是因为 \$w_{k} \\perp \\mathcal{L}_k\$，而 \$\\tilde x_{k|k} \\in \\mathcal{L}_k\$。</p>
 
     <div class="callout">
       <p><strong>💡 直观理解</strong></p>
@@ -193,12 +196,12 @@ lead-grid">
       <div class="mini-card" style="border-left: 4px solid #3b82f6;">
         <h4>📐 均值传播</h4>
         <p>\$\\hat x_{k+1|k} = A \\hat x_{k|k}\$</p>
-        <p style="font-size:0.85rem">状态空间中的线性映射：已知 \$x_k\$ 在 \$\mathcal{L}_k\$ 上的投影，通过 \$A\$ 变换得到 \$x_{k+1}\$ 在同一空间上的投影。</p>
+        <p style="font-size:0.85rem">状态空间中的线性映射：已知 \$x_{k}\$ 在 \$\mathcal{L}_k\$ 上的投影，通过 \$A\$ 变换得到 \$x_{k+1}\$ 在同一空间上的投影。</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #f59e0b;">
         <h4>📐 不确定性传播</h4>
         <p>\$P_{k+1|k} = A P_{k|k} A' + Q\$</p>
-        <p style="font-size:0.85rem">椭球通过 \$A\$ 进行线性变换后，再叠加一个 \$Q\$ 椭球（因为 \$w_k\$ 的加入）。</p>
+        <p style="font-size:0.85rem">椭球通过 \$A\$ 进行线性变换后，再叠加一个 \$Q\$ 椭球（因为 \$w_{k}\$ 的加入）。</p>
       </div>
     </div>
 
@@ -228,9 +231,9 @@ lead-grid">
     <div class="formula-box">
       \$$
       \\begin{aligned}
-      K_k &= P_{k|k-1} C' [C P_{k|k-1} C' + R]^{-1} \\\\\\\\
-      $\\hat x_{k|k} &= \\hat x_{k|k-1} + K_k (y_k - C \\hat x_{k|k-1}) \\\\\\\\$
-      P_{k|k} &= P_{k|k-1} - K_k C P_{k|k-1}
+      K_{k} &= P_{k|k-1} C' [C P_{k|k-1} C' + R]^{-1} \\\\\\\\
+      $\\hat x_{k|k} &= \\hat x_{k|k-1} + K_{k} (y_{k} - C \\hat x_{k|k-1}) \\\\\\\\$
+      P_{k|k} &= P_{k|k-1} - K_{k} C P_{k|k-1}
       \\end{aligned}
       \$$
     </div>
@@ -251,22 +254,22 @@ lead-grid">
       \$$
       \\begin{aligned}
       $P_{k|k-1} &\\;\\text{only depends on}\\; P_{k-1|k-1} \\\\\\\\$
-      $K_k &\\;\\text{only depends on}\\; P_{k|k-1} \\\\\\\\$
+      $K_{k} &\\;\\text{only depends on}\\; P_{k|k-1} \\\\\\\\$
       $P_{k|k} &\\;\\text{only depends on}\\; P_{k|k-1} \\\\\\\\$
       \\end{aligned}
       \$$
     </div>
 
-    <p>特别地，<strong>\$P_{k|k}\$ 和 \$K_k\$ 完全不依赖测量值 \$y_k\$！</strong>它们只由系统参数 \$(A, C, Q, R)\$ 和初始协方差 \$\\Pi_0\$ 决定。</p>
+    <p>特别地，<strong>\$P_{k|k}\$ 和 \$K_{k}\$ 完全不依赖测量值 \$y_{k}\$！</strong>它们只由系统参数 \$(A, C, Q, R)\$ 和初始协方差 \$\\Pi_{0}\$ 决定。</p>
 
     <div class="grid-2">
       <div class="mini-card" style="border-left: 4px solid #22c55e;">
         <h4>🚀 离线阶段</h4>
-        <p>预先计算所有 \$P_{k|k}\$ 和 \$K_k\$，存成表格。只需要矩阵运算，不涉及传感器数据。</p>
+        <p>预先计算所有 \$P_{k|k}\$ 和 \$K_{k}\$，存成表格。只需要矩阵运算，不涉及传感器数据。</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #3b82f6;">
         <h4>⚡ 在线阶段</h4>
-        <p>查表获得 \$K_k\$，然后只做简单的向量运算更新状态估计。计算量从 O(n³) 降到 O(n²)。</p>
+        <p>查表获得 \$K_{k}\$，然后只做简单的向量运算更新状态估计。计算量从 O(n³) 降到 O(n²)。</p>
       </div>
     </div>
 
@@ -308,7 +311,7 @@ lead-grid">
 
     <div class="formula-box">
       \$$
-      $\\hat x_{k+1|k} = A \\hat x_{k|k-1} + K^* [y_k - C \\hat x_{k|k-1}]$
+      $\\hat x_{k+1|k} = A \\hat x_{k|k-1} + K^* [y_{k} - C \\hat x_{k|k-1}]$
       \$$
     </div>
 
@@ -327,12 +330,12 @@ lead-grid">
     <div class="grid-2">
       <div class="mini-card" style="border-left: 4px solid #3b82f6;">
         <h4>🔍 可观性</h4>
-        <p>你能否通过测量 \$y_k\$ 推断出状态 \$x_k\$ 的每一个分量？</p>
-        <p><strong>例子：</strong>如果 \$C\$ 的第 \$i\$ 列全为零，那么 \$x_k\$ 的第 \$i\$ 个分量永远无法被观测到——即使有再多的测量也无法降低其不确定性。</p>
+        <p>你能否通过测量 \$y_{k}\$ 推断出状态 \$x_{k}\$ 的每一个分量？</p>
+        <p><strong>例子：</strong>如果 \$C\$ 的第 \$i\$ 列全为零，那么 \$x_{k}\$ 的第 \$i\$ 个分量永远无法被观测到——即使有再多的测量也无法降低其不确定性。</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #f59e0b;">
         <h4>🎛️ 能控性</h4>
-        <p>过程噪声 \$w_k\$ 能否激励状态的每一个分量？</p>
+        <p>过程噪声 \$w_{k}\$ 能否激励状态的每一个分量？</p>
         <p><strong>例子：</strong>如果 \$Q\$ 的某个对角元为零，对应的状态分量不受噪声驱动——它的不确定性变化仅由 \$A\$ 传播决定。</p>
       </div>
     </div>
@@ -349,7 +352,7 @@ lead-grid">
 
     <div class="interactive-card">
       <h3>问题 1</h3>
-      <p>为什么 KF 的协方差 \$P_{k|k}\$ 和增益 \$K_k\$ 与测量值 \$y_k\$ 无关？</p>
+      <p>为什么 KF 的协方差 \$P_{k|k}\$ 和增益 \$K_{k}\$ 与测量值 \$y_{k}\$ 无关？</p>
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
@@ -364,7 +367,7 @@ lead-grid">
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>因为时间更新引入了过程噪声 \$w_k\$ 带来的不确定性 \$Q\$。在没有新测量来修正之前，系统的不确定性只会增加不会减少。等到测量更新时，新信息才会降低不确定性。</p>
+          <p>因为时间更新引入了过程噪声 \$w_{k}\$ 带来的不确定性 \$Q\$。在没有新测量来修正之前，系统的不确定性只会增加不会减少。等到测量更新时，新信息才会降低不确定性。</p>
         </div>
       </details>
     </div>
@@ -374,7 +377,7 @@ lead-grid">
       <p>\$P_{k|k}\$ 收敛的条件是什么？</p>
       <div class="quiz-options">
         <button onclick="lessonKit.answer(this, 'q3-feedback')" data-correct="yes" data-explanation="正确！(A, C) observable 确保所有模态可以被观测，(A, √Q) controllable 确保所有模态被噪声激励。两个条件缺一不可。">\$(A, C)\$ observable 且 \$(A, \\sqrt{Q})\$ controllable</button>
-        <button onclick="lessonKit.answer(this, 'q3-feedback')" data-correct="no" data-explanation="再想想。收敛需要可观性和能控性两个条件同时满足。">只需要 \$P_0\$ 是正定矩阵</button>
+        <button onclick="lessonKit.answer(this, 'q3-feedback')" data-correct="no" data-explanation="再想想。收敛需要可观性和能控性两个条件同时满足。">只需要 \$P_{0}\$ 是正定矩阵</button>
       </div>
       <div id="q3-feedback" class="quiz-feedback"></div>
     </div>

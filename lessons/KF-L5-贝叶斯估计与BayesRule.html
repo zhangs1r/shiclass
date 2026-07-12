@@ -17,7 +17,10 @@ window.MathJax = {
   svg: { fontCache: 'global' }
 };
 </script>
-<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
 </head>
 <body>
 <div class="page">
@@ -81,7 +84,7 @@ window.MathJax = {
       <tr><th>场景</th><th>未知 $\theta$</th><th>测量 $X$</th></tr>
       <tr><td>房间温度</td><td>真实温度</td><td>温度计读数</td></tr>
       <tr><td>车辆定位</td><td>真实位置</td><td>GPS 信号</td></tr>
-      <tr><td>KF 中的状态</td><td>$x_k$</td><td>$y_k$</td></tr>
+      <tr><td>KF 中的状态</td><td>$x_{k}$</td><td>$y_{k}$</td></tr>
       <tr><td>硬币正反</td><td>正面概率 $p$</td><td>投掷结果序列</td></tr>
       <tr><td>Juliet 迟到</td><td>最大迟到时间 $\theta$</td><td>实际迟到时间 $x$</td></tr>
     </table>
@@ -221,7 +224,7 @@ window.MathJax = {
 
     <p><strong>测量 1：</strong>有人告诉你第一位是 6。</p>
     <div class="flow-formula">
-      $$ P(\theta|x_1) = \begin{cases} 1/10^5 & \text{如果 $\theta$ 以 6 开头} \\ 0 & \text{否则} \end{cases} $$
+      $$ P(\theta|x_{1}) = \begin{cases} 1/10^5 & \text{如果 $\theta$ 以 6 开头} \\ 0 & \text{否则} \end{cases} $$
     </div>
     <p>候选号码从 $10^6$ 缩小到 $10^5$。</p>
 
@@ -229,7 +232,7 @@ window.MathJax = {
 
     <p><strong>... 直到 6 位全知道：</strong></p>
     <div class="flow-formula">
-      $$ P(\theta|x_1,\dots,x_6) \sim \mathcal{N}(627589, 0) $$
+      $$ P(\theta|x_{1},\dots,x_{6}) \sim \mathcal{N}(627589, 0) $$
     </div>
     <p>不确定性几乎降到零。</p>
 
@@ -259,8 +262,8 @@ window.MathJax = {
     <h3>Step 3：套 Bayes Rule</h3>
     <p>后验非零的条件：$x \le \theta \le 1$。</p>
     <div class="formula-box">
-      $$ f(\theta|x) = \frac{f(\theta) f(x|\theta)}{\int_x^1 f(\theta') f(x|\theta') \, d\theta'}
-      = \frac{1/\theta}{\int_x^1 (1/\theta') \, d\theta'}
+      $$ f(\theta|x) = \frac{f(\theta) f(x|\theta)}{\int_{x}^1 f(\theta') f(x|\theta') \, d\theta'}
+      = \frac{1/\theta}{\int_{x}^1 (1/\theta') \, d\theta'}
       = \frac{1/\theta}{|\log x|}
       = \frac{1}{\theta \, |\log x|}, \quad x \le \theta \le 1 $$
     </div>

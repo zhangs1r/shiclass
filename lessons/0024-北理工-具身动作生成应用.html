@@ -22,7 +22,10 @@ window.MathJax = {
   svg: { fontCache: 'global' }
 };
 </script>
-<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
 </head>
 <body>
 <div class="page">
@@ -134,27 +137,27 @@ lead-grid">
     <p>Flow Matching 虽然减少了推理步数，但仍然是多步迭代。MinFlow 的目标是<strong>一步到位</strong>：直接从噪声一步映射到干净动作。</p>
 
     <h3>核心思路</h3>
-    <p>定义一个平均速度场 \$u\$，直接预测从 \$x_0\$ 到 \$x_1\$ 的整体位移：</p>
+    <p>定义一个平均速度场 \$u\$，直接预测从 \$x_{0}\$ 到 \$x_{1}\$ 的整体位移：</p>
     <div class="formula-box">
       \$$
-      $u_{[s,t]}(x_s) = \\frac{1}{t - s} \\int_s^t v_\\theta(x_\\tau, \\tau, C) d\\tau$
+      $u_{[s,t]}(x_{s}) = \\frac{1}{t - s} \\int_{s}^t v_\\theta(x_\\tau, \\tau, C) d\\tau$
       \$$
     </div>
 
     <p>通过对 \$u\$ 进行参数化，使得推理时可直接计算：</p>
     <div class="formula-box">
       \$$
-      $\\boxed{x_1 = x_0 + u_\\theta(x_0, C)}$
+      $\\boxed{x_{1} = x_{0} + u_\\theta(x_{0}, C)}$
       \$$
     </div>
 
-    <p>这里 \$u_\\theta\$ 是一个神经网络，输入为噪声 \$x_0\$ 和条件 \$C\$，输出为一步到位的位移向量。</p>
+    <p>这里 \$u_\\theta\$ 是一个神经网络，输入为噪声 \$x_{0}\$ 和条件 \$C\$，输出为一步到位的位移向量。</p>
 
     <h3>训练目标</h3>
     <p>MinFlow 的损失函数包含 Jacobi-vector product（JVP）项：</p>
     <div class="formula-box">
       \$$
-      $\\mathcal{L}_{\\text{MF}} = \\| u_\\theta(x_t, C) - v_\\phi(x_t, t, C) + (t - s) \\cdot \\text{JVP}(u_\\theta, v_\\phi) \\|^2$
+      $\\mathcal{L}_{\\text{MF}} = \\| u_\\theta(x_{t}, C) - v_\\phi(x_{t}, t, C) + (t - s) \\cdot \\text{JVP}(u_\\theta, v_\\phi) \\|^2$
       \$$
     </div>
 
@@ -173,7 +176,7 @@ lead-grid">
     <p>具体来说，损失函数中的 target 是：</p>
     <div class="formula-box">
       \$$
-      $\\text{Target} = v_\\phi(x_t, t, C) - (t - s) \\cdot \\text{JVP}(u_\\theta, v_\\phi)$
+      $\\text{Target} = v_\\phi(x_{t}, t, C) - (t - s) \\cdot \\text{JVP}(u_\\theta, v_\\phi)$
       \$$
     </div>
     <p>当 \$u_\\theta\$ 更新时，JVP 项也随之变化，导致 target 变成移动目标。这种"自己追自己"的训练方式在实践中有两个问题：</p>
@@ -270,7 +273,7 @@ lead-grid">
           <td>~20 ms</td>
           <td>✅ 可</td>
           <td>✅ 稳定</td>
-          <td>\$\\pi_0\$, RDT</td>
+          <td>\$\\pi_{0}\$, RDT</td>
         </tr>
         <tr>
           <td>MinFlow</td>

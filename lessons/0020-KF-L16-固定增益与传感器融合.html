@@ -22,7 +22,10 @@ window.MathJax = {
   svg: { fontCache: 'global' }
 };
 </script>
-<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
 </head>
 <body>
 <div class="page">
@@ -98,7 +101,7 @@ lead-grid">
 
     <div class="formula-box">
       \$$
-      $\\lim_{k \\to \\infty} K_k = K^* = \\bar P C' [C \\bar P C' + R]^{-1}$
+      $\\lim_{k \\to \\infty} K_{k} = K^* = \\bar P C' [C \\bar P C' + R]^{-1}$
       \$$
     </div>
 
@@ -116,7 +119,7 @@ lead-grid">
 
     <div class="formula-box">
       \$$
-      $\\boxed{\\hat x_{k|k} = A \\hat x_{k-1|k-1} + K^* [y_k - C A \\hat x_{k-1|k-1}]}$
+      $\\boxed{\\hat x_{k|k} = A \\hat x_{k-1|k-1} + K^* [y_{k} - C A \\hat x_{k-1|k-1}]}$
       \$$
     </div>
 
@@ -124,7 +127,7 @@ lead-grid">
 
     <div class="formula-box">
       \$$
-      $\\boxed{\\hat x_{k+1|k} = A \\hat x_{k|k-1} + K^* [y_k - C \\hat x_{k|k-1}]}$
+      $\\boxed{\\hat x_{k+1|k} = A \\hat x_{k|k-1} + K^* [y_{k} - C \\hat x_{k|k-1}]}$
       \$$
     </div>
 
@@ -204,7 +207,7 @@ lead-grid">
     <p>以及状态更新：</p>
     <div class="formula-box">
       \$$
-      $P_{k|k}^{-1} \\hat x_{k|k} = P_{k|k-1}^{-1} \\hat x_{k|k-1} + C' R^{-1} y_k$
+      $P_{k|k}^{-1} \\hat x_{k|k} = P_{k|k-1}^{-1} \\hat x_{k|k-1} + C' R^{-1} y_{k}$
       \$$
     </div>
 
@@ -242,7 +245,7 @@ lead-grid">
 
     <div class="callout">
       <p><strong>💡 解读</strong></p>
-      <p>信息形式的测量更新就是简单的<strong>加法</strong>！每次测量到来，就把 \$C' R^{-1} C\$（信息贡献）加到信息矩阵上，把 \$C' R^{-1} y_k\$（加权测量）加到信息向量上。这种"累加"的结构非常适合多传感器融合。</p>
+      <p>信息形式的测量更新就是简单的<strong>加法</strong>！每次测量到来，就把 \$C' R^{-1} C\$（信息贡献）加到信息矩阵上，把 \$C' R^{-1} y_{k}\$（加权测量）加到信息向量上。这种"累加"的结构非常适合多传感器融合。</p>
     </div>
   </div>
 
@@ -254,7 +257,7 @@ lead-grid">
     <p>假设有 \$n\$ 个传感器，第 \$i\$ 个传感器的测量模型为：</p>
     <div class="formula-box">
       \$$
-      y_k^i = C_i x_k + v_k^i, \\quad v_k^i \\sim N(0, R_i)
+      y_{k}^i = C_{i} x_{k} + v_{k}^i, \\quad v_{k}^i \\sim N(0, R_{i})
       \$$
     </div>
 
@@ -262,10 +265,10 @@ lead-grid">
     <p>将所有测量堆叠成一个向量，然后套用标准 KF：</p>
     <div class="formula-box">
       \$$
-      y_k = \\begin{bmatrix} y_k^1 \\\\ y_k^2 \\\\ \\vdots \\\\ y_k^n \\end{bmatrix}
-      = C x_k + v_k, \\quad
-      C = \\begin{bmatrix} C_1 \\\\ C_2 \\\\ \\vdots \\\\ C_n \\end{bmatrix},
-      $\\quad v_k \\sim N(0, \\text{diag}(R_1, \\dots, R_n))$
+      y_{k} = \\begin{bmatrix} y_{k}^1 \\\\ y_{k}^2 \\\\ \\vdots \\\\ y_{k}^n \\end{bmatrix}
+      = C x_{k} + v_{k}, \\quad
+      C = \\begin{bmatrix} C_{1} \\\\ C_{2} \\\\ \\vdots \\\\ C_{n} \\end{bmatrix},
+      $\\quad v_{k} \\sim N(0, \\text{diag}(R_{1}, \\dots, R_{n}))$
       \$$
     </div>
     <p>这种方法需要每次拼装大矩阵，不够灵活。</p>
@@ -274,17 +277,17 @@ lead-grid">
     <p>用信息形式，每个传感器的贡献独立累加：</p>
     <div class="formula-box">
       \$$
-      $\\boxed{\\Omega_{k|k} = \\Omega_{k|k-1} + \\sum_{i=1}^{n} C_i' R_i^{-1} C_i}$
+      $\\boxed{\\Omega_{k|k} = \\Omega_{k|k-1} + \\sum_{i=1}^{n} C_{i}' R_{i}^{-1} C_i}$
       \$$
       \$$
-      $\\boxed{\\xi_{k|k} = \\xi_{k|k-1} + \\sum_{i=1}^{n} C_i' R_i^{-1} y_k^i}$
+      $\\boxed{\\xi_{k|k} = \\xi_{k|k-1} + \\sum_{i=1}^{n} C_{i}' R_{i}^{-1} y_{k}^i}$
       \$$
     </div>
 
     <div class="grid-3">
       <div class="mini-card" style="border-left: 4px solid #22c55e;">
         <h4>🧩 模块化</h4>
-        <p>每个传感器的贡献独立计算，互不干扰。新增传感器只需增加对应的 \$C_i' R_i^{-1} C_i\$ 项。</p>
+        <p>每个传感器的贡献独立计算，互不干扰。新增传感器只需增加对应的 \$C_{i}' R_{i}^{-1} C_{i}\$ 项。</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #3b82f6;">
         <h4>🔌 即插即用</h4>
@@ -315,7 +318,7 @@ lead-grid">
 
     <div class="callout">
       <p><strong>🤔 开放问题</strong></p>
-      <p>在线性高斯系统下，LMMSE 是否等于 MMSE（最小均方误差估计，即条件均值 \$E[x_k | y_0, \\dots, y_k]\$）？如果等于，则说明 KF 的线性估计实际上是最优的——没有任何非线性方法能做得更好。</p>
+      <p>在线性高斯系统下，LMMSE 是否等于 MMSE（最小均方误差估计，即条件均值 \$E[x_{k} | y_{0}, \\dots, y_{k}]\$）？如果等于，则说明 KF 的线性估计实际上是最优的——没有任何非线性方法能做得更好。</p>
     </div>
 
     <p>要回答这个问题，我们需要从<strong>概率的角度</strong>重新审视。这就是下一讲的内容——用条件高斯分布推导 MMSE 估计，并证明在线性高斯系统中 MMSE = LMMSE。同时还会从<strong>优化法</strong>的角度，将 Kalman 增益的求解转化为二次型最小化问题。</p>
@@ -338,7 +341,7 @@ lead-grid">
       <tbody>
         <tr>
           <td><strong>固定增益估计器</strong></td>
-          <td>\$\\hat x_{k+1|k} = A \\hat x_{k|k-1} + K^* [y_k - C \\hat x_{k|k-1}]\$</td>
+          <td>\$\\hat x_{k+1|k} = A \\hat x_{k|k-1} + K^* [y_{k} - C \\hat x_{k|k-1}]\$</td>
           <td>O(1) 存储、O(n²) 计算</td>
         </tr>
         <tr>
@@ -348,7 +351,7 @@ lead-grid">
         </tr>
         <tr>
           <td><strong>传感器融合</strong></td>
-          <td>\$\\Omega = \\Omega_0 + \\sum C_i' R_i^{-1} C_i\$</td>
+          <td>\$\\Omega = \\Omega_{0} + \\sum C_{i}' R_{i}^{-1} C_{i}\$</td>
           <td>即插即用、模块化、容错</td>
         </tr>
       </tbody>
@@ -374,8 +377,8 @@ lead-grid">
       <h3>问题 2</h3>
       <p>传感器融合中，信息形式的 KF 为什么支持即插即用？</p>
       <div class="quiz-options">
-        <button onclick="lessonKit.answer(this, 'q2-feedback')" data-correct="yes" data-explanation="正确！每个传感器的信息贡献是独立的加性项 \$C_i' R_i^{-1} C_i\$，可以单独累加或移除。">因为每个传感器的贡献是独立加性的，可以逐个叠加</button>
-        <button onclick="lessonKit.answer(this, 'q2-feedback')" data-correct="no" data-explanation="再想想。信息形式的优点正是每个传感器的贡献独立累加。">因为每个传感器的 \$C_i\$ 矩阵都相同</button>
+        <button onclick="lessonKit.answer(this, 'q2-feedback')" data-correct="yes" data-explanation="正确！每个传感器的信息贡献是独立的加性项 \$C_{i}' R_{i}^{-1} C_{i}\$，可以单独累加或移除。">因为每个传感器的贡献是独立加性的，可以逐个叠加</button>
+        <button onclick="lessonKit.answer(this, 'q2-feedback')" data-correct="no" data-explanation="再想想。信息形式的优点正是每个传感器的贡献独立累加。">因为每个传感器的 \$C_{i}\$ 矩阵都相同</button>
       </div>
       <div id="q2-feedback" class="quiz-feedback"></div>
     </div>

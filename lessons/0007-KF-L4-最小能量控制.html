@@ -22,7 +22,10 @@ window.MathJax = {
   svg: { fontCache: 'global' }
 };
 </script>
-<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
 </head>
 <body>
 <div class="page">
@@ -73,23 +76,23 @@ section-card">
     <h2>1. 【课堂练习延续】构造控制输入</h2>
     <p>系统：</p>
     <div class="formula-box">
-      $$ x_{k+1} = A x_k + B u_k $$
+      $$ x_{k+1} = A x_{k} + B u_{k} $$
     </div>
-    <p>希望从 $x_0$ 到 $x_d$。展开 $n$ 步：</p>
+    <p>希望从 $x_{0}$ 到 $x_{d}$。展开 $n$ 步：</p>
     <div class="formula-box">
-      $$ x_n = A^n x_0 + A^{n-1} B u_0 + A^{n-2} B u_1 + \cdots + B u_{n-1} $$
+      $$ x_{n} = A^n x_{0} + A^{n-1} B u_{0} + A^{n-2} B u_{1} + \cdots + B u_{n-1} $$
     </div>
     <p>把输入倒序堆叠：</p>
     <div class="formula-box">
-      $$ \bar u = \begin{bmatrix} u_{n-1} \\ u_{n-2} \\ \vdots \\ u_0 \end{bmatrix} $$
+      $$ \bar u = \begin{bmatrix} u_{n-1} \\ u_{n-2} \\ \vdots \\ u_{0} \end{bmatrix} $$
     </div>
     <p>则：</p>
     <div class="formula-box">
-      $$ x_n = A^n x_0 + M_C \bar u,\quad M_C = [B,\; AB,\; \ldots,\; A^{n-1}B] $$
+      $$ x_{n} = A^n x_{0} + M_{C} \bar u,\quad M_{C} = [B,\; AB,\; \ldots,\; A^{n-1}B] $$
     </div>
-    <p>若要 $x_n = x_d$：</p>
+    <p>若要 $x_{n} = x_{d}$：</p>
     <div class="formula-box">
-      $$ M_C \bar u = x_d - A^n x_0 $$
+      $$ M_{C} \bar u = x_{d} - A^n x_{0} $$
     </div>
   </section>
 
@@ -99,16 +102,16 @@ section-card">
     <div class="grid-2">
       <div class="mini-card">
         <h4>🎯 单输入情况</h4>
-        <p>若 $M_C$ 是 $n \times n$ 且可逆：</p>
+        <p>若 $M_{C}$ 是 $n \times n$ 且可逆：</p>
         <div class="formula-box" style="margin:8px 0">
-          $$ \bar u = M_C^{-1}(x_d - A^n x_0) $$
+          $$ \bar u = M_{C}^{-1}(x_{d} - A^n x_{0}) $$
         </div>
       </div>
       <div class="mini-card">
         <h4>🎯 多输入情况</h4>
         <p>输入维数大于 1 时，常用伪逆：</p>
         <div class="formula-box" style="margin:8px 0">
-          $$ \bar u = M_C^T (M_C M_C^T)^{-1} (x_d - A^n x_0) $$
+          $$ \bar u = M_{C}^T (M_{C} M_{C}^T)^{-1} (x_{d} - A^n x_{0}) $$
         </div>
       </div>
     </div>
@@ -158,54 +161,54 @@ section-card">
     <h2>5. 可观性：从输出能否看见状态</h2>
     <p>考虑系统：</p>
     <div class="formula-box">
-      $$ x_{k+1} = A x_k,\qquad y_k = C x_k $$
+      $$ x_{k+1} = A x_{k},\qquad y_{k} = C x_{k} $$
     </div>
     <p>系统 $(A,C)$ <strong>可观</strong>，意思是：</p>
     <div class="callout">
-      <p>🔭 通过有限个输出 $y_0, y_1, \ldots, y_{k_1}$，可以唯一确定初始状态 $x_0$。</p>
+      <p>🔭 通过有限个输出 $y_{0}, y_{1}, \ldots, y_{k_1}$，可以唯一确定初始状态 $x_{0}$。</p>
     </div>
 
-    <h3>为什么关注 $x_0$？</h3>
-    <p>无输入系统中，只要知道 $x_0$，就知道所有状态：$x_k = A^k x_0$。因此恢复 $x_0$ 就等于理解整条轨迹。</p>
+    <h3>为什么关注 $x_{0}$？</h3>
+    <p>无输入系统中，只要知道 $x_{0}$，就知道所有状态：$x_{k} = A^k x_{0}$。因此恢复 $x_{0}$ 就等于理解整条轨迹。</p>
   </section>
 
   <section id="obs-matrix" class="section-card">
     <h2>6. 可观性矩阵</h2>
     <p>输出展开：</p>
     <div class="formula-box">
-      $$ y_0 = C x_0,\quad y_1 = C A x_0,\quad \vdots,\quad y_{n-1} = C A^{n-1} x_0 $$
+      $$ y_{0} = C x_{0},\quad y_{1} = C A x_{0},\quad \vdots,\quad y_{n-1} = C A^{n-1} x_{0} $$
     </div>
     <p>堆叠写成矩阵形式：</p>
     <div class="formula-box">
-      $$ \bar y = \begin{bmatrix} y_0 \\ y_1 \\ \vdots \\ y_{n-1} \end{bmatrix}
-      = \begin{bmatrix} C \\ C A \\ \vdots \\ C A^{n-1} \end{bmatrix} x_0
-      = M_O x_0 $$
+      $$ \bar y = \begin{bmatrix} y_{0} \\ y_{1} \\ \vdots \\ y_{n-1} \end{bmatrix}
+      = \begin{bmatrix} C \\ C A \\ \vdots \\ C A^{n-1} \end{bmatrix} x_{0}
+      = M_{O} x_{0} $$
     </div>
     <p><strong>可观矩阵</strong>：</p>
     <div class="formula-box">
-      $$ M_O = \begin{bmatrix} C \\ C A \\ \vdots \\ C A^{n-1} \end{bmatrix} $$
+      $$ M_{O} = \begin{bmatrix} C \\ C A \\ \vdots \\ C A^{n-1} \end{bmatrix} $$
     </div>
     <p>系统可观当且仅当：</p>
     <div class="formula-box">
-      $$ \operatorname{rank}(M_O) = n $$
+      $$ \operatorname{rank}(M_{O}) = n $$
     </div>
   </section>
 
   <section id="obs-practice" class="section-card">
-    <h2>7. 【课堂练习】由输出恢复 $x_0$</h2>
-    <p>如果 $(A,C)$ 可观，则 $\bar y = M_O x_0$。</p>
+    <h2>7. 【课堂练习】由输出恢复 $x_{0}$</h2>
+    <p>如果 $(A,C)$ 可观，则 $\bar y = M_{O} x_{0}$。</p>
 
     <div class="grid-2">
       <div class="mini-card">
         <h4>📐 方阵可逆</h4>
         <div class="formula-box" style="margin:8px 0">
-          $$ x_0 = M_O^{-1} \bar y $$
+          $$ x_{0} = M_{O}^{-1} \bar y $$
         </div>
       </div>
       <div class="mini-card">
         <h4>📐 高矩阵满列秩</h4>
         <div class="formula-box" style="margin:8px 0">
-          $$ x_0 = (M_O^T M_O)^{-1} M_O^T \bar y $$
+          $$ x_{0} = (M_{O}^T M_{O})^{-1} M_{O}^T \bar y $$
         </div>
         <p>这就是伪逆解。</p>
       </div>
@@ -217,9 +220,9 @@ section-card">
 
     <h3>可观 Gramian</h3>
     <div class="formula-box">
-      $$ W_O(n) = \sum_{k=0}^{n-1} (A^k)^T C^T C A^k $$
+      $$ W_{O}(n) = \sum_{k=0}^{n-1} (A^k)^T C^T C A^k $$
     </div>
-    <p>可观当且仅当 $\operatorname{rank}(W_O(n)) = n$。</p>
+    <p>可观当且仅当 $\operatorname{rank}(W_{O}(n)) = n$。</p>
 
     <h3>PBH 可观性判据</h3>
     <div class="formula-box">
@@ -248,11 +251,11 @@ section-card">
     <div class="summary-grid">
       <div class="mini-card">
         <h4>🕹️ 控制输入构造</h4>
-        <p>$M_C \bar u = x_d - A^n x_0$，伪逆给出最小能量解。</p>
+        <p>$M_{C} \bar u = x_{d} - A^n x_{0}$，伪逆给出最小能量解。</p>
       </div>
       <div class="mini-card">
         <h4>🔭 可观性</h4>
-        <p>$M_O$ 满秩 ⟺ 能从输出唯一恢复初始状态。</p>
+        <p>$M_{O}$ 满秩 ⟺ 能从输出唯一恢复初始状态。</p>
       </div>
       <div class="mini-card">
         <h4>🪞 对偶</h4>
@@ -265,15 +268,15 @@ section-card">
   <div class="exercise-box">
     <h3>📝 自测题</h3>
     <ol>
-      <li>为什么 $M_O$ 满列秩才能恢复 $x_0$？</li>
-      <li>如果某个状态分量完全不影响 $y_k$，系统可观吗？</li>
+      <li>为什么 $M_{O}$ 满列秩才能恢复 $x_{0}$？</li>
+      <li>如果某个状态分量完全不影响 $y_{k}$，系统可观吗？</li>
       <li>PBH test 为什么能发现"看不见"或"控不到"的模态？</li>
     </ol>
     <details class="exercise-answer">
       <summary>查看答案提示</summary>
       <div class="content">
-        <p><strong>1.</strong> $M_O$ 满列秩意味着方程 $\bar y = M_O x_0$ 有唯一解 $x_0$。若不满秩，则多个 $x_0$ 产生相同的输出，无法区分。</p>
-        <p><strong>2.</strong> 不可观。这个状态分量就是"看不见"的方向，$M_O$ 相应的列是零向量，rank 下降。</p>
+        <p><strong>1.</strong> $M_{O}$ 满列秩意味着方程 $\bar y = M_{O} x_{0}$ 有唯一解 $x_{0}$。若不满秩，则多个 $x_{0}$ 产生相同的输出，无法区分。</p>
+        <p><strong>2.</strong> 不可观。这个状态分量就是"看不见"的方向，$M_{O}$ 相应的列是零向量，rank 下降。</p>
         <p><strong>3.</strong> PBH 逐个检查特征方向。若某个模态既满足 $v^T(A-\lambda I)=0$ 又满足 $v^T B=0$，则无论怎么输入都影响不到它（不可控）。对可观性同理。</p>
       </div>
     </details>
