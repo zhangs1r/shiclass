@@ -45,9 +45,6 @@
     </ul>
   </nav>
 
-  <section id="coin-ml"
-</div>
-
   <div class="lead-grid">
     <div class="callout">
       <h4>🎯 学完本节，你应能</h4>
@@ -59,8 +56,7 @@
     </div>
   </div>
 
-  <section class="section-card"
-section-card">
+  <section id="coin-ml" class="section-card">
     <h2>1. 【课堂例题】偏硬币的 ML 推导</h2>
     <p>硬币正面概率为 $\theta$。第 $i$ 次投掷：</p>
     <div class="formula-box">
@@ -205,3 +201,93 @@ section-card">
     <h2>10. 最小二乘的几何图像</h2>
     <p>$H\hat x$ 是 $y$ 在 $R(H)$ 上的<strong>投影</strong>。</p>
     <div class="formula-box">
+      $$ \hat y = H\hat x = P_{R(H)} y $$
+    </div>
+    <p>其中 $P_{R(H)}$ 是到 $H$ 列空间上的<strong>正交投影算子</strong>。</p>
+
+    <h3>投影的直观理解</h3>
+    <p>想象三维空间中有一个平面（即 $R(H)$）。任意一个点 $y$ 到这个平面的"最近点"就是 $y$ 在平面上的垂直投影。垂直意味着残差与平面正交：</p>
+    <div class="formula-box">
+      $$ r = y - H\hat x \perp R(H) \quad \Longleftrightarrow \quad H^T r = 0 $$
+    </div>
+    <p>这正是正规方程 $H^T(y - H\hat x)=0$ 的几何含义——残差与列空间的每个列向量都正交。</p>
+
+    <h3>残差正交性</h3>
+    <p>将正规方程代入残差定义：</p>
+    <div class="formula-box">
+      $$ H^T(y - H\hat x) = 0 \quad \Longrightarrow \quad H^T y = H^T H \hat x $$
+    </div>
+    <div class="callout">
+      <p><strong>🔑 关键洞察：</strong> 最小二乘解 $\hat x$ 使得残差 $r = y - H\hat x$ <strong>正交于</strong>列空间 $R(H)$。这正是"最小"二乘的本质——残差长度取极小值等价于残差与列空间正交。</p>
+    </div>
+
+    <h3>示意图</h3>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>📐 列空间投影</h4>
+        <p>$y$ 分为两部分：$H\hat x \in R(H)$（投影）和 $r \perp R(H)$（残差）。</p>
+        <p>勾股定理：$\|y\|^2 = \|H\hat x\|^2 + \|r\|^2$。</p>
+      </div>
+      <div class="mini-card">
+        <h4>🔍 正规方程的几何意义</h4>
+        <p>$H^T r = 0$ 表示残差与 $H$ 的每一列正交。这就是"正规"二字的来源——残差与列空间正交（normal）。</p>
+      </div>
+    </div>
+
+    <div class="callout" style="border-left-color: #8b5cf6;">
+      <p><strong>🧭 预览：</strong> 这个"最小二乘 = 投影"的几何视角，在后面 LMMSE 和 Kalman Filter 中会反复出现。每个滤波器本质上都在做"在某个空间中找投影"。</p>
+    </div>
+  </section>
+
+  <section id="exercise" class="section-card">
+    <div class="exercise-box">
+      <h3>📝 课后练习</h3>
+      <ol>
+        <li>
+          <p><strong>【概念理解】</strong> 请解释为什么最小二乘解 $\hat x$ 满足 $H^T(y - H\hat x)=0$。这个方程的几何意义是什么？</p>
+          <details class="exercise-answer"><summary>查看答案</summary><div class="content">
+            <p>最小二乘的目标是极小化 $\|y - Hx\|^2$。对代价函数求导并令导数为 $0$ 即得 $H^T(y - H\hat x)=0$。几何上，这个方程表示残差 $r = y - H\hat x$ 与 $H$ 的每一列都正交，即残差正交于列空间 $R(H)$。</p>
+          </div></details>
+        </li>
+        <li>
+          <p><strong>【数值计算】</strong> 给定 $H = \begin{bmatrix}1 & 2 \\ 1 & 1 \\ 1 & 0\end{bmatrix}$，$y = \begin{bmatrix}2 \\ 3 \\ 1\end{bmatrix}$。请计算：
+            <br>① $H^T H$ 和 $H^T y$；
+            <br>② 正规方程的解 $\hat x = (H^T H)^{-1} H^T y$；
+            <br>③ 残差 $r = y - H\hat x$，验证 $H^T r = 0$。</p>
+          <details class="exercise-answer"><summary>查看答案</summary><div class="content">
+            <p>① $H^T H = \begin{bmatrix}3 & 3 \\ 3 & 5\end{bmatrix}$，$H^T y = \begin{bmatrix}6 \\ 7\end{bmatrix}$。<br>
+            ② $(H^T H)^{-1} = \frac16 \begin{bmatrix}5 & -3 \\ -3 & 3\end{bmatrix}$，$\hat x = \begin{bmatrix}1.5 \\ 0.5\end{bmatrix}$。<br>
+            ③ $H\hat x = \begin{bmatrix}2.5 \\ 2.0 \\ 1.5\end{bmatrix}$，$r = \begin{bmatrix}-0.5 \\ 1.0 \\ -0.5\end{bmatrix}$，$H^T r = \begin{bmatrix}0 \\ 0\end{bmatrix}$ ✓。</p>
+          </div></details>
+        </li>
+        <li>
+          <p><strong>【几何思考】</strong> 如果 $H$ 不满列秩，最小二乘解不唯一。从几何角度看，这些解对应的 $H\hat x$ 有什么共同点？</p>
+          <details class="exercise-answer"><summary>查看答案</summary><div class="content">
+            <p>所有最小二乘解 $\hat x$ 对应的 $H\hat x$ 都是一样的——都是 $y$ 在 $R(H)$ 上的正交投影。因为 $Hx$ 只取决于 $x$ 在 $R(H^T)$ 中的分量；$x$ 的零空间分量不影响投影结果。几何上，$y$ 到列空间的投影是唯一的，但投影在参数空间中的表示可以有很多种。</p>
+          </div></details>
+        </li>
+        <li>
+          <p><strong>【ML 联系】</strong> 在偏硬币问题中，ML 估计 $\hat\theta = \frac{1}{n}\sum x_i$。你能把它改写成最小二乘的形式吗？提示：令 $y = [x_1, \ldots, x_n]^T$，选择合适的 $H$。</p>
+          <details class="exercise-answer"><summary>查看答案</summary><div class="content">
+            <p>取 $H = [1,1,\ldots,1]^T$（全 1 列向量），则 $y = H\theta$ 的最小二乘解为 $\hat\theta = (H^T H)^{-1} H^T y = \frac{1}{n}\sum x_i$。这正是样本均值。这说明在 i.i.d. 高斯噪声假设下，ML 估计与最小二乘估计等价。</p>
+          </div></details>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <div class="nav-links">
+    <a href="0009-KF-L7-非贝叶斯估计.html">← 上一节：KF L7 非贝叶斯估计与最大似然</a>
+    <a href="0011-KF-L9-最小二乘几何.html" class="next">下一节：KF L9 最小二乘几何与内积空间 →</a>
+    <a href="../index.html" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+  </div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 11 · KF L8 硬币ML、最小二乘与正规方程</p>
+    <p>字幕来源：<code>subtitles/20260207_施凌_研讨会系列11_KF_L8_audio_a62b1f0dcb013892.srt</code></p>
+  </div>
+
+</div>
+
+</body>
+</html>

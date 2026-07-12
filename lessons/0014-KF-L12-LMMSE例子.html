@@ -35,9 +35,6 @@
   </div>
 
   <!-- Lead Grid -->
-  <div
-</div>
-
   <div class="lead-grid">
     <div class="callout">
       <h4>🎯 学完本节，你应能</h4>
@@ -46,18 +43,6 @@
     <div class="callout">
       <h4>📖 前置知识</h4>
       <p>建议先完成前面的课程，或具备线性代数与概率论基础。</p>
-    </div>
-  </div>
-
-  <section class="section-card"
-lead-grid">
-    <div class="callout">
-      <p><strong>🎯 本讲目标</strong></p>
-      <p>掌握如何在 $y=Hx+v$ 中求 LMMSE、如何用正交原理列方程、Gram-Schmidt 正交化的思想、以及 smoothing / filtering / prediction 的区别。</p>
-    </div>
-    <div class="callout">
-      <p><strong>🔑 关键思想</strong></p>
-      <p>无论是有限维测量还是随机过程，只要能定义内积，就能用"误差正交"来求最优线性估计。Gram-Schmidt 则为下一讲的新息过程打基础。</p>
     </div>
   </div>
 
@@ -237,7 +222,7 @@ lead-grid">
       R_{y}(T) & R_{y}(0)
       \end{bmatrix}^{-1}
       \begin{bmatrix}
-      \int_{0}^T R_{y}(t) dt $$4pt]
+      \int_{0}^T R_{y}(t) dt \\[4pt]
       \int_0^T R_y(T-t) dt
       \end{bmatrix}
       $$
@@ -335,3 +320,60 @@ lead-grid">
         <p>用当前及过去测量预测未来状态：</p>
         $$
         \{y_1,\ldots,y_j\} \to x_t,\quad t > j
+        $$
+        <p style="font-size:0.85rem;color:var(--text-secondary)">预测未来</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 自测题 -->
+  <div id="quiz" class="section-card">
+    <h2>📝 自测题</h2>
+
+    <div class="interactive-card">
+      <h3>问题 1</h3>
+      <p>在 $y=Hx+v$ 模型中，LMMSE 估计是 $\hat x = R_x H^T (H R_x H^T + R_v)^{-1} y$。如果噪声 $v$ 的协方差 $R_v \to 0$，估计会变成什么？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>当 $R_v \to 0$ 时，测量变得完美，公式趋近于 $\hat x = H^{-1}y$（假设 $H$ 可逆）。误差协方差趋向于 0，说明估计完全依赖测量。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 2</h3>
+      <p>Gram-Schmidt 正交化中，$u_2 = v_2 - \operatorname{Proj}_{u_1}(v_2)$。为什么减去投影后 $u_2$ 与 $u_1$ 正交？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>因为 $\operatorname{Proj}_{u_1}(v_2)$ 是 $v_2$ 在 $u_1$ 上的全部线性成分，减去后剩下的 $u_2$ 与 $u_1$ 正交：$\langle u_2, u_1 \rangle = \langle v_2, u_1 \rangle - \frac{\langle v_2, u_1 \rangle}{\langle u_1, u_1 \rangle} \langle u_1, u_1 \rangle = 0$。这就是"新方向 = 原方向 − 旧方向上的投影"的思想。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 3</h3>
+      <p>Smoothing、Filtering、Prediction 三类估计的本质区别是什么？</p>
+      <div class="quiz-options">
+        <button onclick="lessonKit.answer(this, 'quiz3-feedback')" data-correct="yes" data-explanation="Smoothing 用全部数据估计过去（后处理），Filtering 用当前及过去数据估计现在（实时），Prediction 用过去估计未来（前瞻）。关键区别在于估计时刻 t 和最大可用测量时刻的关系。">估计的时刻 $t$ 与最后可用测量的时刻 $j$ 的相对关系不同</button>
+        <button onclick="lessonKit.answer(this, 'quiz3-feedback')" data-correct="no">使用的数学公式不同</button>
+      </div>
+      <div id="quiz3-feedback" class="quiz-feedback"></div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="nav-links">
+    <a href="0013-KF-L11-LMMSE正交原理.html" class="prev">← 上一节：KF L11 LMMSE 与正交原理</a>
+    <a href="0015-KF-L13-递归估计.html" class="next">下一节：KF L13 递归估计与新息过程 →</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+  </div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 · KF L12 LMMSE 例子、Gram-Schmidt 与三类估计问题</p>
+  </div>
+</div>
+<script src="assets/shiclass.js"></script>
+</body>
+</html>
