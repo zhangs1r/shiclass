@@ -136,10 +136,10 @@ window.SHICLASS_DATA = {
       groupId: "seminars",
       kind: "特邀分享",
       title: "北理工分享：生成式模型驱动具身智能",
-      subtitle: "特邀分享（2 节）",
-      description: "第 0023-0024 课。北京理工大学特邀分享——DDPM、Flow Matching、MinFlow 与 IMF 在机器人动作生成中的演进。",
+      subtitle: "许佳玉 · 特邀分享",
+      description: "第 0023 课。北京理工大学许佳玉特邀分享——DDPM、Flow Matching、MinFlow 与 IMF 在机器人动作生成中的演进。基于 SRT 如实记录。",
       quickOpen: "lessons/0023-北理工-扩散模型基础.html",
-      meta: ["2 节课", "~60 分钟", "具身智能 / 生成式"]
+      meta: ["1 节课", "~30 分钟", "具身智能 / 生成式"]
     },
     {
       id: "special-e2map",
@@ -401,17 +401,8 @@ window.SHICLASS_DATA = {
       id: "0023-北理工-扩散模型基础",
       collectionId: "special-bit",
       path: "lessons/0023-北理工-扩散模型基础.html",
-      title: "北理工(1/2)：扩散模型与Flow Matching",
-      subtitle: "DDPM、Flow Matching、BC局限性",
-      duration: "30 min",
-      tags: ["生成式", "具身智能"]
-    },
-    {
-      id: "0024-北理工-具身动作生成应用",
-      collectionId: "special-bit",
-      path: "lessons/0024-北理工-具身动作生成应用.html",
-      title: "北理工(2/2)：MinFlow与IMF改进",
-      subtitle: "单步流匹配、自举问题、稳定训练",
+      title: "北理工：生成式模型驱动具身智能",
+      subtitle: "许佳玉 · BC局限性、DDPM、Flow Matching、MinFlow与IMF",
       duration: "30 min",
       tags: ["生成式", "具身智能"]
     },

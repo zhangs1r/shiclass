@@ -3,16 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>北理工分享：扩散模型与 Flow Matching 基础 · 施老师大课堂</title>
+<title>北理工分享：生成式模型驱动具身智能 · 施老师大课堂</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="assets/shiclass.css">
-
-
-
-
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
@@ -24,41 +20,24 @@
 
   <!-- Hero -->
   <div class="hero">
-    <div class="eyebrow">研讨会系列 · 特邀分享 · 北京理工大学 · 第一部分</div>
-    <h1>扩散模型与 Flow Matching 基础</h1>
-    <p class="subtitle">从 Behavioral Cloning 的致命缺陷到 DDPM 和 Flow Matching——生成式模型解决多模态动作生成问题的理论基础</p>
+    <div class="eyebrow">研讨会系列 · 特邀分享 · 北京理工大学</div>
+    <h1>生成式模型驱动具身智能</h1>
+    <p class="subtitle">从 BC 的局限性到 DDPM、Flow Matching，再到 MinFlow 与 IMF 改进——生成式方法在机器人动作生成中的演进</p>
     <div class="hero-meta">
       <span>📅 2026-06-06</span>
       <span>📍 北京理工大学</span>
-      <span>🧩 扩散模型</span>
-      <span>🎙️ 取家育</span>
+      <span>🎙️ 许佳玉</span>
     </div>
   </div>
-
-  <!-- Lead Grid -->
-  <div
-</div>
 
   <div class="lead-grid">
     <div class="callout">
-      <h4>🎯 学完本节，你应能</h4>
-      <p>理解扩散模型(DDPM)与Flow Matching的基本原理</p>
+      <h4>🎯 本节内容</h4>
+      <p>分享生成式模型（DDPM、Flow Matching）如何与具身智能中的模仿学习（VLA、VA 等）相结合，以及 MinFlow、IMF 等改进如何提升训练稳定性和推理效率。</p>
     </div>
     <div class="callout">
-      <h4>📖 前置知识</h4>
-      <p>建议先完成前面的课程，或具备线性代数与概率论基础。</p>
-    </div>
-  </div>
-
-  <section class="section-card"
-lead-grid">
-    <div class="callout">
-      <p><strong>🎯 本讲主题</strong></p>
-      <p>理解为什么 Behavioral Cloning 无法处理多模态动作分布，学习 DDPM（扩散模型）和 Flow Matching（流匹配）两种基础生成式模型的核心算法与理论保证。</p>
-    </div>
-    <div class="callout">
-      <p><strong>🔑 核心问题</strong></p>
-      <p>Behavioral Cloning 学的是"平均动作"——面对多模态数据（如从不同方向抓杯）只会走中间路线。生成式模型通过概率建模打破这一局限。</p>
+      <h4>📖 内容性质</h4>
+      <p>本次分享侧重概念理解，带大家理解生成式方法为何在动作生成上有效。</p>
     </div>
   </div>
 
@@ -67,10 +46,11 @@ lead-grid">
     <h3>📖 目录</h3>
     <ul>
       <li><a href="#sec1">1. 生成式模型 × 具身智能：背景</a></li>
-      <li><a href="#sec2">2. Behavioral Cloning 与它的致命缺陷</a></li>
-      <li><a href="#sec3">3. DDPM（扩散模型）</a></li>
-      <li><a href="#sec4">4. Flow Matching（流匹配）</a></li>
-      <li><a href="#sec5">5. DDPM vs Flow Matching 对比</a></li>
+      <li><a href="#sec2">2. Behavioral Cloning 的局限性</a></li>
+      <li><a href="#sec3">3. DDPM（扩散模型）基本概念</a></li>
+      <li><a href="#sec4">4. Flow Matching 简介</a></li>
+      <li><a href="#sec5">5. MinFlow 与 IMF 改进</a></li>
+      <li><a href="#sec6">6. 实验结果：MSE Policy 延迟</a></li>
       <li><a href="#quiz">📝 自测题</a></li>
     </ul>
   </div>
@@ -78,236 +58,88 @@ lead-grid">
   <!-- 1. 背景 -->
   <div id="sec1" class="section-card">
     <h2>1. 生成式模型 × 具身智能：背景</h2>
-    <p>近年来，具身智能（Embodied AI）领域涌现出一批基于大规模模仿学习的模型，以 <strong>VLA（Vision-Language-Action）</strong> 为代表。这类模型接收图像、本体状态、自然语言指令作为输入，通过训练好的编码器将观测压缩为 Token，最终输出机器人的动作。</p>
+    <p>本次分享来自北京理工大学 <strong>许佳玉</strong>（李老师课题组博士生）。分享主题是：在具身智能领域，模仿学习的 VLA、VA 等模型中，生成式方法（如 DDPM、Flow Matching）是如何与动作生成相结合的，以及为什么这些生成式方法在动作生成上是有效的。</p>
 
-    <div class="grid-2">
-      <div class="mini-card">
-        <h4>🧠 输入（观测）</h4>
-        <ul>
-          <li>图像（Image）— 视觉输入</li>
-          <li>本体状态（State）— 关节角度等</li>
-          <li>自然语言指令（Language）— VLA 特有</li>
-        </ul>
-      </div>
-      <div class="mini-card">
-        <h4>🎯 输出（动作）</h4>
-        <ul>
-          <li>机器人动作序列 $A \in \mathbb{R}^{D}$</li>
-          <li>例如 7 自由度机械臂 + 夹爪 → 8 维动作</li>
-          <li>动作生成 = 给定条件 $C$，从 $p(A|C)$ 采样</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="callout">
-      <p><strong>💡 关键设定</strong></p>
-      <p>定义条件 $C = \{ \text{Image}, \text{State}, \text{Language} \}$，目标是生成动作序列 $A = \{a_{0}, a_{1}, \dots, a_{H}\}$。生成式模型要建模的是<strong>条件分布 $p(A|C)$</strong>，而非确定性映射。</p>
-    </div>
+    <p>分享主要带大家推一些公式，并结合图示帮助理解。核心思路是将动作通过一个映射从隐变量（采样）中解决——即把动作生成建模为从概率分布中采样的问题。</p>
   </div>
 
-  <!-- 2. Behavioral Cloning -->
+  <!-- 2. BC -->
   <div id="sec2" class="section-card">
-    <h2>2. Behavioral Cloning 与它的致命缺陷</h2>
+    <h2>2. Behavioral Cloning 的局限性</h2>
 
-    <h3>基础方法：Behavioral Cloning (BC)</h3>
-    <p>最朴素的模仿学习方法：让网络直接监督人类示教数据中的动作。</p>
-    <div class="formula-box">
-      $$
-      \mathcal{L}_{\text{BC}} = \mathbb{E}_{(C, A) \sim \mathcal{D}} \\| F(C) - A \\|^2
-      $$
-      <p style="margin-top:8px;font-size:0.9rem">试图学习一个确定性的映射 $F: C \mapsto A$</p>
-    </div>
+    <p>在机器人动作生成中，一个经典的基线方法是 <strong>Behavioral Cloning（BC）</strong>——让模型直接模仿人类示教数据中的动作。</p>
 
-    <h3>最优解分析</h3>
-    <p>设 $Y = F(C)$，损失函数可以分解为：</p>
-    <div class="formula-box">
-      $$
-      \mathbb{E}[\\|Y - A\\|^2] = \\|Y\\|^2 - 2 Y^T \mathbb{E}[A|C] + \mathbb{E}[\\|A\\|^2|C]
-      $$
-    </div>
-    <p>求导令梯度为零得到：</p>
-    <div class="formula-box">
-      $$
-      Y^* = \mathbb{E}[A | C]
-      $$
-      <p style="margin-top:8px;font-size:0.9rem">最优解是<strong>条件期望</strong>——即"平均动作"</p>
-    </div>
+    <p>然而 BC 有一个致命缺陷。假设机器人抓取一个物体，存在多个可行的路径——从左抓、从右抓、从上抓、从下抓。当把这些多样性轨迹一起放入数据中训练时，BC <strong>只会学习到一个平均的动作</strong>。</p>
 
     <div class="callout" style="border-left-color: #ef4444;">
-      <p><strong>⚠️ BC 的致命问题：多模态失败</strong></p>
-      <p>假设人类示教数据包含两种抓杯方式：从左侧抓和从右侧抓。BC 的最优解会选择一个"中间路线"——既不像左也不像右，最终无法成功抓取。</p>
+      <p><strong>⚠️ BC 的缺点</strong></p>
+      <p>在实时推理时，BC 可能会做一些平均化的动作，甚至会无法完成任务。例如面对两种抓杯方式（从左侧和从右侧），BC 的最优解会走"中间路线"，两边都够不着。</p>
     </div>
 
-    <p>这就是 BC 无法处理 <strong>多模态（multimodal）</strong> 动作分布的根本原因。生成式模型通过引入随机性来解决这一问题：不是在确定性的"平均"上做预测，而是从概率分布中采样。</p>
+    <p>因此需要找到一种方法：如果机器人当前想从左边抓，就能连续地从左边抓；想从右边抓，就能连续地从右边抓——而不是去学一个平均的动作。这就引出了生成式（generative）领域的方法。</p>
   </div>
 
   <!-- 3. DDPM -->
   <div id="sec3" class="section-card">
-    <h2>3. DDPM（扩散模型）</h2>
+    <h2>3. DDPM（扩散模型）基本概念</h2>
 
-    <p><strong>Denoising Diffusion Probabilistic Model</strong> 是生成式模型在动作生成领域的开山之作之一。</p>
+    <p><strong>DDPM</strong>（Denoising Diffusion Probabilistic Model）是扩散模型中最元老的算法。它的主要思想可以从图像生成的角度来理解：</p>
 
-    <h3>核心思想</h3>
-    <div class="grid-2">
-      <div class="mini-card" style="border-left: 4px solid #f59e0b;">
-        <h4>🔁 正向过程（加噪）</h4>
-        <p>从干净的动作分布 $x_{0}$ 开始，逐步添加高斯噪声：</p>
-        $$
-        x_{t} = \sqrt{\bar\alpha_t}\\, x_{0} + \sqrt{1 - \bar\alpha_t}\\,\epsilon
-        $$
-        <p>经过足够多步（通常 $T=50\sim1000$），$x_{T}$ 接近纯高斯噪声。</p>
-      </div>
-      <div class="mini-card" style="border-left: 4px solid #3b82f6;">
-        <h4>🔃 反向过程（去噪）</h4>
-        <p>从纯噪声 $x_{T}$ 出发，学习一个神经网络 $\epsilon_\theta$ 预测噪声，逐步去噪恢复原始动作：</p>
-        $$
-        x_{t-1} = \frac{1}{\sqrt{\alpha_t}}\left(x_{t} - \frac{1-\alpha_t}{\sqrt{1-\bar\alpha_t}}\epsilon_\theta(x_{t}, t, C)\right) + \sigma_{t} z
-        $$
-      </div>
-    </div>
+    <h3>正向过程（加噪）</h3>
+    <p>有一个原始的动作分布 $X_0$（类比数据集中的真实图片）。先对这个 $X_0$ 做一系列加噪操作，称为<strong>正向过程</strong>。每一步都添加高斯噪声，一步一步地加，直到 $X_0$ 变成一个纯的高斯分布。前向过程可以通过概率论的方法推导出一个 close-form（闭式解）。</p>
 
-    <h3>训练目标</h3>
-    <div class="formula-box">
-      $$
-      \mathcal{L}_{\text{DDPM}} = \mathbb{E}_{t, x_{0}, \epsilon} \left[ \\| \epsilon - \epsilon_\theta(x_{t}, t, C) \\|^2 \right]
-      $$
-      <p style="margin-top:8px;font-size:0.9rem">网络学会预测添加的噪声，而不是直接预测动作。</p>
-    </div>
+    <h3>反向过程（去噪）</h3>
+    <p>DDPM 定义了一种 MDP（马尔可夫决策过程）。基于 MDP 的假设，可以将反向过程也通过概率论的闭式形式推导出来（具体推导涉及变分下界等繁琐的概率论推导，分享中未展开）。</p>
 
-    <h3>优势与问题</h3>
-    <div class="grid-2">
-      <div class="mini-card" style="border-left: 4px solid #22c55e;">
-        <h4>✅ 优势</h4>
-        <ul>
-          <li>能够生成多模态动作分布</li>
-          <li>每一步迭代都能将轨迹"拉回"合理区域</li>
-          <li>理论基础扎实，变分下界可推导</li>
-        </ul>
-      </div>
-      <div class="mini-card" style="border-left: 4px solid #ef4444;">
-        <h4>❌ 瓶颈</h4>
-        <ul>
-          <li><strong>推理极慢</strong>：每步去噪都要过一遍网络</li>
-          <li>典型延迟 200-300ms（50 步推理）</li>
-          <li>对机器人实时控制是致命的</li>
-        </ul>
-      </div>
+    <p>核心思想是：在生成动作时，从 $X_t$ 到 $X_0$，模型会<strong>先从一个纯概率分布中采样一个 $X_t$</strong>。这个采样过程赋予了整个 policy 概率意义——它不像 BC 那样是确定性的 policy，而是一个概率性的 policy。</p>
+
+    <div class="callout">
+      <p><strong>💡 关键区别</strong></p>
+      <p>在每一步去噪时，DDPM 都会先从一个纯概率分布中采样，这使得它能够生成多样化的动作，而不是像 BC 那样输出一个确定的平均动作。</p>
     </div>
   </div>
 
   <!-- 4. Flow Matching -->
   <div id="sec4" class="section-card">
-    <h2>4. Flow Matching（流匹配）</h2>
+    <h2>4. Flow Matching 简介</h2>
 
-    <p>2023 年提出的 Flow Matching 采用了一种不同的思路：不去预测噪声，而是学习一个<strong>速度场（velocity field）</strong>，把噪声"流"到数据分布。</p>
+    <p>Flow Matching 是另一种生成式方法。在模仿学习中，标准的数据分布就是动作。给定 flow 的时间 $t$、条件 $c$、以及流场 $x_c$，直接求解是很困难的，因为等式右边存在一个积分，而这个积分是无法直接得到的。</p>
 
-    <h3>基本思想</h3>
-    <p>定义一条从噪声 $x_{0} \sim \mathcal{N}(0, I)$ 到数据 $x_{1} \sim p_{\text{data}}$ 的概率路径：</p>
-    <div class="formula-box">
-      $$
-      x_{t} = (1 - t) x_{0} + t x_{1}, \quad t \in [0, 1]
-      $$
-      <p style="margin-top:8px;font-size:0.9rem">线性插值路径——简单而高效</p>
-    </div>
-
-    <p>速度场就是路径对时间的导数：</p>
-    <div class="formula-box">
-      $$
-      \dot{x}_t = v_{t}(x_{t}) = x_{1} - x_{0}
-      $$
-    </div>
-
-    <h3>目标函数</h3>
-    <p>学习一个参数化的速度场 $v_\theta(x_{t}, t, C)$ 来拟合真实速度：</p>
-    <div class="formula-box">
-      $$
-      \mathcal{L}_{\text{FM}} = \mathbb{E}_{t, x_{0}, x_1} \left[ \\| v_\theta(x_{t}, t, C) - (x_{1} - x_{0}) \\|^2 \right]
-      $$
-    </div>
+    <p>Flow Matching 的核心是通过<strong>条件概率路径</strong>的构建来解决这个问题。条件概率路径其实就是一条条直线，被构造成 $1-t$ 的形式。条件速度 $V$ 就等于 $1-x$。这部分与标准的 Flow Matching 过程是一致的。</p>
 
     <div class="callout">
-      <p><strong>🔬 理论保证</strong></p>
-      <p>虽然我们只能对条件概率路径（conditional path）进行监督，但论文证明：条件路径的期望梯度等于边缘路径的梯度——即学习条件路径等价于学习边缘路径。这就是 Flow Matching 的理论基础。</p>
-    </div>
-
-    <h3>推理过程</h3>
-    <p>通过求解常微分方程（ODE）将噪声搬运到动作分布：</p>
-    <div class="formula-box">
-      $$
-      x_{t+\Delta t} = x_{t} + \Delta t \cdot v_\theta(x_{t}, t, C)
-      $$
-    </div>
-    <p>通常只需 <strong>10~20 步 ODE 求解</strong> 就能得到高质量结果，比 DDPM 的 50~1000 步大幅降低。</p>
-
-    <div class="grid-2">
-      <div class="mini-card" style="border-left: 4px solid #22c55e;">
-        <h4>✅ 优势</h4>
-        <ul>
-          <li>推理步数显著减少（10-20 步）</li>
-          <li>可处理多模态分布</li>
-          <li>理论优雅，实现简单</li>
-        </ul>
-      </div>
-      <div class="mini-card" style="border-left: 4px solid #f59e0b;">
-        <h4>⚠️ 权衡</h4>
-        <ul>
-          <li>步数越少，ODE 近似误差越大</li>
-          <li>10 步 vs 100 步仍然有精度差距</li>
-          <li>实时控制上仍需进一步优化</li>
-        </ul>
-      </div>
+      <p><strong>🔬 Flow Matching 的思路</strong></p>
+      <p>通过构建条件概率路径（conditional probability path），将难以直接求解的积分问题转化为可监督学习的速度场拟合问题。条件路径的速度场可以被显式定义，从而让模型学习从噪声到数据分布的"流动"过程。</p>
     </div>
   </div>
 
-  <!-- 5. 对比 -->
+  <!-- 5. MinFlow 与 IMF -->
   <div id="sec5" class="section-card">
-    <h2>5. DDPM vs Flow Matching 对比</h2>
+    <h2>5. MinFlow 与 IMF 改进</h2>
 
-    <table>
-      <thead>
-        <tr>
-          <th>维度</th>
-          <th>DDPM（扩散模型）</th>
-          <th>Flow Matching（流匹配）</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><strong>预测目标</strong></td>
-          <td>预测噪声 $\epsilon_\theta$</td>
-          <td>预测速度场 $v_\theta$</td>
-        </tr>
-        <tr>
-          <td><strong>生成路径</strong></td>
-          <td>随机去噪（SDE）</td>
-          <td>ODE 求解</td>
-        </tr>
-        <tr>
-          <td><strong>推理步数</strong></td>
-          <td>50~1000 步</td>
-          <td>10~20 步</td>
-        </tr>
-        <tr>
-          <td><strong>延迟</strong></td>
-          <td>200~300 ms</td>
-          <td>~20 ms</td>
-        </tr>
-        <tr>
-          <td><strong>多模态能力</strong></td>
-          <td>✅</td>
-          <td>✅</td>
-        </tr>
-        <tr>
-          <td><strong>代表应用</strong></td>
-          <td>扩散策略（Diffusion Policy）</td>
-          <td>$\pi_{0}$、RDT 等 VLA 模型</td>
-        </tr>
-      </tbody>
-    </table>
+    <h3>MinFlow</h3>
+    <p><strong>MinFlow</strong> 在标准 Flow Matching 的基础上做了改进。唯一的变化在于 <strong>target（目标）</strong>——包括 JVP（Jacobian-Vector Product）的计算和损失函数中的 $U_{\text{target}}$。具体地，$u \cdot du/dt = \text{JVP}$，通过 PyTorch 中的自动微分库可以方便地计算出 $DTU$，进而得到 $U_{\text{target}}$。</p>
 
-    <div class="callout">
-      <p><strong>🚀 趋势</strong></p>
-      <p>目前 Flow Matching 已被广泛用作 VLA 模型的 Action Head，是实现高效动作生成的重要基础设施。下一讲我们将介绍如何进一步改进 Flow Matching，实现单步生成。</p>
+    <h3>训练发散问题</h3>
+    <p>当直接用 MinFlow 去修改一个 VLA 模型的 Action Head 时，训练曲线基本上是<strong>发散的</strong>。这一现象在多个论文中也有详细描述。</p>
+
+    <div class="callout" style="border-left-color: #f59e0b;">
+      <p><strong>🔄 MF 的改进效果</strong></p>
+      <p>在使用 MF（MinFlow）之后，梯度变得比较正常了，说明它确实可以改善训练的稳定性。</p>
+    </div>
+
+    <p>后续的工作（<strong>IMF</strong>，Improved Mean Flow）进一步做了拓展，尝试将方法应用到 VA（模仿学习中的 Value 或 Actor 模型）以及 VLA 模型中，大幅提高推理效率，同时还能保证模型的推理精度。</p>
+  </div>
+
+  <!-- 6. 实验结果 -->
+  <div id="sec6" class="section-card">
+    <h2>6. 实验结果：MSE Policy 延迟</h2>
+
+    <p>在相关的论文文献中，<strong>MSE policy</strong> 已经可以达到 <strong>0.06~0.1 毫秒</strong>的推理延迟，大约是之前 policy 的 <strong>200 倍</strong>的提升。</p>
+
+    <div class="callout" style="border-left-color: #22c55e;">
+      <p><strong>🎯 里程碑</strong></p>
+      <p>0.06~0.1 ms 的推理延迟意味着生成式模型不再成为机器人实时控制的瓶颈，为高频控制闭环（>1kHz）中应用生成式动作策略奠定了基础。</p>
     </div>
   </div>
 
@@ -317,46 +149,58 @@ lead-grid">
 
     <div class="interactive-card">
       <h3>问题 1</h3>
-      <p>Behavioral Cloning 的最优解是什么？为什么这会导致多模态问题？</p>
-      <details class="exercise-answer">
-        <summary>点击查看答案</summary>
-        <div class="content">
-          <p>BC 的最优解是条件期望 $\mathbb{E}[A|C]$。当数据包含多个模态（如从不同方向抓杯）时，期望会输出"平均动作"，在两个模态中间摇摆不定，最终无法完成任务。</p>
-        </div>
-      </details>
+      <p>Behavioral Cloning 在处理多样性的轨迹数据时，会学习到什么结果？</p>
+      <div class="quiz-options">
+        <button onclick="lessonKit.answer(this, 'q1-feedback')" data-correct="no" data-explanation="BC 学的是平均动作，不是随机选择。">随机选择其中一个模态</button>
+        <button onclick="lessonKit.answer(this, 'q1-feedback')" data-correct="yes" data-explanation="正确！BC 会学习到一个平均的动作，导致无法完成多模态任务。">学习到平均的动作</button>
+        <button onclick="lessonKit.answer(this, 'q1-feedback')" data-correct="no" data-explanation="BC 只能学习平均动作，无法分别学习。">分别学习每个模态</button>
+      </div>
+      <div id="q1-feedback" class="quiz-feedback"></div>
     </div>
 
     <div class="interactive-card">
       <h3>问题 2</h3>
-      <p>DDPM 和 Flow Matching 的核心区别是什么？</p>
+      <p>DDPM 的正向过程是对原始数据做什么操作？</p>
+      <div class="quiz-options">
+        <button onclick="lessonKit.answer(this, 'q2-feedback')" data-correct="yes" data-explanation="正确！正向过程逐步添加高斯噪声，最终得到一个纯高斯分布。">逐步添加高斯噪声，最终变成纯高斯分布</button>
+        <button onclick="lessonKit.answer(this, 'q2-feedback')" data-correct="no" data-explanation="DDPM 是加噪而不是去噪，去噪是反向过程做的。">逐步去除噪声，恢复原始数据</button>
+        <button onclick="lessonKit.answer(this, 'q2-feedback')" data-correct="no" data-explanation="DDPM 加的是高斯噪声，不是均匀噪声。">添加均匀噪声</button>
+      </div>
+      <div id="q2-feedback" class="quiz-feedback"></div>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 3</h3>
+      <p>MinFlow（MF）直接用于修改 VLA 模型的 Action Head 时，训练曲线呈现什么特点？</p>
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>DDPM 预测噪声（$\epsilon_\theta$），通过多步去噪生成；Flow Matching 预测速度场（$v_\theta$），通过求解 ODE 生成。Flow Matching 通常需要更少的推理步数（10-20 步 vs 50-1000 步）。</p>
+          <p>训练曲线基本上是发散的。使用 MinFlow 改进后，梯度变得正常，训练稳定性得到改善。</p>
         </div>
       </details>
     </div>
 
     <div class="interactive-card">
-      <h3>问题 3</h3>
-      <p>Flow Matching 的理论保证是什么？</p>
-      <div class="quiz-options">
-        <button onclick="lessonKit.answer(this, 'q3-feedback')" data-correct="yes" data-explanation="正确！条件路径的期望梯度等于边缘路径的梯度，所以学习条件路径等价于学习边缘路径。">条件路径的期望梯度等于边缘路径的梯度</button>
-        <button onclick="lessonKit.answer(this, 'q3-feedback')" data-correct="no" data-explanation="再想想。Flow Matching 的优势在于不依赖变分下界。">Flow Matching 有更紧的变分下界</button>
-      </div>
-      <div id="q3-feedback" class="quiz-feedback"></div>
+      <h3>问题 4</h3>
+      <p>MSE policy 的推理延迟可以达到多少？相比之前提升了多少？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>MSE policy 可达 0.06~0.1 毫秒的推理延迟，大约是之前 policy 的 200 倍提升。</p>
+        </div>
+      </details>
     </div>
   </div>
 
   <!-- Navigation -->
   <div class="nav-links">
     <a href="0022-KF-L17-增益优化方法.html" class="prev">← KF L17：增益优化方法</a>
-    <a href="0024-北理工-具身动作生成应用.html" class="next">北理工：MinFlow 与 IMF 改进 →</a>
+    <a href="0025-E2Map-架构与经验场.html" class="next">E2Map：架构与经验场 →</a>
     <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
   </div>
 
   <div class="foot-note">
-    <p>施老师大课堂 · 研讨会系列 · 北理工特邀分享 · 扩散模型与 Flow Matching 基础</p>
+    <p>施老师大课堂 · 研讨会系列 · 北理工特邀分享 · 许佳玉</p>
   </div>
 </div>
 <script src="assets/shiclass.js"></script>

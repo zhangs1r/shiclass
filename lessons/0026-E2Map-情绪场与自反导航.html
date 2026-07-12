@@ -3,16 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>E2Map：情绪场与自反式导航 · 施老师大课堂</title>
+<title>E2Map：事件描述 · 情绪评估 · 地图更新 · 施老师大课堂</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="assets/shiclass.css">
-
-
-
-
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
@@ -25,40 +21,25 @@
   <!-- Hero -->
   <div class="hero">
     <div class="eyebrow">组内分享 · 张健强 · 第二部分</div>
-    <h1>情绪场与自反式导航</h1>
-    <p class="subtitle">从经验到情绪的映射、自反式导航代价函数、地图更新机制与实验结果</p>
+    <h1>事件描述 · 情绪评估 · 地图更新</h1>
+    <p class="subtitle">Event Descriptor、Emotion Evaluator 的详细设计，E2Map 的 Weber-Fechner 更新机制，以及实验验证</p>
     <div class="hero-meta">
       <span>📅 2026-06</span>
-      <span>🧠 情绪建模</span>
-      <span>🧭 自反导航</span>
-      <span>📊 实验结果</span>
+      <span>🧠 情绪评估</span>
+      <span>📐 Weber-Fechner</span>
+      <span>🔬 实验验证</span>
     </div>
   </div>
 
   <!-- Lead Grid -->
-  <div
-</div>
-
   <div class="lead-grid">
     <div class="callout">
       <h4>🎯 学完本节，你应能</h4>
-      <p>掌握情绪场的构建方法及自反式导航的代价函数设计</p>
+      <p>理解 Event Descriptor 和 Emotion Evaluator 的设计细节，掌握 E2Map 基于 Weber-Fechner 定律的更新机制，了解仿真与真实世界实验结果</p>
     </div>
     <div class="callout">
       <h4>📖 前置知识</h4>
-      <p>建议先完成前面的课程，或具备线性代数与概率论基础。</p>
-    </div>
-  </div>
-
-  <section class="section-card"
-lead-grid">
-    <div class="callout">
-      <p><strong>🎯 核心问题</strong></p>
-      <p>如何将经验统计数据转化为可指导决策的情绪信号？如何设计融合几何、经验和情绪的导航代价函数？</p>
-    </div>
-    <div class="callout">
-      <p><strong>🔑 核心思想</strong></p>
-      <p>情绪场 = 经验的非线性映射 + 空间传播。导航代价 = 几何距离 + 经验代加 + 情绪代价。三者结合形成"有记忆"的闭环导航系统。</p>
+      <p>建议先完成 0025（E2Map 架构与经验场），了解 E2Map 的张量定义和高斯混合情绪模型。</p>
     </div>
   </div>
 
@@ -66,255 +47,358 @@ lead-grid">
   <div class="toc">
     <h3>📖 目录</h3>
     <ul>
-      <li><a href="#sec1">1. 回顾：经验场</a></li>
-      <li><a href="#sec2">2. 情绪场（Emotion Field）定义</a></li>
-      <li><a href="#sec3">3. 情绪场的空间传播</a></li>
-      <li><a href="#sec4">4. 自反式导航代价函数</a></li>
-      <li><a href="#sec5">5. 地图更新机制</a></li>
-      <li><a href="#sec6">6. 实验与效果</a></li>
-      <li><a href="#sec7">7. 局限与未来方向</a></li>
+      <li><a href="#sec1">1. 事件描述器（Event Descriptor）</a></li>
+      <li><a href="#sec2">2. 情绪评估器（Emotion Evaluator）</a></li>
+      <li><a href="#sec3">3. E2Map 更新：Weber-Fechner 定律</a></li>
+      <li><a href="#sec4">4. One-Shot Behavior Adjustment</a></li>
+      <li><a href="#sec5">5. 导航算法（Algorithm 1）</a></li>
+      <li><a href="#sec6">6. 实验验证</a></li>
       <li><a href="#quiz">📝 自测题</a></li>
     </ul>
   </div>
 
-  <!-- 1. 回顾 -->
+  <!-- 1. Event Descriptor -->
   <div id="sec1" class="section-card">
-    <h2>1. 回顾：经验场</h2>
+    <h2>1. 事件描述器（Event Descriptor）</h2>
 
-    <p>上一讲我们定义了经验场 $e(p)$：</p>
-    <div class="formula-box">
-      $$
-      e(p) = [n_{\text{success}}(p),\\; n_{\text{fail}}(p),\\; \bar r(p)]
-      $$
-    </div>
-    <p>经验场记录了每个位置的历史交互统计。但原始的经验向量——成功/失败次数——并不能直接用于路径规划。我们需要将其转化为一个统一的、可比较的代价指标。</p>
-
-    <p>这个转化的桥梁就是<strong>情绪场（Emotion Field）</strong>。</p>
-  </div>
-
-  <!-- 2. 情绪场 -->
-  <div id="sec2" class="section-card">
-    <h2>2. 情绪场（Emotion Field）定义</h2>
-
-    <p>情绪值 $s(p) \in [-1, 1]$ 综合反映位置 $p$ 的情感效价：</p>
-
-    <div class="formula-box">
-      $$
-      \boxed{s(p) = \tanh\left(\alpha \cdot \frac{n_{\text{success}} - n_{\text{fail}}}{n_{\text{success}} + n_{\text{fail}} + \epsilon} + \beta \cdot \bar r(p)\right)}
-      $$
-    </div>
-
-    <div class="grid-2">
-      <div class="mini-card" style="border-left: 4px solid #22c55e;">
-        <h4>$s > 0$：正面情绪</h4>
-        <ul>
-          <li>成功次数 > 失败次数</li>
-          <li>平均奖励高</li>
-          <li>机器人倾向于选择这些区域</li>
-        </ul>
-      </div>
-      <div class="mini-card" style="border-left: 4px solid #ef4444;">
-        <h4>$s < 0$：负面情绪</h4>
-        <ul>
-          <li>失败次数 > 成功次数</li>
-          <li>平均奖励低或为负</li>
-          <li>机器人会主动回避这些区域</li>
-        </ul>
-      </div>
-    </div>
-
-    <h3>公式详解</h3>
-    <div class="formula-box">
-      $$
-      s(p) = \tanh(\alpha \cdot \text{成功率偏差} + \beta \cdot \text{平均奖励})
-      $$
-    </div>
-    <ul>
-      <li>$\frac{n_{\text{success}} - n_{\text{fail}}}{n_{\text{success}} + n_{\text{fail}} + \epsilon}$：取值范围 [-1, 1]，度量成功率偏差</li>
-      <li>$\bar r(p)$：平均累积奖励，可以反映更细致的任务反馈</li>
-      <li>$\tanh(\cdot)$：将结果压缩到 [-1, 1] 区间，避免极端值</li>
-      <li>$\alpha, \beta$：调节两个因素的相对重要性</li>
-    </ul>
+    <p>机器人导航过程中，当发生一个"事件"（event）时——例如突然出现障碍物、门打开、有人走出——系统需要先将这个事件转化为语言描述，才能进行后续的情绪评估。这就是 <strong>Event Descriptor</strong> 的任务。</p>
 
     <div class="callout">
-      <p><strong>🧠 设计理念</strong></p>
-      <p>情绪场不依赖人工标注，而是通过机器人的实际交互经验自动生成。失败次数多的区域自然积累负面情绪，高奖励区域积累正面情绪。这是一种"从经验中学习"的情感范式。</p>
+      <p><strong>📸 输入输出</strong></p>
+      <p>输入：事件发生前、发生时、发生后 <strong>3 张连续图像</strong> $I_{t_{\\text{evt}}-h}$, $I_{t_{\\text{evt}}}$, $I_{t_{\\text{evt}}+h}$</p>
+      <p>输出：事件的语言描述 $l_{\\text{evt}}$</p>
     </div>
-  </div>
 
-  <!-- 3. 空间传播 -->
-  <div id="sec3" class="section-card">
-    <h2>3. 情绪场的空间传播</h2>
+    <h3>方法：LMM Zero-Shot Step-by-Step Reasoning</h3>
+    <p>Event Descriptor 使用一个<strong>多模态大模型（LMM，类似 GPT-4o）</strong>，以 <strong>zero-shot step-by-step reasoning</strong> 的方式生成事件描述。其流程是：</p>
 
-    <p>单个位置的经验通过高斯扩散影响邻域，确保情绪场在空间上连续平滑，避免孤立点导致的规划不稳定。</p>
+    <ol>
+      <li><strong>逐图描述</strong>：先分别描述每张图像中的场景和变化</li>
+      <li><strong>组合推理</strong>：将三个时间点的描述组合起来，推理出完整的事件过程</li>
+    </ol>
 
     <div class="formula-box">
       $$
-      s_{\text{smooth}}(p) = \frac{\sum_{q \in \mathcal{N}(p)} K_\sigma(\\|p - q\\|) \cdot s(q)}{\sum_{q \in \mathcal{N}(p)} K_\sigma(\\|p - q\\|)}
+      l_{\\text{evt}} = \\mathcal{F}_{\\text{ed}}(I_{t_{\\text{evt}}-h}, I_{t_{\\text{evt}}}, I_{t_{\\text{evt}}+h}, p_{\\text{ed}}) \\tag{3}
       $$
     </div>
 
-    <p>其中 $K_\sigma(d) = \exp(-d^2 / 2\sigma^2)$ 是高斯核，$\mathcal{N}(p)$ 是 $p$ 的邻域。</p>
+    <p>其中 $p_{\\text{ed}}$ 是 zero-shot prompt 参数。模型不需要针对导航任务做微调或 few-shot 示例，仅凭预训练的能力和对三张图像的对比推理，就能生成准确的事件描述。</p>
 
     <div class="grid-2">
       <div class="mini-card" style="border-left: 4px solid #3b82f6;">
-        <h4>📏 传播半径 $\sigma$</h4>
-        <p>$\sigma$ 控制情绪影响的空间范围。$\sigma$ 越大，一个点的负面情绪会影响越广的区域，机器人会从更远的地方就开始绕路。</p>
+        <h4>📷 图像 $I_{t_{\\text{evt}}-h}$</h4>
+        <p>事件发生前一帧。提供事件的"背景"或"前因"，例如门还是关着的、墙后还没有人出现。</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #f59e0b;">
-        <h4>🔄 传播效果</h4>
-        <p>传播可以使窄通道中的负面情绪"扩散"到附近区域，让整个区域都被标记为高风险，避免机器人进入后无法掉头。</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- 4. 自反导航 -->
-  <div id="sec4" class="section-card">
-    <h2>4. 自反式导航代价函数</h2>
-
-    <p>自反式导航将传统几何代价与经验-情绪代价融合：</p>
-
-    <div class="formula-box">
-      $$
-      \boxed{J(\tau) = \underbrace{\int_\tau w_{\text{geo}} \\, ds}_{\text{几何距离}} \\;+\\; \lambda_{e} \underbrace{\int_\tau \phi(e(p)) \\, ds}_{\text{经验代价}} \\;+\\; \lambda_{s} \underbrace{\int_\tau \psi(s(p)) \\, ds}_{\text{情绪代价}}}
-      $$
-    </div>
-
-    <p>其中：</p>
-    <ul>
-      <li>$\phi(e(p)) = 1 - \frac{n_{\text{success}}}{n_{\text{success}} + n_{\text{fail}} + \epsilon}$ —— 失败率越高代价越大</li>
-      <li>$\psi(s(p)) = 1 - \frac{s(p) + 1}{2}$ —— 负面情绪区域代价高（$s=-1$ 时代价=1，$s=+1$ 时代价=0）</li>
-      <li>$\lambda_{e}, \lambda_{s}$ 为调节权重</li>
-    </ul>
-
-    <h3>传统 vs 自反式</h3>
-    <div class="grid-2">
-      <div class="mini-card" style="border-left: 4px solid #6b7280;">
-        <h4>📌 传统规划</h4>
-        <ul>
-          <li>只考虑路径长度和碰撞</li>
-          <li>每次规划结果一致</li>
-          <li>无法利用历史经验</li>
-          <li>遇到"麻烦区域"不会主动避开</li>
-        </ul>
-      </div>
-      <div class="mini-card" style="border-left: 4px solid #22c55e;">
-        <h4>🔄 自反式导航</h4>
-        <ul>
-          <li>综合考虑几何 + 经验 + 情绪</li>
-          <li>规划结果随经验积累而改变</li>
-          <li>有"记忆"的导航行为</li>
-          <li>自然形成对"危险区域"的回避</li>
-        </ul>
+        <h4>📷 图像 $I_{t_{\\text{evt}}+h}$</h4>
+        <p>事件发生后一帧。提供事件的"后果"或持续影响，例如机器人与障碍物的相对位置变化。</p>
       </div>
     </div>
 
     <div class="callout">
-      <p><strong>🔄 "自反"的含义</strong></p>
-      <p>自反式导航形成"行动→感知→更新地图→再行动"的闭环。机器人不需要被显式编程告诉"避开某个区域"，而是通过自身经验自动学会。这正是"自反式"（reflexive）的含义——像生物的条件反射一样自然。</p>
+      <p><strong>💡 为什么要用三张图而非单张？</strong></p>
+      <p>单张图像只能捕捉静态场景，无法表达"发生了什么变化"。三张连续图像让 LMM 能通过对比感知到运动、出现、消失等动态事件，从而生成更准确的事件描述。</p>
     </div>
   </div>
 
-  <!-- 5. 地图更新 -->
-  <div id="sec5" class="section-card">
-    <h2>5. 地图更新机制</h2>
+  <!-- 2. Emotion Evaluator -->
+  <div id="sec2" class="section-card">
+    <h2>2. 情绪评估器（Emotion Evaluator）</h2>
 
-    <p>E2Map 的完整更新周期包括：</p>
+    <p>得到事件的语言描述 $l_{\\text{evt}}$ 后，<strong>Emotion Evaluator</strong> 负责<strong>评估该事件对机器人的情绪影响</strong>，输出一个量化的情绪分数。</p>
 
-    <ol>
-      <li><strong>经验更新</strong>：每次任务完成后，更新路径上各位置的经验向量 $e(p)$</li>
-      <li><strong>情绪重新计算</strong>：根据更新后的经验，重新计算各位置的情绪值 $s(p)$</li>
-      <li><strong>情绪传播</strong>：通过高斯核将情绪值传播到邻域</li>
-      <li><strong>时空衰减</strong>：旧经验的权重随时间和距离衰减</li>
-    </ol>
+    <div class="callout">
+      <p><strong>❤️ 输入输出</strong></p>
+      <p>输入：事件描述文本 $l_{\\text{evt}}$</p>
+      <p>输出：二维情绪评分 → 总分 $s_{\\text{emo}}$</p>
+    </div>
 
-    <h3>时空衰减函数</h3>
+    <h3>方法：LLM Few-Shot Prompting</h3>
+    <p>Emotion Evaluator 使用 <strong>LLM</strong>（大语言模型）配合 <strong>few-shot prompting</strong>，根据事件描述评价两个维度的情绪：</p>
+
+    <div class="grid-2">
+      <div class="mini-card" style="border-left: 4px solid #ef4444;">
+        <h4>😰 Upsetness（0–3）</h4>
+        <p>评价 agent（机器人）在给定情境中<strong>感受到的影响程度</strong>。例如突然出现障碍物使机器人受到惊吓，upsetness 较高。</p>
+        <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:8px">灵感：驱动"回避行为"的情绪</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #f59e0b;">
+        <h4>😔 Guiltiness（0–3）</h4>
+        <p>评价 agent 的<strong>行为对环境造成的影响程度</strong>。例如机器人撞倒了物体，guiltiness 较高。</p>
+        <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:8px">灵感：驱动"修复行为"的情绪</p>
+      </div>
+    </div>
+
     <div class="formula-box">
       $$
-      w(t, d) = \exp\left(-\gamma_{t} \cdot \Delta t - \gamma_{d} \cdot \Delta d\right)
+      s_{\\text{emo}} = upsetness + guiltiness \\quad (0 \\leq s_{\\text{emo}} \\leq 6) \\tag{4}
       $$
     </div>
-    <p>时间越久、距离越远的经验对当前情绪值的贡献越小。衰减机制确保地图能适应环境变化——如果某个区域之前经常出问题，但环境改变后再也没出过问题，它的负面情绪会逐渐衰退。</p>
+
+    <div class="formula-box">
+      $$
+      s_{\\text{emo}} = \\mathcal{F}_{\\text{ee}}(l_{\\text{evt}}, p_{\\text{ee}}) \\tag{4}
+      $$
+    </div>
+
+    <p>其中 $p_{\\text{ee}}$ 是 few-shot prompt 参数（包含评分示例）。</p>
+
+    <h3>设计灵感</h3>
+    <p>论文指出，这两个维度的设计灵感来源于人类情感：</p>
+    <ul>
+      <li><strong>Upsetness</strong> 对应驱动<strong>回避行为</strong>（aversion）的情绪——例如恐惧、厌恶，让 agent 远离不愉快的刺激</li>
+      <li><strong>Guiltiness</strong> 对应驱动<strong>修复行为</strong>（repair）的情绪——例如内疚、后悔，让 agent 修正自己的行为</li>
+    </ul>
+    <p>二者结合形成的总分数 $s_{\\text{emo}}$ 决定了 E2Map 更新的方向和幅度。</p>
+
+    <div class="callout" style="border-left-color: #22c55e;">
+      <p><strong>⚡ Key Insight</strong></p>
+      <p>人类情绪并非一个单一维度。论文将情绪分解为"对自身的影响"（upsetness）和"对环境的影响"（guiltiness），使得机器人既能避开危险，又能主动修复自身行为带来的问题。</p>
+    </div>
   </div>
 
-  <!-- 6. 实验 -->
-  <div id="sec6" class="section-card">
-    <h2>6. 实验与效果</h2>
+  <!-- 3. E2Map Update -->
+  <div id="sec3" class="section-card">
+    <h2>3. E2Map 更新：Weber-Fechner 定律</h2>
 
-    <h3>实验设置</h3>
-    <ul>
-      <li>仿真环境：带有动态障碍物和多任务场景的室内导航环境</li>
-      <li>机器人：轮式移动底座 + 机械臂（抓取操作）</li>
-      <li>对比基线：传统 A*、Dijkstra、基于语义地图的导航</li>
-    </ul>
+    <p>得到情绪分数 $s_{\\text{emo}}$ 后，系统需要将其编码到 E2Map 中，使得未来的路径规划能"记住"这次情绪体验。更新机制的核心是<strong>心理物理学中的 Weber-Fechner 定律</strong>。</p>
 
-    <h3>主要结果</h3>
+    <h3>Weber-Fechner 定律</h3>
+    <div class="callout">
+      <p><strong>📐 心理学背景</strong></p>
+      <p>Weber-Fechner 定律描述了<strong>物理刺激强度</strong>与<strong>主观感知强度</strong>之间的对数关系：感知强度随刺激呈<strong>对数增长</strong>。例如，一个物体重量翻倍，人感受到的重量变化并不是翻倍，而是按对数比例增加。</p>
+    </div>
+
+    <p>E2Map 借用这一思想：情绪强度（$s_{\\text{emo}}$）作为"刺激"，对高斯分布协方差的调整幅度作为"感知"，两者通过对数函数关联。</p>
+
+    <h3>更新公式</h3>
+    <p>当事件发生时，系统首先识别与事件相关的 $n$ 个栅格单元格 $p_{\\text{update}}$（基于 agent 事件发生时的位姿），然后更新这些栅格中高斯分布的<strong>标准差</strong>：</p>
+
+    <div class="formula-box">
+      $$
+      \\sigma_{\\text{new}, k} = \\sigma_{k} \\cdot v_{k} \\cdot \\log\\left(\\frac{s_{\\text{emo}}}{T}\\right), \\quad k \\in \\{x, y\\} \\tag{5}
+      $$
+    </div>
+
+    <p>其中各符号的含义：</p>
+
     <table>
       <thead>
-        <tr>
-          <th>指标</th>
-          <th>传统规划</th>
-          <th>语义导航</th>
-          <th>E2Map（自反式）</th>
-        </tr>
+        <tr><th>符号</th><th>含义</th><th>说明</th></tr>
       </thead>
       <tbody>
-        <tr>
-          <td>任务成功率</td>
-          <td>72%</td>
-          <td>81%</td>
-          <td><strong>93%</strong></td>
-        </tr>
-        <tr>
-          <td>平均路径长度</td>
-          <td>最短</td>
-          <td>中等</td>
-          <td>稍长（避让绕路）</td>
-        </tr>
-        <tr>
-          <td>碰撞次数 / 100 步</td>
-          <td>8.2</td>
-          <td>5.1</td>
-          <td><strong>1.4</strong></td>
-        </tr>
-        <tr>
-          <td>交互学习收敛</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td>~50 次交互</td>
-        </tr>
+        <tr><td>$\\sigma_{k}$</td><td>当前标准差</td><td>更新前高斯分布在 $k$ 方向的标准差</td></tr>
+        <tr><td>$\\sigma_{\\text{new}, k}$</td><td>更新后的标准差</td><td>新值替代旧值，传播范围改变</td></tr>
+        <tr><td>$v_{k}$</td><td>方向分量</td><td>事件发生时机器人朝向的单位方向向量 $\\mathbf{v} = (v_x, v_y)$ 在 $k$ 方向的分量</td></tr>
+        <tr><td>$s_{\\text{emo}}$</td><td>情绪总分</td><td>$upsetness + guiltiness$，范围 $[0, 6]$</td></tr>
+        <tr><td>$T$</td><td>Temperature 参数</td><td>控制更新敏感度的温度参数</td></tr>
+        <tr><td>$\\log(\\cdot)$</td><td>对数函数</td><td>Weber-Fechner 定律的核心——非线性映射</td></tr>
+      </tbody>
+    </table>
+
+    <h3>更新效果分析</h3>
+    <div class="grid-2">
+      <div class="mini-card" style="border-left: 4px solid #ef4444;">
+        <h4>😱 负面情绪（$s_{\\text{emo}}$ 大）</h4>
+        <p>$\\log(s_{\\text{emo}} / T) > 0$，高斯分布<strong>标准差增大</strong>。情绪影响范围扩展，机器人从更远的距离就能感知到该区域的负面情绪并提前避让。</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #22c55e;">
+        <h4>😊 正面情绪（$s_{\\text{emo}}$ 小）</h4>
+        <p>$\\log(s_{\\text{emo}} / T) < 0$，高斯分布<strong>标准差减小</strong>（即可压缩）。情绪影响范围收缩，机器人对该区域的回避程度降低。</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <p><strong>🧭 方向性编码</strong></p>
+      <p>$v_k$ 的存在使得更新具有<strong>方向性</strong>：机器人朝向的方向（$\\mathbf{v}$）上的标准差更新幅度更大。这意味着 E2Map 能记住"从哪个方向接近该区域时发生了事件"，从而实现方向感知的情绪场更新。例如，从东侧接近时发生了碰撞，则向东方向的情绪影响范围扩展更明显。</p>
+    </div>
+  </div>
+
+  <!-- 4. One-Shot Behavior Adjustment -->
+  <div id="sec4" class="section-card">
+    <h2>4. One-Shot Behavior Adjustment</h2>
+
+    <p>E2Map 更新后，导航系统如何利用新的地图调整行为？核心机制是<strong>以情绪为代价的 D* 路径重规划</strong>。</p>
+
+    <h3>D* Algorithm with Emotion Cost</h3>
+    <p>论文使用 <strong>D* algorithm</strong> 进行路径规划，其中规划代价包含情绪信息。E2Map 的高斯情绪场直接影响 D* 的代价函数：高斯分布越高的区域（负面情绪越强），代价越高，D* 会倾向于规划绕行路径。</p>
+
+    <div class="callout" style="border-left-color: #f59e0b;">
+      <p><strong>🔄 类似势场法（Potential Field），但有本质区别</strong></p>
+      <p>传统的势场法（PFM）将障碍物产生的排斥力叠加到运动控制中，但容易陷入<strong>局部最小值</strong>（如 U 形障碍物）。E2Map 使用的是<strong>独立的规划器（D*）</strong>，以情绪作为全局代价进行规划，天然避免了局部最小值问题。</p>
+    </div>
+
+    <h3>One-Shot 能力</h3>
+    <p>E2Map 的一个关键优势是 <strong>one-shot behavior adjustment</strong>——只需<strong>一次</strong>事件经历就能调整后续行为：</p>
+
+    <ol>
+      <li>机器人执行任务过程中遇到事件</li>
+      <li>Event Descriptor 描述事件 → Emotion Evaluator 评分 → E2Map 更新</li>
+      <li>D* 立即重新计算最小代价路径</li>
+      <li>机器人沿新路径行动，主动避开负面情绪区域</li>
+    </ol>
+
+    <div class="callout" style="border-left-color: #22c55e;">
+      <p><strong>⚡ 与统计学习方法的对比</strong></p>
+      <p>传统方法需要<strong>多次统计</strong>（如数十次重复试验）才能学会避开某个区域。E2Map 借助 LLM/LMM 对事件的语义理解和情绪评估，单次事件就能改变导航行为偏好。这正是"经验-情绪"映射的威力所在。</p>
+    </div>
+  </div>
+
+  <!-- 5. Algorithm 1 -->
+  <div id="sec5" class="section-card">
+    <h2>5. 导航算法（Algorithm 1）</h2>
+
+    <p>论文给出了完整的导航算法流程（Algorithm 1），将上述所有模块整合为统一的运行循环：</p>
+
+    <div class="formula-box" style="text-align: left;">
+      <pre style="background: transparent; color: var(--text); padding: 0; margin: 0; font-size: 0.85rem; line-height: 1.7;">
+<strong>Algorithm 1</strong> Navigation with E2Map
+
+  goal_list ← GoalSelector(l_inst)
+
+  for each goal in goal_list do
+    τ ← D*_planning(p_agent, goal, M)
+    while not reached(goal) do
+      MPPI_control(τ)
+      if event then
+        l_evt ← F_ed(I_{prev}, I_{evt}, I_{next}, p_ed)
+        s_emo ← F_ee(l_evt, p_ee)
+        p_update ← pose at event occurrence
+        M.update(s_emo, p_update)
+        τ ← D*_planning(p_agent, goal, M)   // replan
+      end if
+    end while
+  end for</pre>
+    </div>
+
+    <h3>算法步骤详解</h3>
+
+    <table>
+      <thead>
+        <tr><th>步骤</th><th>操作</th><th>说明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>Goal Selector</td><td>LLM code generation 将语言指令分解为目标列表</td></tr>
+        <tr><td>2–3</td><td>D* 初始规划</td><td>在当前 E2Map $M$ 上规划到目标的最小代价路径 $\\tau$</td></tr>
+        <tr><td>4</td><td>MPPI 控制</td><td>Model Predictive Path Integral 沿路径 $\\tau$ 执行底层运动控制</td></tr>
+        <tr><td>5–9</td><td>事件处理</td><td>检测到事件时：Event Descriptor 描述 → Emotion Evaluator 评分 → 记录位姿 → E2Map 更新 → D* 重规划</td></tr>
+        <tr><td>10</td><td>循环</td><td>重复控制-事件检测直到到达目标</td></tr>
       </tbody>
     </table>
 
     <div class="callout">
-      <p><strong>📊 关键观察</strong></p>
-      <p>E2Map 的路径虽然略长（因为避让"负面区域"），但成功率大幅提升、碰撞率显著下降。更重要的是，这种能力是机器人<strong>自动习得</strong>的，无需人工标定危险区域。经过约 50 次交互后，导航性能就收敛到稳定水平。</p>
+      <p><strong>🔁 闭环反馈</strong></p>
+      <p>Algorithm 1 的核心特征是<strong>事件驱动的闭环反馈</strong>：事件 → 情绪评估 → 地图更新 → 路径重规划。这个循环使得机器人能<strong>实时</strong>根据新体验调整行为，而不是等待整个任务完成后再更新策略。</p>
     </div>
   </div>
 
-  <!-- 7. 局限 -->
-  <div id="sec7" class="section-card">
-    <h2>7. 局限与未来方向</h2>
+  <!-- 6. Experiments -->
+  <div id="sec6" class="section-card">
+    <h2>6. 实验验证</h2>
+
+    <h3>实验场景</h3>
+    <p>论文设计了<strong>三种典型场景</strong>来验证 E2Map 的自反导航能力：</p>
 
     <div class="grid-2">
-      <div class="mini-card" style="border-left: 4px solid #ef4444;">
-        <h4>⚠️ 当前局限</h4>
-        <ul>
-          <li><strong>冷启动问题</strong>：初始地图为空时，导航退化为传统规划，需要一段交互积累</li>
-          <li><strong>情绪维度单一</strong>：仅用一维标量 $s$ 表达情绪，无法区分恐惧/厌恶/惊喜等不同情感</li>
-          <li><strong>动态环境适应</strong>：环境突变时（如家具重排），旧经验会误导规划</li>
-          <li><strong>扩展性</strong>：高维情感模型会大幅增加存储和计算开销</li>
-        </ul>
-      </div>
       <div class="mini-card" style="border-left: 4px solid #3b82f6;">
-        <h4>🚀 未来方向</h4>
-        <ul>
-          <li><strong>多维情绪建模</strong>：引入愉悦度、唤醒度、优势度（PAD 模型）</li>
-          <li><strong>多机器人共享</strong>：多个机器人共享和融合经验-情绪地图</li>
-          <li><strong>与 LLM 结合</strong>：将情绪场转化为自然语言解释</li>
-          <li><strong>终身学习</strong>：地图持续更新，永不遗忘有用经验</li>
-        </ul>
+        <h4>⚠️ danger sign</h4>
+        <p>环境中出现新的危险标志。机器人经过时 Event Descriptor 识别 → 产生负面情绪 → E2Map 更新 → 后续路径避开该区域。</p>
       </div>
+      <div class="mini-card" style="border-left: 4px solid #f59e0b;">
+        <h4>🧍 human-wall</h4>
+        <p>一个人从墙后走出。机器人经历该事件后产生负面情绪 → 更新地图 → 后续任务中与墙保持安全距离。</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #ef4444;">
+        <h4>🚪 dynamic door</h4>
+        <p>门突然打开。机器人经历后更新 E2Map → 调整后续路线，提前绕开该门或预留更多安全空间。</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <p><strong>🧪 实验协议</strong></p>
+      <p>每个场景中，机器人首先在静环境中完成一次导航（记入 static 结果），然后经历事件（一次体验），最后重新执行导航任务观察行为变化（计入各场景结果）。共测试 <strong>10 次</strong>（10 trials）取成功/失败计数。</p>
+    </div>
+
+    <h3>仿真实验结果</h3>
+    <p>论文将 E2Map 与 <strong>LM-Nav</strong> 和 <strong>VLMaps</strong> 两种基线方法进行了对比：</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>方法</th>
+          <th>static</th>
+          <th>danger sign</th>
+          <th>human-wall</th>
+          <th>dynamic door</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>LM-Nav</strong></td>
+          <td>5/10</td>
+          <td>1/10</td>
+          <td>0/10</td>
+          <td>1/10</td>
+        </tr>
+        <tr>
+          <td><strong>VLMaps</strong></td>
+          <td>10/10</td>
+          <td>0/10</td>
+          <td>0/10</td>
+          <td>0/10</td>
+        </tr>
+        <tr>
+          <td><strong>E2Map</strong></td>
+          <td>10/10</td>
+          <td>9/10</td>
+          <td>9/10</td>
+          <td>9/10</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>结果分析</h3>
+    <div class="grid-2">
+      <div class="mini-card" style="border-left: 4px solid #6b7280;">
+        <h4>📊 LM-Nav</h4>
+        <p>静态场景仅 5/10 成功；动态场景几乎全部失败（0–1/10）。说明纯视觉-语言导航在面对动态变化时缺乏适应性。</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #6b7280;">
+        <h4>📊 VLMaps</h4>
+        <p>静态场景 10/10 完美表现，但动态场景全部 0/10。VLMaps 的语义地图缺少情绪记忆，事件发生后无法调整行为。</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #22c55e;">
+        <h4>📊 E2Map</h4>
+        <p>静态 10/10 保持完美，三个动态场景均达到 <strong>9/10</strong> 的成功率。一次事件经历就足以让 E2Map 学会避开或适应新出现的变化。</p>
+      </div>
+    </div>
+
+    <h3>真实世界实验</h3>
+    <p>论文还在<strong>首尔大学会议室</strong>进行了真实环境验证。环境配置包括：沙发、桌椅、冰箱、微波炉等日常物品。</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>方法</th>
+          <th>static</th>
+          <th>danger sign</th>
+          <th>human-wall</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>E2Map</strong></td>
+          <td>10/10</td>
+          <td>9/10</td>
+          <td>9/10</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout" style="border-left-color: #22c55e;">
+      <p><strong>✅ 结论</strong></p>
+      <p>E2Map 在仿真和真实世界中均表现出色：静态场景 100% 成功，动态场景（一次经历后）达到 90% 成功率。相比之下，LM-Nav 和 VLMaps 在动态场景中几乎完全失效。E2Map 的 one-shot 行为调整能力是其核心优势。</p>
     </div>
   </div>
 
@@ -324,32 +408,44 @@ lead-grid">
 
     <div class="interactive-card">
       <h3>问题 1</h3>
-      <p>情绪场 $s(p)$ 是如何自动生成的？是否需要人工标注？</p>
+      <p>Event Descriptor 的输入是什么？它采用什么推理方式？</p>
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>不需要人工标注。情绪场通过机器人自身的交互经验自动生成：成功次数多积累正面情绪，失败次数多积累负面情绪。公式 $s(p) = \tanh(\alpha \cdot \frac{n_{\text{success}} - n_{\text{fail}}}{n_{\text{success}} + n_{\text{fail}} + \epsilon} + \beta \cdot \bar r(p))$ 将统计数据映射为情感标量。</p>
+          <p>输入是事件发生前、发生时、发生后三张连续图像 $I_{t_{\\text{evt}}-h}$, $I_{t_{\\text{evt}}}$, $I_{t_{\\text{evt}}+h}$。采用 <strong>LMM zero-shot step-by-step reasoning</strong>：先分别描述每张图像，再组合推理出完整事件描述 $l_{\\text{evt}} = \\mathcal{F}_{\\text{ed}}(I_{t_{\\text{evt}}-h}, I_{t_{\\text{evt}}}, I_{t_{\\text{evt}}+h}, p_{\\text{ed}})$。</p>
         </div>
       </details>
     </div>
 
     <div class="interactive-card">
       <h3>问题 2</h3>
-      <p>自反式导航的"自反"体现在哪里？</p>
-      <div class="quiz-options">
-        <button onclick="lessonKit.answer(this, 'q2-feedback')" data-correct="yes" data-explanation="正确！机器人不需要显式指令来避开某些区域，而是通过积累的经验自动形成'回避负面区域'的行为倾向，类似于生物的条件反射。">机器人通过积累的经验自动形成回避行为，类似条件反射</button>
-        <button onclick="lessonKit.answer(this, 'q2-feedback')" data-correct="no" data-explanation="再想想。自反式导航的核心是经验驱动的自动学习，而非使用神经网络做实时反射。">机器人使用神经网络做实时反射</button>
-      </div>
-      <div id="q2-feedback" class="quiz-feedback"></div>
+      <p>Emotion Evaluator 评估哪两个维度？总分范围是多少？分别受什么人类情绪启发？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>两个维度：<strong>Upsetness</strong>（0–3，agent 感受到的影响程度，驱动"回避行为"）和 <strong>Guiltiness</strong>（0–3，agent 行为对环境的影响程度，驱动"修复行为"）。总分 $s_{\\text{emo}} = upsetness + guiltiness \\in [0, 6]$。</p>
+        </div>
+      </details>
     </div>
 
     <div class="interactive-card">
       <h3>问题 3</h3>
-      <p>E2Map 的时空衰减机制解决了什么问题？</p>
+      <p>E2Map 更新基于什么心理学定律？写出更新公式并解释各符号含义。</p>
+      <div class="quiz-options">
+        <button onclick="lessonKit.answer(this, 'q3-feedback')" data-correct="no" data-explanation="不对。E2Map 的更新使用的是 Weber-Fechner 定律，不是 Skinner 的操作性条件反射。">Skinner 的操作性条件反射理论</button>
+        <button onclick="lessonKit.answer(this, 'q3-feedback')" data-correct="yes" data-explanation="正确！公式为 $\\sigma_{\\text{new}, k} = \\sigma_{k} \\cdot v_{k} \\cdot \\log(s_{\\text{emo}} / T)$，感知强度随刺激（情绪）呈对数增长。">Weber-Fechner 心理物理学定律</button>
+        <button onclick="lessonKit.answer(this, 'q3-feedback')" data-correct="no" data-explanation="不对。E2Map 的是 Weber-Fechner 定律，不是 Bayes 更新。">Bayes 更新定理</button>
+      </div>
+      <div id="q3-feedback" class="quiz-feedback"></div>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 4</h3>
+      <p>仿真实验中，E2Map 在 danger sign、human-wall、dynamic door 三个动态场景中各成功几次（共 10 次）？</p>
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>解决了<strong>环境动态变化</strong>的问题。如果某个区域之前经常出问题（负面情绪高），但环境改变后再也没出过问题，衰减机制会让旧的负面经验权重逐渐降低，情绪值慢慢恢复。这样地图不会"僵化"，能持续适应环境变化。</p>
+          <p>三个动态场景各 <strong>9/10</strong> 次成功。相比之下，LM-Nav 最高仅 1/10，VLMaps 全部 0/10。</p>
         </div>
       </details>
     </div>
@@ -363,7 +459,7 @@ lead-grid">
   </div>
 
   <div class="foot-note">
-    <p>施老师大课堂 · 组内分享 · 张健强 · E2Map：情绪场与自反式导航</p>
+    <p>施老师大课堂 · 组内分享 · 张健强 · E2Map：事件描述 · 情绪评估 · 地图更新 · 内容基于 E2Map 论文 (Kim et al., SNU &amp; Stanford, 2024/2025)</p>
   </div>
 </div>
 <script src="assets/shiclass.js"></script>

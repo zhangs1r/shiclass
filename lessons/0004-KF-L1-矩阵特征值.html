@@ -221,10 +221,11 @@
     <p>说明 $AB$ 有 $n$ 个特征值，其中 $n-m$ 个为零；$BA$ 有 $m$ 个非零特征值，与 $AB$ 的相同。</p>
 
     <h3>证明思路（板书）</h3>
-    <p>使用相似变换构造：</p>
+    <p>构造相似变换 $P^{-1}MP$，其中 $P = \begin{bmatrix} I_n & A \\ 0 & I_m \end{bmatrix}$，$M = \begin{bmatrix} AB & 0 \\ B & 0 \end{bmatrix}$：</p>
     <div class="formula-box">
-      $$ \begin{bmatrix} I & A \\ 0 & I \end{bmatrix} \begin{bmatrix} AB & 0 \\ B & 0 \end{bmatrix} \begin{bmatrix} I & -A \\ 0 & I \end{bmatrix} = \begin{bmatrix} 0 & 0 \\ B & BA \end{bmatrix} $$
+      $$ P^{-1} M P = \begin{bmatrix} I_n & -A \\ 0 & I_m \end{bmatrix} \begin{bmatrix} AB & 0 \\ B & 0 \end{bmatrix} \begin{bmatrix} I_n & A \\ 0 & I_m \end{bmatrix} = \begin{bmatrix} 0 & 0 \\ B & BA \end{bmatrix} $$
     </div>
+    <p>这里 $P$ 可逆，故 $M$ 与 $\begin{bmatrix} 0 & 0 \\ B & BA \end{bmatrix}$ 相似，特征值相同。</p>
     <p>两个矩阵相似，故特征值相同。于是 $\lambda(AB) \cup \{0\} = \lambda(BA) \cup \{0\}$。</p>
     <p>推论：$\operatorname{Tr}(AB) = \operatorname{Tr}(BA)$。更一般地，$\operatorname{Tr}(ABCD) = \operatorname{Tr}(DABC)$（循环不变性）。</p>
 
