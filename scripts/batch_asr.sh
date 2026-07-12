@@ -1,16 +1,16 @@
 #!/bin/bash
-# 批量ASR转写：逐一处理缺少SRT的视频，每段之间间隔30秒避免限流
+# 批量ASR转写：逐一处理缺少SRT的视频（使用本地 Qwen3-ASR，零费用）
 # 用法: bash scripts/batch_asr.sh [视频目录] [输出目录]
 
 set -e
-source /home/zjq/.bashrc 2>/dev/null || true
 VIDEO_DIR="${1:-videos}"
 SRT_DIR="${2:-subtitles}"
 LOG_FILE="${SRT_DIR}/batch_asr.log"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo "========================================" | tee -a "$LOG_FILE"
-echo "批量ASR转写开始: $(date)" | tee -a "$LOG_FILE"
+echo "批量 ASR 转写开始: $(date)" | tee -a "$LOG_FILE"
+echo "引擎: Qwen3-ASR-0.6B（本地CPU，零费用）" | tee -a "$LOG_FILE"
 echo "视频目录: $VIDEO_DIR" | tee -a "$LOG_FILE"
 echo "输出目录: $SRT_DIR" | tee -a "$LOG_FILE"
 echo "========================================" | tee -a "$LOG_FILE"
@@ -57,9 +57,9 @@ for vid in "${VIDEOS[@]}"; do
   DUR_MIN=$(echo "scale=0; $DUR / 60" | bc 2>/dev/null || echo "?")
   echo "  时长: ${DUR_MIN}分钟" | tee -a "$LOG_FILE"
   
-  # 运行ASR转写
+  # 运行本地 Qwen3-ASR 转写（无需网络、无需API Key、无限流限制）
   cd "$(dirname "$SCRIPT_DIR")"
-  python3 "$SCRIPT_DIR/asr_transcribe.py" "$VIDEO_FILE" "$SRT_FILE" 2>&1 | tee -a "$LOG_FILE"
+  python3 "$SCRIPT_DIR/qwen_asr_transcribe.py" "$VIDEO_FILE" "$SRT_FILE" 2>&1 | tee -a "$LOG_FILE"
   RET=${PIPESTATUS[0]}
   
   if [ $RET -eq 0 ] && [ -f "$SRT_FILE" ] && [ -s "$SRT_FILE" ]; then
@@ -70,15 +70,14 @@ for vid in "${VIDEOS[@]}"; do
     FAIL=$((FAIL + 1))
   fi
   
-  # 间隔60秒避免限流
+  # Qwen 是本地运行，无需间隔等待
   if [ $COUNT -lt $TOTAL ]; then
-    echo "  等待60秒..." | tee -a "$LOG_FILE"
-    sleep 60
+    echo "  处理下一个..." | tee -a "$LOG_FILE"
   fi
 done
 
 echo "" | tee -a "$LOG_FILE"
 echo "========================================" | tee -a "$LOG_FILE"
-echo "批量ASR转写完成: $(date)" | tee -a "$LOG_FILE"
+echo "批量 ASR 转写完成: $(date)" | tee -a "$LOG_FILE"
 echo "总计: $TOTAL, 成功: $SUCCESS, 失败: $FAIL" | tee -a "$LOG_FILE"
 echo "========================================" | tee -a "$LOG_FILE"
