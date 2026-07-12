@@ -202,7 +202,7 @@ lead-grid">
 
     <div class="formula-box">
       $$
-      $e(p) = [n_{\text{success}}(p),\\; n_{\text{fail}}(p),\\; \bar r(p)]$
+      e(p) = [n_{\text{success}}(p),\\; n_{\text{fail}}(p),\\; \bar r(p)]
       $$
     </div>
 
@@ -225,7 +225,7 @@ lead-grid">
     <p>假如机器人 10 次经过客厅地毯区域，其中 3 次被绊倒，7 次安全通过。那么：</p>
     <div class="formula-box">
       $$
-      $e(\text{客厅地毯}) = [n_{\text{success}}=7,\\; n_{\text{fail}}=3,\\; \bar r = 0.7]$
+      e(\text{客厅地毯}) = [n_{\text{success}}=7,\\; n_{\text{fail}}=3,\\; \bar r = 0.7]
       $$
     </div>
     <p>这个经验向量将告诉规划器：这个区域有 30% 的风险——是否值得冒险，由后续的代价函数决定。</p>
@@ -240,9 +240,9 @@ lead-grid">
     <div class="formula-box">
       $$
       \begin{aligned}
-      $n_{\text{success}}(p) &\leftarrow n_{\text{success}}(p) + \mathbb{1}_{\text{success}} \\\\$
-      $n_{\text{fail}}(p) &\leftarrow n_{\text{fail}}(p) + \mathbb{1}_{\text{fail}} \\\\$
-      $\bar r(p) &\leftarrow \frac{n_{\text{success}} \cdot \bar r_{\text{old}} + r_{\text{new}}}{n_{\text{success}} + 1}$
+            n_{\text{success}}(p) &\leftarrow n_{\text{success}}(p) + \mathbb{1}_{\text{success}} \\
+            n_{\text{fail}}(p) &\leftarrow n_{\text{fail}}(p) + \mathbb{1}_{\text{fail}} \\
+      \bar r(p) &\leftarrow \frac{n_{\text{success}} \cdot \bar r_{\text{old}} + r_{\text{new}}}{n_{\text{success}} + 1}
       \end{aligned}
       $$
     </div>
@@ -276,7 +276,7 @@ lead-grid">
         <h4>📉 衰减机制</h4>
         <p>旧经验的权重随时间衰减：</p>
         $$
-        $w(t) = \exp(-\gamma \cdot \Delta t)$
+        w(t) = \exp(-\gamma \cdot \Delta t)
         $$
         <p>确保地图能反映环境变化，避免"过时经验"误导规划。</p>
       </div>

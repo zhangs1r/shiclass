@@ -85,7 +85,7 @@ lead-grid">
 
     <div class="formula-box">
       $$
-      $\lim_{k \to \infty} P_{k|k} = \bar P$
+      \lim_{k \to \infty} P_{k|k} = \bar P
       $$
     </div>
 
@@ -93,7 +93,7 @@ lead-grid">
 
     <div class="formula-box">
       $$
-      $\lim_{k \to \infty} K_{k} = K^* = \bar P C' [C \bar P C' + R]^{-1}$
+      \lim_{k \to \infty} K_{k} = K^* = \bar P C' [C \bar P C' + R]^{-1}
       $$
     </div>
 
@@ -111,7 +111,7 @@ lead-grid">
 
     <div class="formula-box">
       $$
-      $\boxed{\hat x_{k|k} = A \hat x_{k-1|k-1} + K^* [y_{k} - C A \hat x_{k-1|k-1}]}$
+      \boxed{\hat x_{k|k} = A \hat x_{k-1|k-1} + K^* [y_{k} - C A \hat x_{k-1|k-1}]}
       $$
     </div>
 
@@ -119,7 +119,7 @@ lead-grid">
 
     <div class="formula-box">
       $$
-      $\boxed{\hat x_{k+1|k} = A \hat x_{k|k-1} + K^* [y_{k} - C \hat x_{k|k-1}]}$
+      \boxed{\hat x_{k+1|k} = A \hat x_{k|k-1} + K^* [y_{k} - C \hat x_{k|k-1}]}
       $$
     </div>
 
@@ -127,7 +127,7 @@ lead-grid">
     <p>$K^*$ 可以通过求解 <strong>代数 Riccati 方程（ARE）</strong>得到：</p>
     <div class="formula-box">
       $$
-      $\bar P = A \bar P A' - A \bar P C' [C \bar P C' + R]^{-1} C \bar P A' + Q$
+      \bar P = A \bar P A' - A \bar P C' [C \bar P C' + R]^{-1} C \bar P A' + Q
       $$
     </div>
     <p>ARE 可以离线求解（例如用迭代法或直接数值解法），得到 $\bar P$ 后再计算 $K^* = \bar P C' [C \bar P C' + R]^{-1}$。</p>
@@ -199,7 +199,7 @@ lead-grid">
     <p>以及状态更新：</p>
     <div class="formula-box">
       $$
-      $P_{k|k}^{-1} \hat x_{k|k} = P_{k|k-1}^{-1} \hat x_{k|k-1} + C' R^{-1} y_{k}$
+      P_{k|k}^{-1} \hat x_{k|k} = P_{k|k-1}^{-1} \hat x_{k|k-1} + C' R^{-1} y_{k}
       $$
     </div>
 
@@ -208,19 +208,19 @@ lead-grid">
       <div class="mini-card">
         <h4>信息矩阵</h4>
         $$
-        $\Omega_{k|k} = P_{k|k}^{-1}$
+        \Omega_{k|k} = P_{k|k}^{-1}
         $$
         $$
-        $\Omega_{k|k-1} = P_{k|k-1}^{-1}$
+        \Omega_{k|k-1} = P_{k|k-1}^{-1}
         $$
       </div>
       <div class="mini-card">
         <h4>信息向量</h4>
         $$
-        $\xi_{k|k} = P_{k|k}^{-1} \hat x_{k|k}$
+        \xi_{k|k} = P_{k|k}^{-1} \hat x_{k|k}
         $$
         $$
-        $\xi_{k|k-1} = P_{k|k-1}^{-1} \hat x_{k|k-1}$
+        \xi_{k|k-1} = P_{k|k-1}^{-1} \hat x_{k|k-1}
         $$
       </div>
     </div>
@@ -228,7 +228,7 @@ lead-grid">
     <h3>信息形式的更新规则</h3>
     <div class="formula-box">
       $$
-      $\boxed{\Omega_{k|k} = \Omega_{k|k-1} + C' R^{-1} C}$
+      \boxed{\Omega_{k|k} = \Omega_{k|k-1} + C' R^{-1} C}
       $$
       $$
       \boxed{\xi_{k|k} = \xi_{k|k-1} + C' R^{-1} y_k}
@@ -260,7 +260,7 @@ lead-grid">
       y_{k} = \begin{bmatrix} y_{k}^1 \\\\ y_{k}^2 \\\\ \vdots \\\\ y_{k}^n \end{bmatrix}
       = C x_{k} + v_{k}, \quad
       C = \begin{bmatrix} C_{1} \\\\ C_{2} \\\\ \vdots \\\\ C_{n} \end{bmatrix},
-      $\quad v_{k} \sim N(0, \text{diag}(R_{1}, \dots, R_{n}))$
+      \quad v_{k} \sim N(0, \text{diag}(R_{1}, \dots, R_{n}))
       $$
     </div>
     <p>这种方法需要每次拼装大矩阵，不够灵活。</p>
@@ -269,10 +269,10 @@ lead-grid">
     <p>用信息形式，每个传感器的贡献独立累加：</p>
     <div class="formula-box">
       $$
-      $\boxed{\Omega_{k|k} = \Omega_{k|k-1} + \sum_{i=1}^{n} C_{i}' R_{i}^{-1} C_i}$
+      \boxed{\Omega_{k|k} = \Omega_{k|k-1} + \sum_{i=1}^{n} C_{i}' R_{i}^{-1} C_i}
       $$
       $$
-      $\boxed{\xi_{k|k} = \xi_{k|k-1} + \sum_{i=1}^{n} C_{i}' R_{i}^{-1} y_{k}^i}$
+      \boxed{\xi_{k|k} = \xi_{k|k-1} + \sum_{i=1}^{n} C_{i}' R_{i}^{-1} y_{k}^i}
       $$
     </div>
 

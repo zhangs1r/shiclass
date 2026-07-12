@@ -117,7 +117,7 @@ lead-grid">
 
     <div class="formula-box">
       $$
-      $\hat x_{k+1} = A \hat x_{k} + K_{k+1} (y_{k+1} - C A \hat x_{k})$
+      \hat x_{k+1} = A \hat x_{k} + K_{k+1} (y_{k+1} - C A \hat x_{k})
       $$
     </div>
 
@@ -127,7 +127,7 @@ lead-grid">
 
     <div class="formula-box">
       $$
-      $\boxed{\text{Find } K_{k+1} \text{ s.t. } P_{k+1} = E[(x_{k+1} - \hat x_{k+1})(x_{k+1} - \hat x_{k+1})'] \text{ is minimized}}$
+      \boxed{\text{Find } K_{k+1} \text{ s.t. } P_{k+1} = E[(x_{k+1} - \hat x_{k+1})(x_{k+1} - \hat x_{k+1})'] \text{ is minimized}}
       $$
     </div>
 
@@ -143,9 +143,9 @@ lead-grid">
     <div class="formula-box">
       $$
       \begin{aligned}
-      $\tilde x_{k+1|k} &= x_{k+1} - A \hat x_{k} \\\\\\\\$
-      $&= (A x_{k} + w_{k}) - A \hat x_{k} \\\\\\\\$
-      $&= A \tilde x_{k} + w_{k}$
+            \tilde x_{k+1|k} &= x_{k+1} - A \hat x_{k} \\
+            &= (A x_{k} + w_{k}) - A \hat x_{k} \\
+      &= A \tilde x_{k} + w_{k}
       \end{aligned}
       $$
     </div>
@@ -155,9 +155,9 @@ lead-grid">
     <div class="formula-box">
       $$
       \begin{aligned}
-      $\tilde x_{k+1} &= x_{k+1} - \hat x_{k+1} \\\\\\\\$
-      $&= x_{k+1} - [A \hat x_{k} + K_{k+1} (y_{k+1} - C A \hat x_{k})] \\\\\\\\$
-      $&= \tilde x_{k+1|k} - K_{k+1} (C \tilde x_{k+1|k} + v_{k+1})$
+            \tilde x_{k+1} &= x_{k+1} - \hat x_{k+1} \\
+            &= x_{k+1} - [A \hat x_{k} + K_{k+1} (y_{k+1} - C A \hat x_{k})] \\
+      &= \tilde x_{k+1|k} - K_{k+1} (C \tilde x_{k+1|k} + v_{k+1})
       \end{aligned}
       $$
     </div>
@@ -166,7 +166,7 @@ lead-grid">
     <div class="formula-box">
       $$
       \begin{aligned}
-      $P_{k+1}(K_{k+1}) &= E[\tilde x_{k+1} \tilde x_{k+1}'] \\\\\\\\$
+            P_{k+1}(K_{k+1}) &= E[\tilde x_{k+1} \tilde x_{k+1}'] \\
       &= (I - K_{k+1} C) P_{k+1|k} (I - K_{k+1} C)' + K_{k+1} R K_{k+1}'
       \end{aligned}
       $$
@@ -198,8 +198,8 @@ lead-grid">
     <div class="formula-box">
       $$
       \begin{aligned}
-      P_{k+1}(K) &= P_{k+1|k} - K C P_{k+1|k} - P_{k+1|k} C' K' + K S K' \\\\\\\\
-      &= P_{k+1|k} - P_{k+1|k} C' S^{-1} C P_{k+1|k} \\\\\\\\
+            P_{k+1}(K) &= P_{k+1|k} - K C P_{k+1|k} - P_{k+1|k} C' K' + K S K' \\
+            &= P_{k+1|k} - P_{k+1|k} C' S^{-1} C P_{k+1|k} \\
       &\quad + (K - P_{k+1|k} C' S^{-1}) S (K - P_{k+1|k} C' S^{-1})'
       \end{aligned}
       $$
@@ -210,8 +210,8 @@ lead-grid">
     <div class="formula-box">
       $$
       \begin{aligned}
-      &(K - P C' S^{-1}) S (K - P C' S^{-1})' \\\\
-      =& K S K' - K S S^{-1} C P - P C' S^{-1} S K' + P C' S^{-1} S S^{-1} C P \\\\
+            &(K - P C' S^{-1}) S (K - P C' S^{-1})' \\
+            =& K S K' - K S S^{-1} C P - P C' S^{-1} S K' + P C' S^{-1} S S^{-1} C P \\
       =& K S K' - K C P - P C' K' + P C' S^{-1} C P
       \end{aligned}
       $$

@@ -124,8 +124,8 @@ lead-grid">
     <p>定义信息集合：</p>
     <div class="formula-box">
       $$
-      $Y_{k} = \{y_{0}, y_{1}, \dots, y_{k}\}, \quad$
-      $U_{k} = \{u_{0}, u_{1}, \dots, u_{k}\}$
+      Y_{k} = \{y_{0}, y_{1}, \dots, y_{k}\}, \quad
+      U_{k} = \{u_{0}, u_{1}, \dots, u_{k}\}
       $$
     </div>
 
@@ -134,19 +134,19 @@ lead-grid">
       <div class="mini-card">
         <h4>估计</h4>
         $$
-        $\hat x_{k|k} = E[x_{k} \mid Y_{k}, U_{k-1}]$
+        \hat x_{k|k} = E[x_{k} \mid Y_{k}, U_{k-1}]
         $$
         $$
-        $P_{k|k} = \text{Cov}[x_{k} \mid Y_{k}, U_{k-1}]$
+        P_{k|k} = \text{Cov}[x_{k} \mid Y_{k}, U_{k-1}]
         $$
       </div>
       <div class="mini-card">
         <h4>预测</h4>
         $$
-        $\hat x_{k|k-1} = E[x_{k} \mid Y_{k-1}, U_{k-1}]$
+        \hat x_{k|k-1} = E[x_{k} \mid Y_{k-1}, U_{k-1}]
         $$
         $$
-        $P_{k|k-1} = \text{Cov}[x_{k} \mid Y_{k-1}, U_{k-1}]$
+        P_{k|k-1} = \text{Cov}[x_{k} \mid Y_{k-1}, U_{k-1}]
         $$
       </div>
     </div>
@@ -167,7 +167,7 @@ lead-grid">
       <p><strong>定理：</strong>设 $X$ 和 $Y$ 联合高斯：</p>
       $$
       \begin{bmatrix} X \\\\ Y \end{bmatrix} \sim N\left(
-      $\begin{bmatrix} \bar x \\\\ \bar y \end{bmatrix},\\;$
+      \begin{bmatrix} \bar x \\\\ \bar y \end{bmatrix},\\;
       \begin{bmatrix} \Sigma_{x} & \Sigma_{xy} \\\\ \Sigma_{yx} & \Sigma_{y} \end{bmatrix}
       \right)
       $$
@@ -177,7 +177,7 @@ lead-grid">
 
     <div class="formula-box">
       $$
-      $\boxed{\mu_{x|y=y} = \bar x + \Sigma_{xy} \Sigma_{y}^{-1} (y - \bar y)}$
+      \boxed{\mu_{x|y=y} = \bar x + \Sigma_{xy} \Sigma_{y}^{-1} (y - \bar y)}
       $$
       $$
       \boxed{\Sigma_{x|y=y} = \Sigma_{x} - \Sigma_{xy} \Sigma_{y}^{-1} \Sigma_{yx}}
@@ -196,7 +196,7 @@ lead-grid">
       <div class="mini-card">
         <h4>② $X \perp Y$ 时</h4>
         $$
-        $\mu_{x|y=y} = \bar x,\quad \Sigma_{x|y=y} = \Sigma_{x}$
+        \mu_{x|y=y} = \bar x,\quad \Sigma_{x|y=y} = \Sigma_{x}
         $$
         <p style="font-size:0.85rem">Y 不提供 X 的任何信息。</p>
       </div>
@@ -218,10 +218,10 @@ lead-grid">
     <div class="formula-box">
       $$
       \begin{aligned}
-      $\hat x_{k|k-1} &= E[x_{k} \mid Y_{k-1}, U_{k-1}] \\\\\\\\$
-      $&= E[A x_{k-1} + B u_{k-1} + w_{k-1} \mid Y_{k-1}, U_{k-1}] \\\\\\\\$
-      $&= A E[x_{k-1} \mid Y_{k-1}, U_{k-1}] + B u_{k-1} + E[w_{k-1} \mid Y_{k-1}, U_{k-1}] \\\\\\\\$
-      $&= A \hat x_{k-1|k-1} + B u_{k-1}$
+            \hat x_{k|k-1} &= E[x_{k} \mid Y_{k-1}, U_{k-1}] \\
+            &= E[A x_{k-1} + B u_{k-1} + w_{k-1} \mid Y_{k-1}, U_{k-1}] \\
+            &= A E[x_{k-1} \mid Y_{k-1}, U_{k-1}] + B u_{k-1} + E[w_{k-1} \mid Y_{k-1}, U_{k-1}] \\
+      &= A \hat x_{k-1|k-1} + B u_{k-1}
       \end{aligned}
       $$
     </div>
@@ -232,8 +232,8 @@ lead-grid">
     <div class="formula-box">
       $$
       \begin{aligned}
-      $P_{k|k-1} &= E\big[(x_{k} - \hat x_{k|k-1})(x_{k} - \hat x_{k|k-1})' \mid Y_{k-1}, U_{k-1}\big] \\\\\\\\$
-      $&= E\big[(A \tilde x_{k-1|k-1} + w_{k-1})(A \tilde x_{k-1|k-1} + w_{k-1})' \mid Y_{k-1}, U_{k-1}\big] \\\\\\\\$
+            P_{k|k-1} &= E\big[(x_{k} - \hat x_{k|k-1})(x_{k} - \hat x_{k|k-1})' \mid Y_{k-1}, U_{k-1}\big] \\
+            &= E\big[(A \tilde x_{k-1|k-1} + w_{k-1})(A \tilde x_{k-1|k-1} + w_{k-1})' \mid Y_{k-1}, U_{k-1}\big] \\
       &= A P_{k-1|k-1} A' + Q
       \end{aligned}
       $$
@@ -259,11 +259,11 @@ lead-grid">
     <div class="formula-box">
       $$
       \begin{aligned}
-      $E[x_{k} \mid \cdot] &= \hat x_{k|k-1} \\\\$
-      $E[y_{k} \mid \cdot] &= C \hat x_{k|k-1} \\\\$
-      $\text{Cov}[x_{k} \mid \cdot] &= P_{k|k-1} \\\\$
-      $\text{Cov}[y_{k} \mid \cdot] &= C P_{k|k-1} C' + R \\\\$
-      $\text{Cov}[x_{k}, y_{k} \mid \cdot] &= P_{k|k-1} C'$
+            E[x_{k} \mid \cdot] &= \hat x_{k|k-1} \\
+            E[y_{k} \mid \cdot] &= C \hat x_{k|k-1} \\
+            \text{Cov}[x_{k} \mid \cdot] &= P_{k|k-1} \\
+            \text{Cov}[y_{k} \mid \cdot] &= C P_{k|k-1} C' + R \\
+      \text{Cov}[x_{k}, y_{k} \mid \cdot] &= P_{k|k-1} C'
       \end{aligned}
       $$
     </div>
@@ -272,7 +272,7 @@ lead-grid">
     <div class="formula-box">
       $$
       \begin{aligned}
-      $\hat x_{k|k} &= \hat x_{k|k-1} + P_{k|k-1} C' [C P_{k|k-1} C' + R]^{-1} (y_{k} - C \hat x_{k|k-1}) \\\\\\\\$
+            \hat x_{k|k} &= \hat x_{k|k-1} + P_{k|k-1} C' [C P_{k|k-1} C' + R]^{-1} (y_{k} - C \hat x_{k|k-1}) \\
       P_{k|k} &= P_{k|k-1} - P_{k|k-1} C' [C P_{k|k-1} C' + R]^{-1} C P_{k|k-1}
       \end{aligned}
       $$

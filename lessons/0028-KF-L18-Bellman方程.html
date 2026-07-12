@@ -93,13 +93,13 @@ lead-grid">
       <div class="mini-card">
         <h4>累加代价</h4>
         $$
-        $J = \mathbb{E}\{g_{N}(x_{N}) + \sum_{k=0}^{N-1} g_{k}(x_{k}, u_{k}, w_{k})\}$
+        J = \mathbb{E}\{g_{N}(x_{N}) + \sum_{k=0}^{N-1} g_{k}(x_{k}, u_{k}, w_{k})\}
         $$
       </div>
       <div class="mini-card">
         <h4>控制目标</h4>
         $$
-        $\min_{u_{0},\dots,u_{N-1}} J(x_{0})$
+        \min_{u_{0},\dots,u_{N-1}} J(x_{0})
         $$
       </div>
     </div>
@@ -123,7 +123,7 @@ lead-grid">
     <p>完整的策略定义为：</p>
     <div class="formula-box">
       $$
-      $\pi = \{\mu_{0}, \mu_{1}, \dots, \mu_{N-1}\}$
+      \pi = \{\mu_{0}, \mu_{1}, \dots, \mu_{N-1}\}
       $$
       <p style="margin-top:8px;font-size:0.9rem">$\pi$ 称为一个<strong>策略</strong>（policy）或控制律序列</p>
     </div>
@@ -183,7 +183,7 @@ lead-grid">
 
     <div class="formula-box">
       $$
-      $V_{k}(x_{k}) = \min_{\pi} \mathbb{E}\left[ g_{N}(x_{N}) + \sum_{i=k}^{N-1} g_{i}(x_{i}, u_{i}, w_{i}) \Big| x_{k} \right]$
+      V_{k}(x_{k}) = \min_{\pi} \mathbb{E}\left[ g_{N}(x_{N}) + \sum_{i=k}^{N-1} g_{i}(x_{i}, u_{i}, w_{i}) \Big| x_{k} \right]
       $$
     </div>
 
@@ -191,7 +191,7 @@ lead-grid">
 
     <div class="formula-box">
       $$
-      $\boxed{V_{k}(x_{k}) = \min_{u_k} \mathbb{E}_{w_k} \big[ g_{k}(x_{k}, u_{k}, w_{k}) + V_{k+1}(f_{k}(x_{k}, u_{k}, w_{k})) \big]}$
+      \boxed{V_{k}(x_{k}) = \min_{u_k} \mathbb{E}_{w_k} \big[ g_{k}(x_{k}, u_{k}, w_{k}) + V_{k+1}(f_{k}(x_{k}, u_{k}, w_{k})) \big]}
       $$
     </div>
 
@@ -237,7 +237,7 @@ lead-grid">
         <h4>2️⃣ 反向递推</h4>
         <p>对 $k = N-1, N-2, \dots, 0$：</p>
         $$
-        $V_{k}(x_{k}) = \min_{u_k} \mathbb{E}[g_{k} + V_{k+1}]$
+        V_{k}(x_{k}) = \min_{u_k} \mathbb{E}[g_{k} + V_{k+1}]
         $$
         <p>对每个可能的状态 $x_{k}$ 求解。</p>
       </div>
@@ -245,7 +245,7 @@ lead-grid">
         <h4>3️⃣ 提取策略</h4>
         <p>保存每个状态下的最优决策：</p>
         $$
-        $\mu_{k}^*(x_{k}) = \arg\min_{u_k} \mathbb{E}[g_{k} + V_{k+1}]$
+        \mu_{k}^*(x_{k}) = \arg\min_{u_k} \mathbb{E}[g_{k} + V_{k+1}]
         $$
         <p>记录最优动作。</p>
       </div>

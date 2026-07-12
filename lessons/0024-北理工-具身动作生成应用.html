@@ -132,14 +132,14 @@ lead-grid">
     <p>定义一个平均速度场 $u$，直接预测从 $x_{0}$ 到 $x_{1}$ 的整体位移：</p>
     <div class="formula-box">
       $$
-      $u_{[s,t]}(x_{s}) = \frac{1}{t - s} \int_{s}^t v_\theta(x_\tau, \tau, C) d\tau$
+      u_{[s,t]}(x_{s}) = \frac{1}{t - s} \int_{s}^t v_\theta(x_\tau, \tau, C) d\tau
       $$
     </div>
 
     <p>通过对 $u$ 进行参数化，使得推理时可直接计算：</p>
     <div class="formula-box">
       $$
-      $\boxed{x_{1} = x_{0} + u_\theta(x_{0}, C)}$
+      \boxed{x_{1} = x_{0} + u_\theta(x_{0}, C)}
       $$
     </div>
 
@@ -149,7 +149,7 @@ lead-grid">
     <p>MinFlow 的损失函数包含 Jacobi-vector product（JVP）项：</p>
     <div class="formula-box">
       $$
-      $\mathcal{L}_{\text{MF}} = \\| u_\theta(x_{t}, C) - v_\phi(x_{t}, t, C) + (t - s) \cdot \text{JVP}(u_\theta, v_\phi) \\|^2$
+      \mathcal{L}_{\text{MF}} = \\| u_\theta(x_{t}, C) - v_\phi(x_{t}, t, C) + (t - s) \cdot \text{JVP}(u_\theta, v_\phi) \\|^2
       $$
     </div>
 
@@ -168,7 +168,7 @@ lead-grid">
     <p>具体来说，损失函数中的 target 是：</p>
     <div class="formula-box">
       $$
-      $\text{Target} = v_\phi(x_{t}, t, C) - (t - s) \cdot \text{JVP}(u_\theta, v_\phi)$
+      \text{Target} = v_\phi(x_{t}, t, C) - (t - s) \cdot \text{JVP}(u_\theta, v_\phi)
       $$
     </div>
     <p>当 $u_\theta$ 更新时，JVP 项也随之变化，导致 target 变成移动目标。这种"自己追自己"的训练方式在实践中有两个问题：</p>
@@ -191,14 +191,14 @@ lead-grid">
       <div class="mini-card" style="border-left: 4px solid #ef4444;">
         <h4>🔴 MinFlow（原始）</h4>
         $$
-        $\text{Target} = v_\phi - (t-s) \cdot \text{JVP}(u_\theta, v_\phi)$
+        \text{Target} = v_\phi - (t-s) \cdot \text{JVP}(u_\theta, v_\phi)
         $$
         <p>Target 中包含 $u_\theta$，导致<strong>目标随网络变化</strong>，训练不稳定。</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #22c55e;">
         <h4>🟢 IMF（改进）</h4>
         $$
-        $\text{Target} = v_\phi - (t-s) \cdot \text{JVP}(u_\psi, v_\phi)$
+        \text{Target} = v_\phi - (t-s) \cdot \text{JVP}(u_\psi, v_\phi)
         $$
         <p>用独立的 MLP 预测 $u_\psi$，<strong>从计算图中分离</strong>，目标更稳定。</p>
       </div>

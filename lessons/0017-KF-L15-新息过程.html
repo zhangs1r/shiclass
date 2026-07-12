@@ -85,11 +85,11 @@
     <div class="formula-box">
       $$
       \begin{aligned}
-      $\text{①}\quad & e_{k} = y_{k} - C \hat x_{k|k-1} \\\\\\\\$
-      $\text{②}\quad & R_{e,k} = \langle e_{k}, e_{k} \rangle = C P_{k|k-1} C' + R \\\\\\\\$
-      $\text{③}\quad & \hat x_{k|k} = \hat x_{k|k-1} + K_{k} e_{k} \\\\\\\\$
-      $\text{④}\quad & K_{k} = P_{k|k-1} C' R_{e,k}^{-1} \\\\\\\\$
-      $\text{⑤}\quad & P_{k|k} = P_{k|k-1} - P_{k|k-1} C' R_{e,k}^{-1} C P_{k|k-1}$
+            \text{①}\quad & e_{k} = y_{k} - C \hat x_{k|k-1} \\
+            \text{②}\quad & R_{e,k} = \langle e_{k}, e_{k} \rangle = C P_{k|k-1} C' + R \\
+            \text{③}\quad & \hat x_{k|k} = \hat x_{k|k-1} + K_{k} e_{k} \\
+            \text{④}\quad & K_{k} = P_{k|k-1} C' R_{e,k}^{-1} \\
+      \text{⑤}\quad & P_{k|k} = P_{k|k-1} - P_{k|k-1} C' R_{e,k}^{-1} C P_{k|k-1}
       \end{aligned}
       $$
     </div>
@@ -106,7 +106,7 @@
     <p>回顾系统的状态方程 $x_{k+1} = A x_{k} + w_{k}$。将状态反复展开：</p>
     <div class="formula-box">
       $$
-      $x_{k} = A^k x_{0} + A^{k-1} w_{0} + A^{k-2} w_{1} + \cdots + A w_{k-2} + w_{k-1}$
+      x_{k} = A^k x_{0} + A^{k-1} w_{0} + A^{k-2} w_{1} + \cdots + A w_{k-2} + w_{k-1}
       $$
     </div>
     <p>所以 $x_{k}$ 是初始状态 $x_{0}$ 和过程噪声 $w_{0}, \dots, w_{k-1}$ 的<strong>线性组合</strong>。</p>
@@ -146,9 +146,9 @@
     <div class="formula-box">
       $$
       \begin{aligned}
-      e_{1} &= v_{1} \\\\
-      $e_{2} &= v_{2} - \text{proj}\{v_{2} \mid \text{span}\{e_{1}\}\} \\\\$
-      $e_{3} &= v_{3} - \text{proj}\{v_{3} \mid \text{span}\{e_{1}, e_{2}\}\} \\\\$
+            e_{1} &= v_{1} \\
+            e_{2} &= v_{2} - \text{proj}\{v_{2} \mid \text{span}\{e_{1}\}\} \\
+            e_{3} &= v_{3} - \text{proj}\{v_{3} \mid \text{span}\{e_{1}, e_{2}\}\} \\
       &\\;\\;\vdots
       \end{aligned}
       $$
@@ -158,7 +158,7 @@
 
     <div class="formula-box">
       $$
-      $e_{k} = y_{k} - \text{proj}\{y_{k} \mid \mathcal{L}_{k-1}\}$
+      e_{k} = y_{k} - \text{proj}\{y_{k} \mid \mathcal{L}_{k-1}\}
       $$
     </div>
 
@@ -168,7 +168,7 @@
       <p><strong>📌 核心性质</strong></p>
       <p>由 Gram-Schmidt 构造过程可知，新息 $e_{k}$ 与历史测量空间 $\mathcal{L}_{k-1}$ 正交，且不同时刻的新息彼此正交：</p>
       $$
-      $\langle e_{k}, e_{j} \rangle = 0, \quad \forall j < k$
+      \langle e_{k}, e_{j} \rangle = 0, \quad \forall j < k
       $$
       <p>这正是递归估计能够实现的根本原因——新息提供了"不重复"的信息。</p>
     </div>
@@ -185,9 +185,9 @@
     <div class="formula-box">
       $$
       \begin{aligned}
-      $e_{k} &= y_{k} - \sum_{j=0}^{k-1} \langle y_{k}, e_{j} \rangle \\|e_{j}\\|^{-2} e_{j} \\\\\\\\$
-          $&= y_{k} - \sum_{j=0}^{k-1} \langle C x_{k} + v_{k}, e_{j} \rangle \\|e_{j}\\|^{-2} e_{j} \\\\\\\\$
-          $&= y_{k} - C \underbrace{\sum_{j=0}^{k-1} \langle x_{k}, e_{j} \rangle \\|e_{j}\\|^{-2} e_j}_{\hat x_{k|k-1}} - \underbrace{\sum_{j=0}^{k-1} \langle v_{k}, e_{j} \rangle \\|e_{j}\\|^{-2} e_j}_{=0}$
+            e_{k} &= y_{k} - \sum_{j=0}^{k-1} \langle y_{k}, e_{j} \rangle \\|e_{j}\\|^{-2} e_{j} \\
+                    &= y_{k} - \sum_{j=0}^{k-1} \langle C x_{k} + v_{k}, e_{j} \rangle \\|e_{j}\\|^{-2} e_{j} \\
+          &= y_{k} - C \underbrace{\sum_{j=0}^{k-1} \langle x_{k}, e_{j} \rangle \\|e_{j}\\|^{-2} e_j}_{\hat x_{k|k-1}} - \underbrace{\sum_{j=0}^{k-1} \langle v_{k}, e_{j} \rangle \\|e_{j}\\|^{-2} e_j}_{=0}
       \end{aligned}
       $$
     </div>
@@ -201,7 +201,7 @@
     <p>因此我们得到了简洁的表达式：</p>
     <div class="formula-box">
       $$
-      $\boxed{e_{k} = y_{k} - C \hat x_{k|k-1}}$
+      \boxed{e_{k} = y_{k} - C \hat x_{k|k-1}}
       $$
     </div>
 
@@ -223,9 +223,9 @@
     <div class="formula-box">
       $$
       \begin{aligned}
-      $\langle e_{k}, y_{i} \rangle &= \langle y_{k} - C \hat x_{k|k-1},\\; y_{i} \rangle \\\\\\\\$
-      $&= \langle y_{k}, y_{i} \rangle - \langle C \hat x_{k|k-1}, y_{i} \rangle \\\\\\\\$
-      $&= \langle C x_{k} + v_{k}, y_{i} \rangle - \langle C \hat x_{k|k-1}, y_{i} \rangle$
+            \langle e_{k}, y_{i} \rangle &= \langle y_{k} - C \hat x_{k|k-1},\\; y_{i} \rangle \\
+            &= \langle y_{k}, y_{i} \rangle - \langle C \hat x_{k|k-1}, y_{i} \rangle \\
+      &= \langle C x_{k} + v_{k}, y_{i} \rangle - \langle C \hat x_{k|k-1}, y_{i} \rangle
       \end{aligned}
       $$
     </div>
@@ -234,9 +234,9 @@
     <div class="formula-box">
       $$
       \begin{aligned}
-      $\langle e_{k}, y_{i} \rangle &= \langle C x_{k}, y_{i} \rangle - \langle C \hat x_{k|k-1}, y_{i} \rangle \\\\\\\\$
-      $&= \langle C (x_{k} - \hat x_{k|k-1}), y_{i} \rangle \\\\\\\\$
-      $&= \langle C \tilde x_{k|k-1}, y_{i} \rangle$
+            \langle e_{k}, y_{i} \rangle &= \langle C x_{k}, y_{i} \rangle - \langle C \hat x_{k|k-1}, y_{i} \rangle \\
+            &= \langle C (x_{k} - \hat x_{k|k-1}), y_{i} \rangle \\
+      &= \langle C \tilde x_{k|k-1}, y_{i} \rangle
       \end{aligned}
       $$
     </div>
@@ -244,7 +244,7 @@
     <p>而 $\tilde x_{k|k-1} \perp \mathcal{L}_{k-1}$（根据正交原理，预测误差与历史测量空间正交），所以：</p>
     <div class="formula-box">
       $$
-      $\boxed{\langle e_{k}, y_{i} \rangle = 0, \quad \forall i < k}$
+      \boxed{\langle e_{k}, y_{i} \rangle = 0, \quad \forall i < k}
       $$
     </div>
 
@@ -254,7 +254,7 @@
     <p>由于 $e_{i} \in \mathcal{L}_{k-1}$（对 $i < k$），由上述结论立即得到：</p>
     <div class="formula-box">
       $$
-      $\boxed{\langle e_{k}, e_{i} \rangle = 0, \quad \forall i < k}$
+      \boxed{\langle e_{k}, e_{i} \rangle = 0, \quad \forall i < k}
       $$
     </div>
 
@@ -272,7 +272,7 @@
 
     <div class="formula-box">
       $$
-      $R_{e,k} = \langle e_{k}, e_{k} \rangle$
+      R_{e,k} = \langle e_{k}, e_{k} \rangle
       $$
     </div>
 
@@ -282,9 +282,9 @@
     <div class="formula-box">
       $$
       \begin{aligned}
-      $e_{k} &= C x_{k} + v_{k} - C \hat x_{k|k-1} \\\\\\\\$
-          $&= C (x_{k} - \hat x_{k|k-1}) + v_{k} \\\\\\\\$
-          $&= C \tilde x_{k|k-1} + v_{k}$
+            e_{k} &= C x_{k} + v_{k} - C \hat x_{k|k-1} \\
+                    &= C (x_{k} - \hat x_{k|k-1}) + v_{k} \\
+          &= C \tilde x_{k|k-1} + v_{k}
       \end{aligned}
       $$
     </div>
@@ -294,9 +294,9 @@
     <div class="formula-box">
       $$
       \begin{aligned}
-      $R_{e,k} &= \langle C \tilde x_{k|k-1} + v_{k},\\; C \tilde x_{k|k-1} + v_{k} \rangle \\\\\\\\$
-              $&= C \underbrace{\langle \tilde x_{k|k-1}, \tilde x_{k|k-1} \rangle}_{P_{k|k-1}} C' + \langle v_{k}, v_{k} \rangle \\\\\\\\$
-              $&\quad + \underbrace{\langle C \tilde x_{k|k-1}, v_{k} \rangle}_{=0} + \underbrace{\langle v_{k}, C \tilde x_{k|k-1} \rangle}_{=0} \\\\\\\\$
+            R_{e,k} &= \langle C \tilde x_{k|k-1} + v_{k},\\; C \tilde x_{k|k-1} + v_{k} \rangle \\
+                            &= C \underbrace{\langle \tilde x_{k|k-1}, \tilde x_{k|k-1} \rangle}_{P_{k|k-1}} C' + \langle v_{k}, v_{k} \rangle \\
+                            &\quad + \underbrace{\langle C \tilde x_{k|k-1}, v_{k} \rangle}_{=0} + \underbrace{\langle v_{k}, C \tilde x_{k|k-1} \rangle}_{=0} \\
               &= C P_{k|k-1} C' + R
       \end{aligned}
       $$
@@ -332,14 +332,14 @@
       <div class="mini-card">
         <h4>① 新息定义</h4>
         $$
-        $e_{k} = y_{k} - C \hat x_{k|k-1}$
+        e_{k} = y_{k} - C \hat x_{k|k-1}
         $$
         <p style="font-size:0.85rem">测量中真正"新"的部分</p>
       </div>
       <div class="mini-card">
         <h4>② 正交性</h4>
         $$
-        $e_{k} \perp \mathcal{L}_{k-1}$
+        e_{k} \perp \mathcal{L}_{k-1}
         $$
         <p style="font-size:0.85rem">新息与历史信息不相关</p>
       </div>

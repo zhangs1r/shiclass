@@ -87,7 +87,7 @@ lead-grid">
       <div class="mini-card" style="border-left: 4px solid #3b82f6;">
         <h4>① 新息</h4>
         $$
-        $e_{k} = y_{k} - C \hat x_{k|k-1}$
+        e_{k} = y_{k} - C \hat x_{k|k-1}
         $$
         <p style="font-size:0.85rem">测量中的全新信息，正交于 $\mathcal{L}_{k-1}$</p>
       </div>
@@ -111,7 +111,7 @@ lead-grid">
 
     <div class="formula-box">
       $$
-      $\boxed{\hat x_{k|k} = \hat x_{k|k-1} + K_{k} e_k}, \qquad$
+      \boxed{\hat x_{k|k} = \hat x_{k|k-1} + K_{k} e_k}, \qquad
       \boxed{K_{k} = P_{k|k-1} C' R_{e,k}^{-1}}
       $$
     </div>
@@ -120,13 +120,13 @@ lead-grid">
     <p>新息 $e_{k}$ 与 $\mathcal{L}_{k-1}$ 正交，所以测量空间可以分解为直和：</p>
     <div class="formula-box">
       $$
-      $\mathcal{L}_k = \mathcal{L}_{k-1} \oplus \text{span}\{e_{k}\}$
+      \mathcal{L}_k = \mathcal{L}_{k-1} \oplus \text{span}\{e_{k}\}
       $$
     </div>
     <p>这意味着更新后的估计（投影到 $\mathcal{L}_k$ 上）可以拆成两部分之和：</p>
     <div class="formula-box">
       $$
-      $\hat x_{k|k} = \underbrace{\text{proj}\{x_{k} \mid \mathcal{L}_{k-1}\}}_{\hat x_{k|k-1}} + \underbrace{\text{proj}\{x_{k} \mid \text{span}\{e_{k}\}\}}_{\text{新息修正}}$
+      \hat x_{k|k} = \underbrace{\text{proj}\{x_{k} \mid \mathcal{L}_{k-1}\}}_{\hat x_{k|k-1}} + \underbrace{\text{proj}\{x_{k} \mid \text{span}\{e_{k}\}\}}_{\text{新息修正}}
       $$
     </div>
 
@@ -145,9 +145,9 @@ lead-grid">
     <div class="formula-box">
       $$
       \begin{aligned}
-      $\langle x_{k}, e_{k} \rangle &= \langle x_{k},\\; y_{k} - C \hat x_{k|k-1} \rangle \\\\\\\\$
-      $&= \langle x_{k},\\; C \tilde x_{k|k-1} + v_{k} \rangle \\\\\\\\$
-      $&= \langle x_{k}, C \tilde x_{k|k-1} \rangle + \cancel{\langle x_{k}, v_{k} \rangle}$
+            \langle x_{k}, e_{k} \rangle &= \langle x_{k},\\; y_{k} - C \hat x_{k|k-1} \rangle \\
+            &= \langle x_{k},\\; C \tilde x_{k|k-1} + v_{k} \rangle \\
+      &= \langle x_{k}, C \tilde x_{k|k-1} \rangle + \cancel{\langle x_{k}, v_{k} \rangle}
       \end{aligned}
       $$
     </div>
@@ -157,8 +157,8 @@ lead-grid">
     <div class="formula-box">
       $$
       \begin{aligned}
-      $\langle x_{k}, e_{k} \rangle &= \langle \hat x_{k|k-1} + \tilde x_{k|k-1},\\; C \tilde x_{k|k-1} \rangle \\\\\\\\$
-      $&= \cancel{\langle \hat x_{k|k-1}, C \tilde x_{k|k-1} \rangle} + \langle \tilde x_{k|k-1}, C \tilde x_{k|k-1} \rangle$
+            \langle x_{k}, e_{k} \rangle &= \langle \hat x_{k|k-1} + \tilde x_{k|k-1},\\; C \tilde x_{k|k-1} \rangle \\
+      &= \cancel{\langle \hat x_{k|k-1}, C \tilde x_{k|k-1} \rangle} + \langle \tilde x_{k|k-1}, C \tilde x_{k|k-1} \rangle
       \end{aligned}
       $$
     </div>
@@ -167,7 +167,7 @@ lead-grid">
 
     <div class="formula-box">
       $$
-      $\boxed{\langle x_{k}, e_{k} \rangle = P_{k|k-1} C'}$
+      \boxed{\langle x_{k}, e_{k} \rangle = P_{k|k-1} C'}
       $$
     </div>
 
@@ -183,10 +183,10 @@ lead-grid">
     <div class="formula-box">
       $$
       \begin{aligned}
-      $\hat x_{k|k} &= \text{proj}\{x_{k} \mid \mathcal{L}_k\} \\\\\\\\$
-      $&= \sum_{j=0}^{k} \langle x_{k}, e_{j} \rangle \\|e_{j}\\|^{-2} e_{j} \\\\\\\\$
-      $&= \underbrace{\sum_{j=0}^{k-1} \langle x_{k}, e_{j} \rangle \\|e_{j}\\|^{-2} e_j}_{\hat x_{k|k-1}} + \langle x_{k}, e_{k} \rangle \\|e_{k}\\|^{-2} e_{k} \\\\\\\\$
-      $&= \hat x_{k|k-1} + P_{k|k-1} C' \cdot R_{e,k}^{-1} \cdot e_{k}$
+            \hat x_{k|k} &= \text{proj}\{x_{k} \mid \mathcal{L}_k\} \\
+            &= \sum_{j=0}^{k} \langle x_{k}, e_{j} \rangle \\|e_{j}\\|^{-2} e_{j} \\
+            &= \underbrace{\sum_{j=0}^{k-1} \langle x_{k}, e_{j} \rangle \\|e_{j}\\|^{-2} e_j}_{\hat x_{k|k-1}} + \langle x_{k}, e_{k} \rangle \\|e_{k}\\|^{-2} e_{k} \\
+      &= \hat x_{k|k-1} + P_{k|k-1} C' \cdot R_{e,k}^{-1} \cdot e_{k}
       \end{aligned}
       $$
     </div>
@@ -203,7 +203,7 @@ lead-grid">
 
     <div class="formula-box">
       $$
-      $\boxed{\hat x_{k|k} = \hat x_{k|k-1} + K_{k} e_k}$
+      \boxed{\hat x_{k|k} = \hat x_{k|k-1} + K_{k} e_k}
       $$
     </div>
 
@@ -248,9 +248,9 @@ lead-grid">
     <h3>步骤 1：写出估计误差</h3>
     <div class="formula-box">
       $$
-      $\tilde x_{k|k} = x_{k} - \hat x_{k|k}$
-      $= x_{k} - (\hat x_{k|k-1} + K_{k} e_{k})$
-      $= \tilde x_{k|k-1} - K_{k} e_{k}$
+      \tilde x_{k|k} = x_{k} - \hat x_{k|k}
+      = x_{k} - (\hat x_{k|k-1} + K_{k} e_{k})
+      = \tilde x_{k|k-1} - K_{k} e_{k}
       $$
     </div>
 
@@ -258,9 +258,9 @@ lead-grid">
     <div class="formula-box">
       $$
       \begin{aligned}
-      $P_{k|k} &= \langle \tilde x_{k|k},\\; \tilde x_{k|k} \rangle \\\\\\\\$
-      $&= \langle \tilde x_{k|k-1} - K_{k} e_{k},\\; \tilde x_{k|k-1} - K_{k} e_{k} \rangle \\\\\\\\$
-      $&= P_{k|k-1} - K_{k} \langle e_{k}, \tilde x_{k|k-1} \rangle - \langle \tilde x_{k|k-1}, e_{k} \rangle K_{k}' + K_{k} \langle e_{k}, e_{k} \rangle K_{k}'$
+            P_{k|k} &= \langle \tilde x_{k|k},\\; \tilde x_{k|k} \rangle \\
+            &= \langle \tilde x_{k|k-1} - K_{k} e_{k},\\; \tilde x_{k|k-1} - K_{k} e_{k} \rangle \\
+      &= P_{k|k-1} - K_{k} \langle e_{k}, \tilde x_{k|k-1} \rangle - \langle \tilde x_{k|k-1}, e_{k} \rangle K_{k}' + K_{k} \langle e_{k}, e_{k} \rangle K_{k}'
       \end{aligned}
       $$
     </div>
@@ -269,8 +269,8 @@ lead-grid">
     <div class="formula-box">
       $$
       \begin{aligned}
-      $\langle \tilde x_{k|k-1}, e_{k} \rangle &= \langle \tilde x_{k|k-1},\\; C \tilde x_{k|k-1} + v_{k} \rangle = P_{k|k-1} C' \\\\\\\\$
-      $\langle e_{k}, \tilde x_{k|k-1} \rangle &= C P_{k|k-1}$
+            \langle \tilde x_{k|k-1}, e_{k} \rangle &= \langle \tilde x_{k|k-1},\\; C \tilde x_{k|k-1} + v_{k} \rangle = P_{k|k-1} C' \\
+      \langle e_{k}, \tilde x_{k|k-1} \rangle &= C P_{k|k-1}
       \end{aligned}
       $$
     </div>
@@ -279,9 +279,9 @@ lead-grid">
     <div class="formula-box">
       $$
       \begin{aligned}
-      $P_{k|k} &= P_{k|k-1} - K_{k} \cdot C P_{k|k-1} - P_{k|k-1} C' \cdot K_{k}' + K_{k} \cdot R_{e,k} \cdot K_{k}' \\\\\\\\$
-      &= P_{k|k-1} - P_{k|k-1} C' R_{e,k}^{-1} C P_{k|k-1} - P_{k|k-1} C' R_{e,k}^{-1} C P_{k|k-1} \\\\\\\\
-      $&\quad + P_{k|k-1} C' R_{e,k}^{-1} \cdot R_{e,k} \cdot R_{e,k}^{-1} C P_{k|k-1} \\\\\\\\$
+            P_{k|k} &= P_{k|k-1} - K_{k} \cdot C P_{k|k-1} - P_{k|k-1} C' \cdot K_{k}' + K_{k} \cdot R_{e,k} \cdot K_{k}' \\
+            &= P_{k|k-1} - P_{k|k-1} C' R_{e,k}^{-1} C P_{k|k-1} - P_{k|k-1} C' R_{e,k}^{-1} C P_{k|k-1} \\
+            &\quad + P_{k|k-1} C' R_{e,k}^{-1} \cdot R_{e,k} \cdot R_{e,k}^{-1} C P_{k|k-1} \\
       &= P_{k|k-1} - P_{k|k-1} C' R_{e,k}^{-1} C P_{k|k-1}
       \end{aligned}
       $$
@@ -302,8 +302,8 @@ lead-grid">
     <div class="formula-box">
       $$
       \begin{aligned}
-      P_{k|k} &= P_{k|k-1} - K_{k} C P_{k|k-1} \\\\\\\\
-              &= (I - K_{k} C) P_{k|k-1} \\\\\\\\
+            P_{k|k} &= P_{k|k-1} - K_{k} C P_{k|k-1} \\
+                            &= (I - K_{k} C) P_{k|k-1} \\
               &= P_{k|k-1} - P_{k|k-1} C' [C P_{k|k-1} C' + R]^{-1} C P_{k|k-1}
       \end{aligned}
       $$
@@ -342,7 +342,7 @@ lead-grid">
       <div class="mini-card">
         <h4>① 新息</h4>
         $$
-        $e_{k} = y_{k} - C \hat x_{k|k-1}$
+        e_{k} = y_{k} - C \hat x_{k|k-1}
         $$
       </div>
       <div class="mini-card">
@@ -360,7 +360,7 @@ lead-grid">
       <div class="mini-card">
         <h4>④ 状态更新</h4>
         $$
-        $\hat x_{k|k} = \hat x_{k|k-1} + K_{k} e_{k}$
+        \hat x_{k|k} = \hat x_{k|k-1} + K_{k} e_{k}
         $$
       </div>
       <div class="mini-card">
