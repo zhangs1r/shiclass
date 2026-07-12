@@ -167,6 +167,29 @@ body {
   font-size: 0.85rem;
 }
 
+.workspace-topbar { font-size: 0.7rem; padding: 4px 16px; }
+
+.workspace-topbar {
+  background: rgba(204, 120, 92, 0.08);
+  border-bottom: 1px solid var(--border);
+  padding: 6px 24px;
+  font-size: 0.8rem;
+  text-align: center;
+}
+.workspace-topbar a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+.workspace-topbar a:hover { text-decoration: underline; color: var(--accent); }
+.workspace-topbar .sep {
+  color: var(--text-secondary);
+  margin: 0 8px;
+}
+.workspace-topbar .current {
+  color: var(--text-secondary);
+}
+
 @media (max-width: 640px) {
   .site-header h1 { font-size: 1.8rem; }
   .lesson-grid { grid-template-columns: 1fr; }
@@ -174,6 +197,13 @@ body {
 </style>
 </head>
 <body>
+
+<div class="workspace-topbar">
+  <a href="https://zhangs1r.github.io/lessonworkspace/">📚 LessonWorkspace</a>
+  <span class="sep">/</span>
+  <span class="current">ShiClass</span>
+</div>
+
 <div class="page">
   <header class="site-header">
     <h1>📖 施老师大课堂</h1>
