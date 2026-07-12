@@ -110,25 +110,25 @@ lead-grid">
       <div class="mini-card" style="border-left: 4px solid #3b82f6;">
         <h4>① 动态系统</h4>
         <p>存在一个离散时间动态系统，状态随时间演化：</p>
-        \$$
+        $$
         x_{k+1} = f_{k}(x_{k}, u_{k}, w_{k})
-        \$$
-        <p style="font-size:0.85rem">\$x_{k}\$=状态，\$u_{k}\$=控制，\$w_{k}\$=随机扰动</p>
+        $$
+        <p style="font-size:0.85rem">$x_{k}$=状态，$u_{k}$=控制，$w_{k}$=随机扰动</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #f59e0b;">
         <h4>② 代价函数</h4>
         <p>代价随时间可加（或可乘）：</p>
-        \$$
+        $$
         $J = \\mathbb{E}\\left\\{g_{N}(x_{N}) + \\sum_{k=0}^{N-1} g_{k}(x_{k}, u_{k}, w_{k})\\right\\}$
-        \$$
-        <p style="font-size:0.85rem">\$g_{k}\$=运行代价，\$g_{N}\$=终端代价</p>
+        $$
+        <p style="font-size:0.85rem">$g_{k}$=运行代价，$g_{N}$=终端代价</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #22c55e;">
         <h4>③ 最优目标</h4>
         <p>目标：选择控制序列使总期望代价最小：</p>
-        \$$
+        $$
         $\\min_{u_{0}, \\dots, u_{N-1}} J(x_{0})$
-        \$$
+        $$
         <p style="font-size:0.85rem">序贯决策，后一步受前一步影响</p>
       </div>
     </div>
@@ -142,26 +142,26 @@ lead-grid">
 
     <h3>① 离散时间动态系统</h3>
     <div class="formula-box">
-      \$$
+      $$
       $x_{k+1} = f_{k}(x_{k}, u_{k}, w_{k}), \\quad k = 0, 1, \\dots, N-1$
-      \$$
+      $$
     </div>
     <ul>
-      <li>\$x_{k}\$：系统状态（如库存量、位置、温度等）</li>
-      <li>\$u_{k}\$：控制输入（如订货量、推力、电压等）</li>
-      <li>\$w_{k}\$：随机扰动（如需求、风速、噪声等）——可以是随机变量，分布已知</li>
+      <li>$x_{k}$：系统状态（如库存量、位置、温度等）</li>
+      <li>$u_{k}$：控制输入（如订货量、推力、电压等）</li>
+      <li>$w_{k}$：随机扰动（如需求、风速、噪声等）——可以是随机变量，分布已知</li>
     </ul>
 
     <h3>② 累加代价函数</h3>
     <div class="formula-box">
-      \$$
+      $$
       $J = \\mathbb{E}\\left\\{ g_{N}(x_{N}) + \\sum_{k=0}^{N-1} g_{k}(x_{k}, u_{k}, w_{k}) \\right\\}$
-      \$$
+      $$
     </div>
     <ul>
-      <li>\$g_{N}(x_{N})\$：终端代价（最终状态的惩罚或奖励）</li>
-      <li>\$g_{k}(x_{k}, u_{k}, w_{k})\$：每步运行代价（即时成本）</li>
-      <li>期望 \$\\mathbb{E}\$ 对随机扰动 \$w_{k}\$ 取（如果是确定性系统则不需要）</li>
+      <li>$g_{N}(x_{N})$：终端代价（最终状态的惩罚或奖励）</li>
+      <li>$g_{k}(x_{k}, u_{k}, w_{k})$：每步运行代价（即时成本）</li>
+      <li>期望 $\\mathbb{E}$ 对随机扰动 $w_{k}$ 取（如果是确定性系统则不需要）</li>
     </ul>
 
     <p>求解方法：<strong>动态规划！</strong></p>
@@ -185,39 +185,39 @@ lead-grid">
     <div class="grid-2">
       <div class="mini-card">
         <h4>系统模型</h4>
-        \$$
+        $$
         x_{k+1} = x_{k} + u_{k} - w_{k}
-        \$$
+        $$
         <ul>
-          <li>\$x_{k}\$：第 \$k\$ 天开始时的库存（罐数）</li>
-          <li>\$u_{k}\$：当天订货量（罐数）</li>
-          <li>\$w_{k}\$：当天销售量（随机需求）</li>
+          <li>$x_{k}$：第 $k$ 天开始时的库存（罐数）</li>
+          <li>$u_{k}$：当天订货量（罐数）</li>
+          <li>$w_{k}$：当天销售量（随机需求）</li>
         </ul>
       </div>
       <div class="mini-card">
         <h4>代价函数</h4>
-        \$$
+        $$
         $J = \\mathbb{E}\\left\\{ R(x_{N}) + \\sum_{k=0}^{N-1} \\left[ r(x_{k}) + c u_{k} - \\beta w_{k} \\right] \\right\\}$
-        \$$
+        $$
         <ul>
-          <li>\$r(x_{k})\$：库存惩罚（如 \$r(x_{k}) = |x_{k}|^2\$）</li>
-          <li>\$c u_{k}\$：采购成本</li>
-          <li>\$\\beta w_{k}\$：销售收入</li>
-          <li>\$R(x_{N})\$：终端成本</li>
+          <li>$r(x_{k})$：库存惩罚（如 $r(x_{k}) = |x_{k}|^2$）</li>
+          <li>$c u_{k}$：采购成本</li>
+          <li>$\\beta w_{k}$：销售收入</li>
+          <li>$R(x_{N})$：终端成本</li>
         </ul>
       </div>
     </div>
 
     <h3>问题解读</h3>
     <ul>
-      <li><strong>库存过多</strong>：资金占用、仓储成本（\$r(x_{k})\$ 惩罚大）</li>
+      <li><strong>库存过多</strong>：资金占用、仓储成本（$r(x_{k})$ 惩罚大）</li>
       <li><strong>库存过少</strong>：缺货损失（销售机会流失）</li>
-      <li><strong>订货量 \$u_{k}\$</strong>：需要平衡库存惩罚和采购成本</li>
-      <li><strong>随机需求 \$w_{k}\$</strong>：每天卖多少不确定，需要做<strong>概率性</strong>的决策</li>
+      <li><strong>订货量 $u_{k}$</strong>：需要平衡库存惩罚和采购成本</li>
+      <li><strong>随机需求 $w_{k}$</strong>：每天卖多少不确定，需要做<strong>概率性</strong>的决策</li>
     </ul>
 
     <div class="flow-formula">
-      目标：选择订货策略 \$u_{0}, u_{1}, \\dots, u_{N-1}\$ 最小化总期望成本 \$J\$
+      目标：选择订货策略 $u_{0}, u_{1}, \\dots, u_{N-1}$ 最小化总期望成本 $J$
     </div>
 
     <p>直觉上，如果订货太少，你会缺货、亏销售；如果订货太多，你会被库存惩罚压垮。DP 会告诉你：在库存高的时候少订，在库存低的时候多订——但具体"高"和"低"的阈值怎么定，就是 DP 要算出来的。</p>
@@ -233,23 +233,23 @@ lead-grid">
       <div class="mini-card" style="border-left: 4px solid #f59e0b;">
         <h4>🔓 Off-line 开环策略</h4>
         <p>提前预定好每天的订货量，不考虑实际销售情况。</p>
-        <p><strong>例 1：</strong>\$u_{k} = 100, \\forall k\$（每天固定订 100 罐）</p>
+        <p><strong>例 1：</strong>$u_{k} = 100, \\forall k$（每天固定订 100 罐）</p>
         <p><strong>例 2：</strong>根据季节预设</p>
-        \$$
+        $$
         $u_{k} = \\begin{cases} 200, & \\text{春秋} \\\\ 500, & \\text{夏天} \\\\ 50, & \\text{冬天} \\end{cases}$
-        \$$
+        $$
         <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:8px">⚠️ 如果某天卖得多导致库存为负，也无能为力</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #22c55e;">
         <h4>🔒 On-line 闭环策略</h4>
-        <p>根据当前实际库存 \$x_{k}\$ 来决定今天订多少。</p>
-        \$$
+        <p>根据当前实际库存 $x_{k}$ 来决定今天订多少。</p>
+        $$
         u_{k} = \\mu_{k}(x_{k})
-        \$$
+        $$
         <p>例如：</p>
-        \$$
+        $$
         $u_{k} = \\begin{cases} 200, & \\text{若 } x_{k} < 50 \\\\ 50, & \\text{若 } x_{k} \\ge 50 \\end{cases}$
-        \$$
+        $$
         <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:8px">✅ 可以根据实际情况动态调整，更鲁棒</p>
       </div>
     </div>
@@ -267,12 +267,12 @@ lead-grid">
     <p>在存在随机扰动的情况下，开环策略面临一个根本问题：它不能纠正偏差。</p>
 
     <div class="formula-box">
-      开环：\$u_{k}\$ 只依赖于时间 \$k\$（\$\\{u_{0}, u_{1}, \\dots, u_{N-1}\\}\$ 提前固定）
+      开环：$u_{k}$ 只依赖于时间 $k$（$\\{u_{0}, u_{1}, \\dots, u_{N-1}\\}$ 提前固定）
       <br><br>
-      闭环：\$u_{k}\$ 依赖于当前状态 \$x_{k}\$（\$u_{k} = \\mu_{k}(x_{k})\$）
+      闭环：$u_{k}$ 依赖于当前状态 $x_{k}$（$u_{k} = \\mu_{k}(x_{k})$）
     </div>
 
-    <p>假设第 3 天突然来了一大批顾客，把库存买光了（\$w_{3}\$ 很大）。开环策略在第 4 天仍然按原计划订货，结果库存继续为负，损失惨重。而闭环策略看到库存很低，就会加大订货量来补货。</p>
+    <p>假设第 3 天突然来了一大批顾客，把库存买光了（$w_{3}$ 很大）。开环策略在第 4 天仍然按原计划订货，结果库存继续为负，损失惨重。而闭环策略看到库存很低，就会加大订货量来补货。</p>
 
     <div class="grid-2">
       <div class="mini-card" style="border-left: 4px solid #ef4444;">
@@ -306,18 +306,18 @@ lead-grid">
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>① 一个离散时间动态系统 \$x_{k+1} = f_{k}(x_{k}, u_{k}, w_{k})\$；② 一个累加的代价函数 \$J = \\mathbb{E}\\{g_{N}(x_{N}) + \\sum g_{k}(x_{k}, u_{k}, w_{k})\\}\$。目标：选择控制序列最小化期望代价。</p>
+          <p>① 一个离散时间动态系统 $x_{k+1} = f_{k}(x_{k}, u_{k}, w_{k})$；② 一个累加的代价函数 $J = \\mathbb{E}\\{g_{N}(x_{N}) + \\sum g_{k}(x_{k}, u_{k}, w_{k})\\}$。目标：选择控制序列最小化期望代价。</p>
         </div>
       </details>
     </div>
 
     <div class="interactive-card">
       <h3>问题 2</h3>
-      <p>在 7-11 库存控制例子中，\$x_{k+1} = x_{k} + u_{k} - w_{k}\$ 的含义是什么？</p>
+      <p>在 7-11 库存控制例子中，$x_{k+1} = x_{k} + u_{k} - w_{k}$ 的含义是什么？</p>
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>\$x_{k}\$ 是第 \$k\$ 天开始时的库存量，\$u_{k}\$ 是当天订货量，\$w_{k}\$ 是当天销售量。今天的库存 + 订货 - 销售 = 明天的库存。这是一个经典的状态演化方程。</p>
+          <p>$x_{k}$ 是第 $k$ 天开始时的库存量，$u_{k}$ 是当天订货量，$w_{k}$ 是当天销售量。今天的库存 + 订货 - 销售 = 明天的库存。这是一个经典的状态演化方程。</p>
         </div>
       </details>
     </div>
@@ -326,7 +326,7 @@ lead-grid">
       <h3>问题 3</h3>
       <p>开环策略和闭环策略的核心区别是什么？</p>
       <div class="quiz-options">
-        <button onclick="lessonKit.answer(this, 'q3-feedback')" data-correct="yes" data-explanation="正确！闭环策略的决策依赖当前状态，具有反馈能力，在随机环境下更鲁棒。">闭环策略的决策 \$u_{k} = \\mu_{k}(x_{k})\$ 依赖当前状态，开环策略的决策固定或仅依赖时间</button>
+        <button onclick="lessonKit.answer(this, 'q3-feedback')" data-correct="yes" data-explanation="正确！闭环策略的决策依赖当前状态，具有反馈能力，在随机环境下更鲁棒。">闭环策略的决策 $u_{k} = \\mu_{k}(x_{k})$ 依赖当前状态，开环策略的决策固定或仅依赖时间</button>
         <button onclick="lessonKit.answer(this, 'q3-feedback')" data-correct="no" data-explanation="再想想。区分开环和闭环的关键不是算法选择，而是是否使用当前状态的反馈。">开环策略使用神经网络，闭环策略使用 PID 控制</button>
       </div>
       <div id="q3-feedback" class="quiz-feedback"></div>

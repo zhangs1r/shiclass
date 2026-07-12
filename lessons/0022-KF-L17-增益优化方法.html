@@ -26,7 +26,7 @@
   <div class="hero">
     <div class="eyebrow">研讨会系列 · KF L17 · 第二部分</div>
     <h1>Kalman 增益优化与三种方法对比</h1>
-    <p class="subtitle">从优化角度重新推导 Kalman 增益——将 \$P_{k}\$ 写成 \$K_{k}\$ 的二次型，通过 Completion of Squares 求最优解</p>
+    <p class="subtitle">从优化角度重新推导 Kalman 增益——将 $P_{k}$ 写成 $K_{k}$ 的二次型，通过 Completion of Squares 求最优解</p>
     <div class="hero-meta">
       <span>📅 2026-05-30</span>
       <span>⚡ 优化方法</span>
@@ -116,22 +116,22 @@ lead-grid">
     <p>考虑如下递归线性估计器（不含测量噪声协方差先验信息）：</p>
 
     <div class="formula-box">
-      \$$
+      $$
       $\\hat x_{k+1} = A \\hat x_{k} + K_{k+1} (y_{k+1} - C A \\hat x_{k})$
-      \$$
+      $$
     </div>
 
-    <p>其中初始条件 \$\\hat x_{0} = 0\$。这是一个"预测 + 修正"结构的线性估计器，但增益 \$K_{k+1}\$ 尚未确定。</p>
+    <p>其中初始条件 $\\hat x_{0} = 0$。这是一个"预测 + 修正"结构的线性估计器，但增益 $K_{k+1}$ 尚未确定。</p>
 
-    <p>我们的目标：找到 \$K_{k+1}\$ 使得后验误差协方差最小化。</p>
+    <p>我们的目标：找到 $K_{k+1}$ 使得后验误差协方差最小化。</p>
 
     <div class="formula-box">
-      \$$
+      $$
       $\\boxed{\\text{Find } K_{k+1} \\text{ s.t. } P_{k+1} = E[(x_{k+1} - \\hat x_{k+1})(x_{k+1} - \\hat x_{k+1})'] \\text{ is minimized}}$
-      \$$
+      $$
     </div>
 
-    <p>这里的优化是一个<strong>矩阵优化问题</strong>——我们要找一个矩阵 \$K\$ 使得协方差矩阵（在矩阵半正定序下）最小。</p>
+    <p>这里的优化是一个<strong>矩阵优化问题</strong>——我们要找一个矩阵 $K$ 使得协方差矩阵（在矩阵半正定序下）最小。</p>
   </div>
 
   <!-- 3. 二次型表达 -->
@@ -139,51 +139,51 @@ lead-grid">
     <h2>3. 误差协方差的二次型表达</h2>
 
     <h3>步骤 1：计算预测误差</h3>
-    <p>预测阶段：\$\\hat x_{k+1|k} = A \\hat x_{k}\$</p>
+    <p>预测阶段：$\\hat x_{k+1|k} = A \\hat x_{k}$</p>
     <div class="formula-box">
-      \$$
+      $$
       \\begin{aligned}
       $\\tilde x_{k+1|k} &= x_{k+1} - A \\hat x_{k} \\\\\\\\$
       $&= (A x_{k} + w_{k}) - A \\hat x_{k} \\\\\\\\$
       $&= A \\tilde x_{k} + w_{k}$
       \\end{aligned}
-      \$$
+      $$
     </div>
-    <p>预测协方差：\$P_{k+1|k} = A P_{k} A' + Q\$</p>
+    <p>预测协方差：$P_{k+1|k} = A P_{k} A' + Q$</p>
 
     <h3>步骤 2：计算后验误差</h3>
     <div class="formula-box">
-      \$$
+      $$
       \\begin{aligned}
       $\\tilde x_{k+1} &= x_{k+1} - \\hat x_{k+1} \\\\\\\\$
       $&= x_{k+1} - [A \\hat x_{k} + K_{k+1} (y_{k+1} - C A \\hat x_{k})] \\\\\\\\$
       $&= \\tilde x_{k+1|k} - K_{k+1} (C \\tilde x_{k+1|k} + v_{k+1})$
       \\end{aligned}
-      \$$
+      $$
     </div>
 
     <h3>步骤 3：写出协方差矩阵</h3>
     <div class="formula-box">
-      \$$
+      $$
       \\begin{aligned}
       $P_{k+1}(K_{k+1}) &= E[\\tilde x_{k+1} \\tilde x_{k+1}'] \\\\\\\\$
       &= (I - K_{k+1} C) P_{k+1|k} (I - K_{k+1} C)' + K_{k+1} R K_{k+1}'
       \\end{aligned}
-      \$$
+      $$
     </div>
 
     <p>展开后得到：</p>
     <div class="formula-box">
-      \$$
+      $$
       \\boxed{P_{k+1}(K) = P_{k+1|k} - K C P_{k+1|k} - P_{k+1|k} C' K' + K (C P_{k+1|k} C' + R) K'}
-      \$$
+      $$
     </div>
 
-    <p>这正是 \$K\$ 的<strong>二次型</strong>！其中 \$K\$ 是变量，\$P_{k+1|k}\$、\$C\$、\$R\$ 都是已知量。</p>
+    <p>这正是 $K$ 的<strong>二次型</strong>！其中 $K$ 是变量，$P_{k+1|k}$、$C$、$R$ 都是已知量。</p>
 
     <div class="callout">
       <p><strong>💡 关键观察</strong></p>
-      <p>\$P_{k+1}(K)\$ 是 \$K\$ 的二次型：线性项（\$K\$ 和 \$K'\$）和二次项（\$K \\cdot R_{e} \\cdot K'\$）。这与标量情况下对 \$x\$ 求 \$ax^2 + bx + c\$ 的最小值是类似的思路，只是这里是矩阵版本。</p>
+      <p>$P_{k+1}(K)$ 是 $K$ 的二次型：线性项（$K$ 和 $K'$）和二次项（$K \\cdot R_{e} \\cdot K'$）。这与标量情况下对 $x$ 求 $ax^2 + bx + c$ 的最小值是类似的思路，只是这里是矩阵版本。</p>
     </div>
   </div>
 
@@ -191,52 +191,52 @@ lead-grid">
   <div id="sec4" class="section-card">
     <h2>4. Completion of Squares 求解</h2>
 
-    <p>在标量情况下，配方法（completing the square）将 \$ax^2 + bx + c\$ 改写为 \$a(x + b/(2a))^2 + (c - b^2/(4a))\$。矩阵情况下做类似操作：</p>
+    <p>在标量情况下，配方法（completing the square）将 $ax^2 + bx + c$ 改写为 $a(x + b/(2a))^2 + (c - b^2/(4a))$。矩阵情况下做类似操作：</p>
 
     <h3>步骤 1：提取公因子</h3>
-    <p>记 \$S = C P_{k+1|k} C' + R = R_{e,k+1}\$，有：</p>
+    <p>记 $S = C P_{k+1|k} C' + R = R_{e,k+1}$，有：</p>
     <div class="formula-box">
-      \$$
+      $$
       \\begin{aligned}
       P_{k+1}(K) &= P_{k+1|k} - K C P_{k+1|k} - P_{k+1|k} C' K' + K S K' \\\\\\\\
       &= P_{k+1|k} - P_{k+1|k} C' S^{-1} C P_{k+1|k} \\\\\\\\
       &\\quad + (K - P_{k+1|k} C' S^{-1}) S (K - P_{k+1|k} C' S^{-1})'
       \\end{aligned}
-      \$$
+      $$
     </div>
 
     <h3>步骤 2：验证配方法</h3>
     <p>展开最后一项验证：</p>
     <div class="formula-box">
-      \$$
+      $$
       \\begin{aligned}
       &(K - P C' S^{-1}) S (K - P C' S^{-1})' \\\\
       =& K S K' - K S S^{-1} C P - P C' S^{-1} S K' + P C' S^{-1} S S^{-1} C P \\\\
       =& K S K' - K C P - P C' K' + P C' S^{-1} C P
       \\end{aligned}
-      \$$
+      $$
     </div>
     <p>代入原式即验证了等式。</p>
 
     <h3>步骤 3：确定最优增益</h3>
-    <p>由于 \$S \\succ 0\$（正定），二次项 \$(K - \\text{opt}) S (K - \\text{opt})'\$ 永远是半正定矩阵。要最小化 \$P_{k+1}(K)\$，只需让这一项为零：</p>
+    <p>由于 $S \\succ 0$（正定），二次项 $(K - \\text{opt}) S (K - \\text{opt})'$ 永远是半正定矩阵。要最小化 $P_{k+1}(K)$，只需让这一项为零：</p>
 
     <div class="formula-box">
-      \$$
+      $$
       \\boxed{K_{k+1}^* = P_{k+1|k} C' S^{-1} = P_{k+1|k} C' [C P_{k+1|k} C' + R]^{-1}}
-      \$$
+      $$
     </div>
 
     <p>代入后得到最小协方差：</p>
     <div class="formula-box">
-      \$$
+      $$
       \\boxed{P_{k+1}^* = P_{k+1|k} - P_{k+1|k} C' S^{-1} C P_{k+1|k}}
-      \$$
+      $$
     </div>
 
     <div class="callout">
       <p><strong>🧠 理解 Completion of Squares</strong></p>
-      <p>配方法的核心思路：把 \$P(K)\$ 写成 \$\\text{常数} + (K - K^*) S (K - K^*)'\$。由于 \$S \\succ 0\$，右边第二项≥0，所以当 \$K = K^*\$ 时 \$P(K)\$ 最小。这个常数就是最小可能的协方差。</p>
+      <p>配方法的核心思路：把 $P(K)$ 写成 $\\text{常数} + (K - K^*) S (K - K^*)'$。由于 $S \\succ 0$，右边第二项≥0，所以当 $K = K^*$ 时 $P(K)$ 最小。这个常数就是最小可能的协方差。</p>
     </div>
   </div>
 
@@ -249,24 +249,24 @@ lead-grid">
     <div class="grid-3">
       <div class="mini-card" style="border-left: 4px solid var(--accent);">
         <h4>📐 几何法视角</h4>
-        <p>\$K_{k}\$ 是投影系数——将状态\$x_{k}\$投影到新息方向上。</p>
+        <p>$K_{k}$ 是投影系数——将状态$x_{k}$投影到新息方向上。</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #3b82f6;">
         <h4>📊 概率法视角</h4>
-        <p>\$K_{k}\$ 是回归系数——\$\\Sigma_{xy} \\Sigma_{y}^{-1}\$的自然产物。</p>
+        <p>$K_{k}$ 是回归系数——$\\Sigma_{xy} \\Sigma_{y}^{-1}$的自然产物。</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #22c55e;">
         <h4>⚡ 优化法视角</h4>
-        <p>\$K_{k}\$ 是优化变量——使协方差二次型最小的唯一解。</p>
+        <p>$K_{k}$ 是优化变量——使协方差二次型最小的唯一解。</p>
       </div>
     </div>
 
     <h3>三种方法殊途同归</h3>
     <p>三种方法得到的 Kalman 增益表达式完全一致：</p>
     <div class="formula-box">
-      \$$
+      $$
       \\boxed{K_{k} = P_{k|k-1} C' [C P_{k|k-1} C' + R]^{-1}}
-      \$$
+      $$
     </div>
 
     <p>这验证了一个深刻的事实：</p>
@@ -358,18 +358,18 @@ lead-grid">
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>构造一个形式合理的线性递归估计器（预测 + 修正结构），将后验协方差 \$P_{k+1}\$ 写成增益 \$K_{k+1}\$ 的二次型，然后通过 Completion of Squares 找到使协方差最小化的最优增益。</p>
+          <p>构造一个形式合理的线性递归估计器（预测 + 修正结构），将后验协方差 $P_{k+1}$ 写成增益 $K_{k+1}$ 的二次型，然后通过 Completion of Squares 找到使协方差最小化的最优增益。</p>
         </div>
       </details>
     </div>
 
     <div class="interactive-card">
       <h3>问题 2</h3>
-      <p>Completion of Squares 推导中，为什么最优增益是 \$K^* = P C' S^{-1}\$？</p>
+      <p>Completion of Squares 推导中，为什么最优增益是 $K^* = P C' S^{-1}$？</p>
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
         <div class="content">
-          <p>配方法将 \$P(K)\$ 写成 \$\\text{const} + (K - K^*) S (K - K^*)'\$。由于 \$S = C P C' + R \\succ 0\$，第二项总是半正定矩阵，只有在 \$K = K^*\$ 时为零，此时 \$P(K)\$ 达到最小。</p>
+          <p>配方法将 $P(K)$ 写成 $\\text{const} + (K - K^*) S (K - K^*)'$。由于 $S = C P C' + R \\succ 0$，第二项总是半正定矩阵，只有在 $K = K^*$ 时为零，此时 $P(K)$ 达到最小。</p>
         </div>
       </details>
     </div>
