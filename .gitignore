@@ -1,21 +1,55 @@
-# 大文件 - 不上传视频/PDF/SRT等原始资料
-/videos/
-/pdfs/
-/pdf-md/
-/subtitles/
-/course-notes/
-*.mp4
-*.pdf
-*.srt
-*.wav
-*.mp3
+# Python
+__pycache__/
+*.pyc
+*.pyo
 
-# 系统文件
+# OS
 .DS_Store
 Thumbs.db
-*.swp
-*.swo
 
-# Node
-node_modules/
+# Temp/test scripts
+test_*.py
+scan_katex*.py
+scripts/fix_dollar_in_display_dry.py
+
+# Large binary files - videos
+videos/
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.flv
+*.wmv
+
+# PDF sources (can be redownloaded from cloud drive)
+pdfs/
+*.pdf
+
+# Board note images (MinerU output - can be regenerated)
+pdf-md/
 pdf-md-verified/
+*.jpg
+*.png
+*.jpeg
+*.gif
+*.bmp
+*.webp
+
+# Audio files (generated from ASR pipeline)
+*.mp3
+*.wav
+*.m4a
+*.flac
+*.ogg
+
+# ASR raw text (SRT is the canonical source)
+subtitles/*.txt
+subtitles/batch_asr.log
+subtitles/batch_asr*.sh
+
+# Course notes (personal notes, not part of website)
+course-notes/
+course-notes-ai/
+
+# Script output
+*.log
