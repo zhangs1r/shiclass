@@ -11,7 +11,7 @@
 <script>
 window.MathJax = {
   tex: {
-    inlineMath: [['$', '$'], ['\\\(', '\\\)']],
+    inlineMath: [['$', '$'], ['\\\\(', '\\\\)']],
     displayMath: [['$$', '$$'], ['\\[', '\\]']]
   },
   svg: { fontCache: 'global' }
@@ -22,70 +22,294 @@ window.MathJax = {
 <body>
 <div class="page">
 
-  <div class="hero">
-    <div class="eyebrow">KF 系列 · L1</div>
-    <h1>KF L1：矩阵特征值、SVD与正定性</h1>
-    <p class="subtitle">Kalman Filter 的数学基础：特征值分解、奇异值分解、正定矩阵</p>
+  <header class="hero">
+    <div class="eyebrow">研讨会系列 4 · Kalman Filter L1</div>
+    <h1>矩阵特征值、SVD与正定性</h1>
+    <p class="subtitle">如果把矩阵看作线性变换，特征值就是拉伸系数，特征向量就是拉伸方向——这是理解 Kalman Filter 一切数学的起点。</p>
     <div class="hero-meta">
       <span>📅 2025-11-22</span>
-      <span>🧩 矩阵理论</span>
-      <span>📐 SVD</span>
-      <span>🎯 KF基础</span>
-      <span>👤 施凌</span>
+      <span>⏱ ~60 分钟</span>
+      <span>📊 中级</span>
+      <span>🎯 KF 数学基础</span>
+    </div>
+  </header>
+
+  <div class="lead-grid">
+    <div class="callout">
+      <h4>🎯 学完本节，你应能</h4>
+      <ul>
+        <li>解释特征值和特征向量的几何意义</li>
+        <li>理解 SVD 为何是"将矩阵拆成旋转×拉伸×旋转"</li>
+        <li>用特征值判据判断矩阵的正定性</li>
+        <li>理解谱分解和 Cholesky 分解的基本思想</li>
+      </ul>
+    </div>
+    <div class="callout">
+      <h4>📖 前置知识</h4>
+      <ul>
+        <li>大学线性代数基础（矩阵乘法、行列式、逆矩阵）</li>
+        <li>了解向量的线性变换概念</li>
+      </ul>
+      <p style="margin-top:8px;font-size:0.9rem;color:var(--text-secondary);">💡 建议先看 0000–0003 建立 KF 学习的动机，再进入本讲。</p>
     </div>
   </div>
 
-  <main>
-    
-  <section class="section-card">
-    <h2>课程概览</h2>
-    <p>以下内容基于课堂实录整理：</p><blockquote style='background:var(--bg-subtle);padding:1rem;border-left:3px solid var(--accent);'>是雷总
-师傅 hello
-师姐
-你们稍等我一下
-我要用因为我用这个另外一部电脑去手写
-我看另外一部电脑里面有没有
-有没有那个腾讯会议
-不一定有可能还临时得安装一下
-好的师傅
-我们正好顺便等一下其他的同学们
-快来了 22 个
-23 个人了
-那我这个也没有
-觉得没有我下载一下
-马上</blockquote>
-  </section>
+  <nav class="toc">
+    <h3>📖 本讲目录</h3>
+    <ul>
+      <li><a href="#eigen-intro">1. 特征值的几何直觉：矩阵 = 线性变换</a></li>
+      <li><a href="#eigen-prop">2. 特征值的性质与迹-行列式关系</a></li>
+      <li><a href="#spectral">3. 谱分解/相似变换：对角化的条件</a></li>
+      <li><a href="#svd">4. SVD：旋转·拉伸·旋转</a></li>
+      <li><a href="#posdef">5. 正定矩阵：特征值 > 0 的几何意义</a></li>
+      <li><a href="#cholesky">6. Cholesky 分解</a></li>
+      <li><a href="#lemma">7. 【补充引理】AB 与 BA 的非零特征值相同</a></li>
+      <li><a href="#exercise">8. 课后练习</a></li>
+    </ul>
+  </nav>
 
-  <section class="section-card">
-    <h2>核心内容</h2>
-    <p>1. Dynamic Programming 动态规划</p><p>(A tool / an algorithm to solve a class of problems)</p><p>The basic problem (P1):</p><p>① An underlying discrete-time dynamic system. e.g., $x_{k+1} = A x_k + B u_k + w_k$ .</p><p>$$<br>x _ {k + 1} = f _ {k} (x _ {k}, u _ {k}, w _ {k}), k = 0, 1, \dots , N - 1.<br>$$</p><p>② A cost function is additive over time</p><p>$$<br>J = E \left\{g _ {N} (x _ {N}) + \sum_ {k = 0} ^ {N - 1} g _ {k} (x _ {k}, u _ {k}, w _ {k}) \right\}.<br>$$</p><p>$$<br>J = E \left\{\prod_ {k = 0} ^ {N} g _ {k} (\cdot) \right\}<br>$$</p><p>Goal: minimize J by choosing $u_{0}, \cdots, u_{N-1}$ .</p><p>Solution: use dynamic programming!</p><p>2. Example. You are the owner of a 7-11 store. Consider a very simple scenario. You only sell one product (e.g., cocoa).</p><p>$x_{k}$ : no. of cans available at the beginning of the k-th day.</p><p>Uk: no. of cans ordered</p><p>Wk: no. of cans sold on the k-th day</p><p>${x}_{k + 1} = {x}_{k} + {u}_{k} - {w}_{k}$ .</p><p>$r(x_k): penalty. (e.g., r(x_k) = |x_k|^2)$</p><p>Cuk : purchasing cost. βwk : profit.</p><p>$R(x_{N})$ : terminal cost.</p><p>② $J = E \left\{ R(x_{N}) + \sum_{k=0}^{N-1} \left( r(x_{k}) + c u_{k} - \beta w_{k} \right) \right\}.$</p><p>Goal: choose $U_0, \cdots U_{N-1}$ to minimize $J$</p><p>3. closed-loop vs open-loop minimization.</p><p>Example: (case 11) let $u_k = 100 \forall k$ .</p><p>(2) let $u_k = \begin{cases} 200, &amp; 春天 \text{ or 秋天} \\ 500, &amp; 夏天 \\ 50, &amp; 冬天 \end{cases}$ off line strategy.<br>离线 (open-loop)</p><p>focus.</p><p>(3) $U_{k}$ depends on $x_{k}$ ( $x_{k-1}, \ldots, x_{0}$ ).</p><p>$u_{k}=\mu_{k}(x_{k})$ . 关于 $x_{k}$ 的一个函数.</p><p>$\pi : \left\{ {{\mu }_{0},{\mu }_{1},\cdots {\mu }_{n - 1}}\right\}$ is called a policy / control law.</p><p>Basic Problem $P_{1}$ : $\min_{\pi} J(x_{0})$</p>
-  </section>
+  <section id="eigen-intro" class="section-card">
+    <h2>1. 特征值的几何直觉：矩阵 = 线性变换</h2>
+    <p>矩阵 $A \in \mathbb{R}^{n \times n}$ 可以看作一个<strong>线性变换</strong>：它将一个向量 $v$ 映射为 $Av$。变换的效果可能是旋转、拉伸、剪切或者它们的组合。</p>
 
-  <section class="section-card">
-    <h2>练习与思考</h2>
-    
-        <div class="exercise-box">
-          <ol>
-            <li><details class="exercise-answer"><summary>回顾本节课的核心概念，你能用自己的话复述吗？</summary><div>尝试关闭视频，凭记忆把本节课讲的主要思路写下来。</div></details></li>
-            <li><details class="exercise-answer"><summary>板书中的关键公式，你能独立推导一遍吗？</summary><div>建议手推一遍，不要直接看板书。</div></details></li>
-          </ol>
-        </div>
-        
-  </section>
-
-  </main>
-
-  <footer class="section-card" style="margin-top:2rem;text-align:center;">
-    <div class="nav-links">
-      <a href="0003-演讲技巧学术表达.html">← 上节</a>
-      <a href="0005-KF-L2-矩阵求逆状态空间.html" class="next">下节 →</a>
-      <a href="../index.html" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
-      
+    <div class="callout">
+      <p><strong>💡 核心直觉：</strong>特征向量 $v_i$ 是"被 $A$ 变换后方向不变的向量"，特征值 $\lambda_i$ 是对应的"拉伸倍数"。</p>
     </div>
-    <p class="foot-note" style="margin-top:1.5rem;color:var(--text-light);font-size:0.85rem;">
-      内容基于施凌老师课堂录制整理，结合 SRT 字幕与板书笔记生成。
-    </p>
-  </footer>
+
+    <div class="formula-box">
+      $$ A v_i = \lambda_i v_i, \quad i = 1,\dots,n $$
+    </div>
+
+    <p>也就是说：在 $v_i$ 这个方向上，矩阵 $A$ 的效果<strong>退化为标量乘法</strong>。</p>
+
+    <h3>【课堂例子】旋转矩阵没有（实）特征值</h3>
+    <p>考虑 $A = \begin{bmatrix}0 & -1 \\ 1 & 0\end{bmatrix}$（旋转 90°）。任何非零向量被旋转后方向都变了，所以没有实特征值。</p>
+
+    <h3>求法</h3>
+    <div class="formula-box">
+      $$ \det(\lambda I - A) = 0 \quad\Rightarrow\quad \lambda_1, \dots, \lambda_n $$
+    </div>
+    <p>解特征多项式得到 $n$ 个特征值（可能有重复、可能有复数）。</p>
+  </section>
+
+  <section id="eigen-prop" class="section-card">
+    <h2>2. 特征值的性质与迹-行列式关系</h2>
+
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>🔢 迹 = 特征值之和</h4>
+        <p>$$ \sum_{i=1}^n \lambda_i = \operatorname{Tr}(A) $$</p>
+      </div>
+      <div class="mini-card">
+        <h4>📊 行列式 = 特征值之积</h4>
+        <p>$$ \prod_{i=1}^n \lambda_i = \det(A) $$</p>
+      </div>
+    </div>
+
+    <h3>矩阵变换对特征值的影响</h3>
+    <table>
+      <tr><th>变换</th><th>特征值变化</th></tr>
+      <tr><td>$A^{-1}$</td><td>$\{\lambda_i^{-1}\}$</td></tr>
+      <tr><td>$A^{T}$</td><td>$\{\lambda_i\}$（相同）</td></tr>
+      <tr><td>$A^{2}$</td><td>$\{\lambda_i^{2}\}$</td></tr>
+      <tr><td>$A^{k}$</td><td>$\{\lambda_i^{k}\}$</td></tr>
+      <tr><td>$cI + A$</td><td>$\{c + \lambda_i\}$</td></tr>
+    </table>
+    <p>这些性质后面在分析系统稳定性时非常有用——KF L3 会用到。</p>
+  </section>
+
+  <section id="spectral" class="section-card">
+    <h2>3. 谱分解/相似变换：对角化的条件</h2>
+    <p>如果 $A$ 有 $n$ 个<strong>线性无关</strong>的特征向量，则 $A$ 可以对角化：</p>
+    <div class="formula-box">
+      $$ P^{-1} A P = \begin{bmatrix} \lambda_1 & & \\ & \ddots & \\ & & \lambda_n \end{bmatrix} \triangleq D, \quad P = [v_1 \; \cdots \; v_n] $$
+    </div>
+    <p>其中 $P$ 的列是特征向量。</p>
+
+    <div class="callout">
+      <p><strong>⚠️ 注意：</strong>并非所有矩阵都可对角化。</p>
+    </div>
+
+    <h3>反例：Jordan 块</h3>
+    <div class="formula-box">
+      $$ A = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix} $$
+    </div>
+    <p>这个矩阵只有一个特征向量 $(1,0)^T$，无法张成二维空间。如果能对角化，则 $P^{-1}AP = I \Rightarrow A = I$，矛盾！</p>
+
+    <div class="callout" style="border-left-color: var(--accent-light);">
+      <p><strong>🔗 连接 KF：</strong>谱分解是理解系统稳定性的关键——$A^k = P D^k P^{-1}$，因此 $x_k \to 0$ 当且仅当所有 $|\lambda_i| < 1$。</p>
+    </div>
+  </section>
+
+  <section id="svd" class="section-card">
+    <h2>4. SVD：旋转·拉伸·旋转</h2>
+    <p>SVD 是线性代数中最优美的分解之一，适用于<strong>任何</strong>矩阵（不要求方阵、不要求可对角化）：</p>
+    <div class="formula-box">
+      $$ A = U \Sigma V^T = \sum_{i=1}^{r} \sigma_i \, u_i v_i^T $$
+    </div>
+    <p>其中 $\sigma_i$ 是奇异值（$A A^T$ 的特征值的平方根），$U$ 和 $V$ 是正交矩阵。</p>
+
+    <div class="callout">
+      <p><strong>💡 三层理解：</strong></p>
+      <ol>
+        <li><strong>符号</strong>：$A = U\Sigma V^T$，$U$ 和 $V$ 是正交矩阵，$\Sigma$ 是对角阵</li>
+        <li><strong>含义</strong>：任何线性变换可以分解为"旋转($V^T$) → 拉伸($\Sigma$) → 旋转($U$)"</li>
+        <li><strong>直觉</strong>：SVD 告诉你"矩阵在每个方向上的放大倍数"——奇异值越大，该方向越重要</li>
+      </ol>
+    </div>
+
+    <h3>【课堂例子】低秩近似</h3>
+    <p>施老师在课堂上用 SVD 做低秩近似：只保留前 $k$ 个最大的奇异值：</p>
+    <div class="formula-box">
+      $$ A \approx \sum_{i=1}^{k} \sigma_i \, u_i v_i^T $$
+    </div>
+    <p>这在图像压缩、PCA、数据降维中都是核心思想。</p>
+  </section>
+
+  <section id="posdef" class="section-card">
+    <h2>5. 正定矩阵：特征值 > 0 的几何意义</h2>
+    <p>设 $A \in \mathbb{R}^{n \times n}$ 是对称矩阵。</p>
+
+    <table>
+      <tr><th>性质</th><th>定义</th><th>特征值条件</th></tr>
+      <tr><td><strong>正定 (p.d.)</strong></td><td>$x^T A x > 0,\; \forall x \neq 0$</td><td>$\lambda_i > 0$</td></tr>
+      <tr><td><strong>半正定 (p.s.d.)</strong></td><td>$x^T A x \ge 0,\; \forall x \neq 0$</td><td>$\lambda_i \ge 0$</td></tr>
+    </table>
+
+    <div class="callout">
+      <p><strong>🌰 通俗例子：</strong>$A = \begin{bmatrix}1 & 0 \\ 0 & 1\end{bmatrix}$ 是正定的。因为 $x^T A x = x_1^2 + x_2^2 > 0$ 对任意非零 $x$ 成立。而 $A = \begin{bmatrix}1 & 1 \\ 0 & 1\end{bmatrix}$ <strong>不是</strong>正定的——它不对称！</p>
+    </div>
+
+    <h3>正定矩阵的性质</h3>
+    <ol>
+      <li>若 $A$ 正定，$\alpha > 0$，则 $\alpha A$ 正定</li>
+      <li>若 $A,B$ 半正定，则 $A+B$ 半正定</li>
+      <li>若 $A$ 正定，$B$ 半正定，则 $A+B$ 正定</li>
+      <li>若 $A$ 半正定，$C \in \mathbb{R}^{n \times m}$，则 $C^T A C$ 半正定</li>
+      <li><strong>若 $A$ 正定，则 $A^{-1}$ 正定</strong>（课后可证）</li>
+    </ol>
+
+    <div class="callout" style="border-left-color: var(--accent-light);">
+      <p><strong>🔗 连接 KF：</strong>协方差矩阵一定是半正定的（$P \ge 0$）。正定性保证了二次型优化有唯一最小值——KF L3 中你会看到 $P$ 的正定性如何影响 Kalman Gain 的计算。</p>
+    </div>
+  </section>
+
+  <section id="cholesky" class="section-card">
+    <h2>6. Cholesky 分解</h2>
+    <p>如果 $A$ 是半正定矩阵，则存在下三角矩阵 $L$（实对角元非负）使得：</p>
+    <div class="formula-box">
+      $$ A = L L^T $$
+    </div>
+
+    <h3>应用：解线性方程 $A x = y$</h3>
+    <p>Cholesky 分解将求解转化为两步回代（无需计算逆矩阵）：</p>
+    <div class="flow-formula">
+      $$ A x = y \;\Longrightarrow\; \begin{cases} L z = y \\ L^T x = z \end{cases} $$
+    </div>
+
+    <h3>递归计算过程（板书核心）</h3>
+    <div class="formula-box">
+      $$ A = \begin{bmatrix} A_{11} & A_{12} \\ A_{21} & A_{22} \end{bmatrix},\quad
+      L = \begin{bmatrix} L_{11} & 0 \\ L_{21} & L_{22} \end{bmatrix} $$
+      $$ L_{11} = \sqrt{A_{11}},\quad L_{21} = A_{21} / L_{11} $$
+      $$ L_{22} L_{22}^T = A_{22} - L_{21} L_{21}^T $$
+    </div>
+    <p>不断对右下角子矩阵递归，直到 $n \to 1$。这是数值线性代数的经典算法。</p>
+  </section>
+
+  <section id="lemma" class="section-card">
+    <h2>7. 【补充引理】$AB$ 与 $BA$ 的非零特征值相同</h2>
+    <p>设 $A \in \mathbb{R}^{n \times m}$，$B \in \mathbb{R}^{m \times n}$，$n > m$。则：</p>
+    <div class="formula-box">
+      $$ \lambda(AB) = \{\lambda(BA)\} \cup \{0\} $$
+    </div>
+    <p>说明 $AB$ 有 $n$ 个特征值，其中 $n-m$ 个为零；$BA$ 有 $m$ 个非零特征值，与 $AB$ 的相同。</p>
+
+    <h3>证明思路（板书）</h3>
+    <p>使用相似变换构造：</p>
+    <div class="formula-box">
+      $$ \begin{bmatrix} I & A \\ 0 & I \end{bmatrix} \begin{bmatrix} AB & 0 \\ B & 0 \end{bmatrix} \begin{bmatrix} I & -A \\ 0 & I \end{bmatrix} = \begin{bmatrix} 0 & 0 \\ B & BA \end{bmatrix} $$
+    </div>
+    <p>两个矩阵相似，故特征值相同。于是 $\lambda(AB) \cup \{0\} = \lambda(BA) \cup \{0\}$。</p>
+    <p>推论：$\operatorname{Tr}(AB) = \operatorname{Tr}(BA)$。更一般地，$\operatorname{Tr}(ABCD) = \operatorname{Tr}(DABC)$（循环不变性）。</p>
+
+    <div class="callout">
+      <p><strong>💡 直觉：</strong>这个引理在后面矩阵求逆引理（KF L2）的推导中非常关键。</p>
+    </div>
+  </section>
+
+  <section id="exercise" class="section-card">
+    <div class="exercise-box">
+      <h3>📝 课后练习</h3>
+      <ol>
+        <li>
+          <p><strong>【数值计算】</strong>给定 $A = \begin{bmatrix} 2 & 1 \\ 1 & 2 \end{bmatrix}$，求其特征值和特征向量，并判断 $A$ 是否正定。</p>
+          <details class="exercise-answer">
+            <summary>查看答案</summary>
+            <div class="content">
+              <p>特征方程: $\det(\lambda I - A) = (\lambda-2)^2 - 1 = 0$ → $\lambda^2 - 4\lambda + 3 = 0$</p>
+              <p>$\lambda_1 = 3$, $v_1 = (1,1)^T$；$\lambda_2 = 1$, $v_2 = (1,-1)^T$</p>
+              <p>两个特征值都 > 0，且 $A$ 对称，所以 $A$ 正定。</p>
+            </div>
+          </details>
+        </li>
+        <li>
+          <p><strong>【正定性判断】</strong>为什么协方差矩阵 $\Sigma = E[(X-\mu)(X-\mu)^T]$ 一定是半正定的？</p>
+          <details class="exercise-answer">
+            <summary>查看答案提示</summary>
+            <div class="content">
+              <p>对任意 $y \neq 0$，$y^T \Sigma y = E[y^T(X-\mu)(X-\mu)^T y] = E[(y^T(X-\mu))^2] \ge 0$。平方的期望非负，所以半正定。</p>
+            </div>
+          </details>
+        </li>
+        <li>
+          <p><strong>【推导】</strong>若 $A$ 正定，证明 $A^{-1}$ 也正定。（板书留作 homework）</p>
+          <details class="exercise-answer">
+            <summary>查看提示</summary>
+            <div class="content">
+              <p>$A$ 正定 $\Rightarrow$ $\lambda_i(A) > 0$ $\Rightarrow$ $\lambda_i(A^{-1}) = 1/\lambda_i(A) > 0$。对称性继承，所以 $A^{-1}$ 正定。</p>
+            </div>
+          </details>
+        </li>
+        <li>
+          <p><strong>【编程思考】</strong>用 Python/NumPy 对随机生成的数据矩阵做 SVD，观察奇异值的衰减速度。保留前 $k$ 个奇异值重构原矩阵，看看重构误差如何随 $k$ 变化。</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section-card">
+    <h2>📌 小结</h2>
+    <div class="summary-grid">
+      <div class="mini-card">
+        <h4>🔑 特征值</h4>
+        <p>特征向量是"不变方向"，特征值是"拉伸倍数"。</p>
+      </div>
+      <div class="mini-card">
+        <h4>🌀 SVD</h4>
+        <p>$A = U\Sigma V^T$：旋转→拉伸→旋转。任何矩阵都能分解。</p>
+      </div>
+      <div class="mini-card">
+        <h4>✅ 正定性</h4>
+        <p>对称矩阵 + 所有特征值 > 0 = 正定。协方差矩阵天然半正定。</p>
+      </div>
+    </div>
+    <div class="callout" style="border-left-color: var(--accent-light);margin-top:16px;">
+      <p><strong>👉 下节预告：</strong>KF L2 将学习矩阵求逆引理（MIL）——这是后面推导 Kalman Gain 的关键工具。你会看到 MIL 如何把"大矩阵求逆"转化为"小矩阵求逆"，大幅降低计算量。</p>
+    </div>
+  </section>
+
+  <div class="nav-links">
+    <a href="0003-演讲技巧学术表达.html">← 上一节：演讲技巧</a>
+    <a href="0005a-KF-L2-矩阵求逆引理.html" class="next">下一节：KF L2 矩阵求逆引理 →</a>
+    <a href="../index.html" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+  </div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 4 · KF L1 矩阵特征值、SVD 与正定性</p>
+    <p>字幕来源：<code>subtitles/20251115_施凌_研讨会系列4_KF_L1_audio_34eaee802b23f1a1.srt</code></p>
+    <p>板书来源：<code>pdf-md/20251122_施凌_研讨会系列4_KF_L1 md文档/</code></p>
+  </div>
 
 </div>
 </body>

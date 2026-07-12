@@ -98,13 +98,13 @@ lead-grid">
       <div class="mini-card">
         <h4>累加代价</h4>
         \$$
-        J = \\mathbb{E}\\{g_N(x_N) + \\sum_{k=0}^{N-1} g_k(x_k, u_k, w_k)\\}
+        $J = \\mathbb{E}\\{g_N(x_N) + \\sum_{k=0}^{N-1} g_k(x_k, u_k, w_k)\\}$
         \$$
       </div>
       <div class="mini-card">
         <h4>控制目标</h4>
         \$$
-        \\min_{u_0,\\dots,u_{N-1}} J(x_0)
+        $\\min_{u_0,\\dots,u_{N-1}} J(x_0)$
         \$$
       </div>
     </div>
@@ -128,7 +128,7 @@ lead-grid">
     <p>完整的策略定义为：</p>
     <div class="formula-box">
       \$$
-      \\pi = \\{\\mu_0, \\mu_1, \\dots, \\mu_{N-1}\\}
+      $\\pi = \\{\\mu_0, \\mu_1, \\dots, \\mu_{N-1}\\}$
       \$$
       <p style="margin-top:8px;font-size:0.9rem">\$\\pi\$ 称为一个<strong>策略</strong>（policy）或控制律序列</p>
     </div>
@@ -188,7 +188,7 @@ lead-grid">
 
     <div class="formula-box">
       \$$
-      V_k(x_k) = \\min_{\\pi} \\mathbb{E}\\left[ g_N(x_N) + \\sum_{i=k}^{N-1} g_i(x_i, u_i, w_i) \\Big| x_k \\right]
+      $V_k(x_k) = \\min_{\\pi} \\mathbb{E}\\left[ g_N(x_N) + \\sum_{i=k}^{N-1} g_i(x_i, u_i, w_i) \\Big| x_k \\right]$
       \$$
     </div>
 
@@ -196,7 +196,7 @@ lead-grid">
 
     <div class="formula-box">
       \$$
-      \\boxed{V_k(x_k) = \\min_{u_k} \\mathbb{E}_{w_k} \\big[ g_k(x_k, u_k, w_k) + V_{k+1}(f_k(x_k, u_k, w_k)) \\big]}
+      $\\boxed{V_k(x_k) = \\min_{u_k} \\mathbb{E}_{w_k} \\big[ g_k(x_k, u_k, w_k) + V_{k+1}(f_k(x_k, u_k, w_k)) \\big]}$
       \$$
     </div>
 
@@ -242,7 +242,7 @@ lead-grid">
         <h4>2️⃣ 反向递推</h4>
         <p>对 \$k = N-1, N-2, \\dots, 0\$：</p>
         \$$
-        V_k(x_k) = \\min_{u_k} \\mathbb{E}[g_k + V_{k+1}]
+        $V_k(x_k) = \\min_{u_k} \\mathbb{E}[g_k + V_{k+1}]$
         \$$
         <p>对每个可能的状态 \$x_k\$ 求解。</p>
       </div>
@@ -250,7 +250,7 @@ lead-grid">
         <h4>3️⃣ 提取策略</h4>
         <p>保存每个状态下的最优决策：</p>
         \$$
-        \\mu_k^*(x_k) = \\arg\\min_{u_k} \\mathbb{E}[g_k + V_{k+1}]
+        $\\mu_k^*(x_k) = \\arg\\min_{u_k} \\mathbb{E}[g_k + V_{k+1}]$
         \$$
         <p>记录最优动作。</p>
       </div>

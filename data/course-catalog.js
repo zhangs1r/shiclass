@@ -42,14 +42,34 @@ window.SHICLASS_DATA = {
       meta: ["1 节课", "~45 分钟", "演讲技巧"]
     },
     {
-      id: "kf-series-4-8",
+      id: "kf-series-4-5",
       groupId: "seminars",
       kind: "KF 系列",
-      title: "KF L1-L5：矩阵基础与贝叶斯估计",
-      subtitle: "Kalman Filter 入门系列 (L1-L5)",
-      description: "第 0004-0007 课（KF L1-L4）。矩阵特征值、SVD、状态空间、协方差、二次型优化、能控性与可观性，打下 KF 数学基础。",
+      title: "KF L1-L2：矩阵基础与状态空间",
+      subtitle: "Kalman Filter 入门系列 (L1-L2)",
+      description: "第 0004-0005 课（KF L1-L2），已拆分为 4 节。矩阵特征值、SVD、正定性、矩阵求逆引理、状态空间模型与协方差传播，打下 KF 数学基础。",
       quickOpen: "lessons/0004-KF-L1-矩阵特征值.html",
-      meta: ["5 节课", "~6 小时", "矩阵理论 / 贝叶斯"]
+      meta: ["4 节", "~3 小时", "矩阵理论 / 状态空间"]
+    },
+    {
+      id: "kf-series-l5",
+      groupId: "seminars",
+      kind: "KF 系列",
+      title: "KF L5：贝叶斯估计与 Bayes Rule",
+      subtitle: "Kalman Filter 贝叶斯基础 (L5)",
+      description: "新增第 KF L5 课。贝叶斯估计入门——Bayes Rule、先验/似然/后验、Romeo & Juliet 经典例子。填补 L4（可观性）到 L6（MAP/MMSE）之间的理论桥梁。",
+      quickOpen: "lessons/KF-L5-贝叶斯估计与BayesRule.html",
+      meta: ["1 课", "~60 分钟", "贝叶斯估计"]
+    },
+    {
+      id: "kf-series-6-7",
+      groupId: "seminars",
+      kind: "KF 系列",
+      title: "KF L3-L4：系统理论与能控可观",
+      subtitle: "Kalman Filter 系统基础 (L3-L4)",
+      description: "第 0006-0007 课（KF L3-L4）。二次型优化、系统稳定性、能控性、最小能量控制、PBH、可观性。",
+      quickOpen: "lessons/0006-KF-L3-二次型优化.html",
+      meta: ["2 节", "~3 小时", "系统理论 / 能控性"]
     },
     {
       id: "kf-series-9-11",
@@ -57,7 +77,7 @@ window.SHICLASS_DATA = {
       kind: "KF 系列",
       title: "KF L6-L9：估计理论与最小二乘",
       subtitle: "Kalman Filter 进阶系列 (L6-L9)",
-      description: "第 0006-0011 课。MAP、MMSE、最大似然、最小二乘与内积空间。",
+      description: "第 0008-0011 课。MAP、MMSE、最大似然、最小二乘与内积空间。",
       quickOpen: "lessons/0008-KF-L6-MAP-MMSE.html",
       meta: ["4 节课", "~4 小时", "估计理论 / 最小二乘"]
     },
@@ -148,8 +168,8 @@ window.SHICLASS_DATA = {
       collectionId: "yang-xicheng",
       path: "lessons/0000-图像算法安防应用.html",
       title: "杨熙丞：图像算法在安防行业的应用",
-      subtitle: "人脸识别、目标检测、视频监控算法落地",
-      duration: "15 min",
+      subtitle: "荧光抓拍、车窗增强、算法部署全流程与校招建议",
+      duration: "30 min",
       tags: ["图像算法", "安防"]
     },
     {
@@ -157,7 +177,7 @@ window.SHICLASS_DATA = {
       collectionId: "series-1-2",
       path: "lessons/0001-研究共同体方向地图.html",
       title: "研究共同体与方向地图",
-      subtitle: "学术共同体构建方法与研究方向地图",
+      subtitle: "从海关检测到SLAM——统一的状态估计主线",
       duration: "30 min",
       tags: ["学术规范"]
     },
@@ -166,7 +186,7 @@ window.SHICLASS_DATA = {
       collectionId: "series-1-2",
       path: "lessons/0002-学术规范职业习惯.html",
       title: "组规、学术规范与职业习惯",
-      subtitle: "学术写作规范与科研习惯养成",
+      subtitle: "学术诚信、投稿规范、守时与邮件礼仪",
       duration: "30 min",
       tags: ["学术规范"]
     },
@@ -175,31 +195,40 @@ window.SHICLASS_DATA = {
       collectionId: "series-3-speech",
       path: "lessons/0003-演讲技巧学术表达.html",
       title: "演讲技巧与学术表达",
-      subtitle: "学术演讲结构设计与表达技巧",
+      subtitle: "Verbal/Vocal/Visual三要素与演讲结构设计",
       duration: "30 min",
       tags: ["演讲技巧"]
     },
     {
       id: "0004-KF-L1-矩阵特征值",
-      collectionId: "kf-series-4-8",
+      collectionId: "kf-series-4-5",
       path: "lessons/0004-KF-L1-矩阵特征值.html",
       title: "KF L1：矩阵特征值、SVD与正定性",
-      subtitle: "特征值几何意义、SVD分解、正定矩阵判据",
+      subtitle: "特征值几何意义、SVD分解、正定矩阵判据与Cholesky",
       duration: "45 min",
       tags: ["线性代数", "KF基础"]
     },
     {
-      id: "0005-KF-L2-矩阵求逆状态空间",
-      collectionId: "kf-series-4-8",
-      path: "lessons/0005-KF-L2-矩阵求逆状态空间.html",
-      title: "KF L2：矩阵求逆引理、状态空间与协方差",
-      subtitle: "矩阵求逆引理、状态空间表示、协方差传播",
-      duration: "45 min",
+      id: "0005a-KF-L2-矩阵求逆引理",
+      collectionId: "kf-series-4-5",
+      path: "lessons/0005a-KF-L2-矩阵求逆引理.html",
+      title: "KF L2(上)：矩阵求逆引理",
+      subtitle: "MIL标准形式、三步推导、几何直觉与KF用途预告",
+      duration: "30 min",
+      tags: ["线性代数", "KF基础"]
+    },
+    {
+      id: "0005b-KF-L2-状态空间协方差",
+      collectionId: "kf-series-4-5",
+      path: "lessons/0005b-KF-L2-状态空间协方差.html",
+      title: "KF L2(下)：状态空间与协方差",
+      subtitle: "2D车辆建模、协方差矩阵、线性变换传播",
+      duration: "30 min",
       tags: ["线性代数", "KF基础"]
     },
     {
       id: "0006-KF-L3-二次型优化",
-      collectionId: "kf-series-4-8",
+      collectionId: "kf-series-6-7",
       path: "lessons/0006-KF-L3-二次型优化.html",
       title: "KF L3：二次型优化、稳定性与能控性",
       subtitle: "二次型优化、特征值稳定性、能控性矩阵",
@@ -208,12 +237,21 @@ window.SHICLASS_DATA = {
     },
     {
       id: "0007-KF-L4-最小能量控制",
-      collectionId: "kf-series-4-8",
+      collectionId: "kf-series-6-7",
       path: "lessons/0007-KF-L4-最小能量控制.html",
       title: "KF L4：最小能量控制、PBH与可观性",
       subtitle: "最小能量控制、PBH判据、系统可观性",
       duration: "45 min",
       tags: ["控制理论", "可观性"]
+    },
+    {
+      id: "KF-L5-贝叶斯估计",
+      collectionId: "kf-series-l5",
+      path: "lessons/KF-L5-贝叶斯估计与BayesRule.html",
+      title: "KF L5：贝叶斯估计与 Bayes Rule",
+      subtitle: "先验/似然/后验、Bayes Rule、Romeo & Juliet经典例子",
+      duration: "45 min",
+      tags: ["估计理论"]
     },
     {
       id: "0008-KF-L6-MAP-MMSE",

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KF L5：贝叶斯估计与 Bayes Rule · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/shiclass.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\\\(', '\\\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']]
+  },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <div class="eyebrow">研讨会系列 8 · Kalman Filter L5</div>
+    <h1>贝叶斯估计与 Bayes Rule</h1>
+    <p class="subtitle">从"系统能不能被观测"到"观测到数据后如何修正信念"——Bayes Rule 是估计理论的灵魂。</p>
+    <div class="hero-meta">
+      <span>📅 2025-12-27</span>
+      <span>⏱ ~60 分钟</span>
+      <span>📊 中级</span>
+      <span>🎯 KF 概率基础</span>
+    </div>
+  </header>
+
+  <div class="lead-grid">
+    <div class="callout">
+      <h4>🎯 学完本节，你应能</h4>
+      <ul>
+        <li>区分 Bayesian 与 Non-Bayesian 估计的本质差异</li>
+        <li>解释先验、似然、后验的含义与关系</li>
+        <li>写出 Bayes Rule 的连续与离散形式</li>
+        <li>用 Bayes Rule 解决简单的参数估计问题</li>
+        <li>理解"测量 = 缩小不确定性"的核心思想</li>
+      </ul>
+    </div>
+    <div class="callout">
+      <h4>📖 前置知识</h4>
+      <ul>
+        <li>KF L4 可观性（0007）或系统理论基础</li>
+        <li>条件概率基础（$P(A|B)$ 的含义）</li>
+        <li>连续/离散随机变量的 PDF/PMF 概念</li>
+      </ul>
+      <p style="margin-top:8px;font-size:0.9rem;color:var(--text-secondary);">💡 本讲是从"系统理论"到"估计理论"的桥梁课。建议先看 L1-L4 再进入。</p>
+    </div>
+  </div>
+
+  <nav class="toc">
+    <h3>📖 本讲目录</h3>
+    <ul>
+      <li><a href="#estimation-problem">1. 估计问题是什么</a></li>
+      <li><a href="#bayesian-vs-nonbayesian">2. Bayesian vs Non-Bayesian 估计</a></li>
+      <li><a href="#room-temp">3. 【课堂例子】房间温度估计</a></li>
+      <li><a href="#prior-likelihood-posterior">4. 先验、似然、后验</a></li>
+      <li><a href="#bayes-rule">5. Bayes Rule 的数学形式</a></li>
+      <li><a href="#lottery">6. 【课堂例子】抽奖号码与测量减熵</a></li>
+      <li><a href="#romeo-juliet">7. 【课堂例题】Romeo & Juliet 迟到问题</a></li>
+      <li><a href="#exercise">8. 课后练习</a></li>
+    </ul>
+  </nav>
+
+  <section id="estimation-problem" class="section-card">
+    <h2>1. 估计问题是什么</h2>
+    <p>估计问题的基本形式：</p>
+    <div class="callout">
+      <p>有一个<strong>未知量 $\theta$</strong>，我们想知道它，但只能通过<strong>测量 $X$</strong> 间接推断。</p>
+    </div>
+
+    <table>
+      <tr><th>场景</th><th>未知 $\theta$</th><th>测量 $X$</th></tr>
+      <tr><td>房间温度</td><td>真实温度</td><td>温度计读数</td></tr>
+      <tr><td>车辆定位</td><td>真实位置</td><td>GPS 信号</td></tr>
+      <tr><td>KF 中的状态</td><td>$x_k$</td><td>$y_k$</td></tr>
+      <tr><td>硬币正反</td><td>正面概率 $p$</td><td>投掷结果序列</td></tr>
+      <tr><td>Juliet 迟到</td><td>最大迟到时间 $\theta$</td><td>实际迟到时间 $x$</td></tr>
+    </table>
+
+    <div class="callout" style="border-left-color: var(--accent-light);">
+      <p><strong>💡 核心问题：</strong>给定有限的、带噪的测量，我们到底能多"确定"地推断 $\theta$？这个问题的答案，就是整个估计理论要回答的核心。</p>
+    </div>
+  </section>
+
+  <section id="bayesian-vs-nonbayesian" class="section-card">
+    <h2>2. Bayesian vs Non-Bayesian 估计</h2>
+
+    <div class="grid-2">
+      <div class="mini-card" style="border:2px solid var(--accent);">
+        <h4>📍 Bayesian 估计</h4>
+        <p>把 $\theta$ 视为<strong>随机变量</strong>，给它一个分布 $p(\theta)$。</p>
+        <p>目标：更新 $\theta$ 的分布（后验）。</p>
+        <p>"先相信，再看数据修正"</p>
+      </div>
+      <div class="mini-card">
+        <h4>📍 Non-Bayesian 估计</h4>
+        <p>把 $\theta$ 视为<strong>固定未知常数</strong>。</p>
+        <p>目标：找一个最合理的数值。</p>
+        <p>"数据说话，不做先验假设"</p>
+      </div>
+    </div>
+
+    <table>
+      <tr><th>视角</th><th>$\theta$ 是什么</th><th>随机性来源</th><th>目标</th></tr>
+      <tr><td>Bayesian</td><td>随机变量</td><td>$\theta$ 和 $X$ 都是随机的</td><td>求后验分布 $p(\theta|X)$</td></tr>
+      <tr><td>Non-Bayesian</td><td>固定未知常数</td><td>只有 $X$ 是随机的</td><td>求 $\theta$ 的点估计值</td></tr>
+    </table>
+
+    <div class="callout">
+      <p><strong>🔗 连接 KF：</strong>Kalman Filter 本质上是 Bayesian 的——每一步都在做"用先验（预测）× 似然（测量）→ 后验（估计）"的递归计算。</p>
+    </div>
+  </section>
+
+  <section id="room-temp" class="section-card">
+    <h2>3. 【课堂例子】房间温度估计</h2>
+    <p>施老师在黑板上用房间温度的例子直观展示两种框架的差异。</p>
+
+    <p>设真实温度为 $\theta$，测量为：</p>
+    <div class="formula-box">
+      $$ Y = \theta + v, \quad v \sim \mathcal{N}(0, 1) $$
+    </div>
+
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>Non-Bayesian</h4>
+        <p>$\theta$ 是固定常数：</p>
+        <p>$$ Y \sim \mathcal{N}(\theta, 1) $$</p>
+        <p>$\theta$ 的取值范围是 $[0, 30^\circ\text{C}]$</p>
+      </div>
+      <div class="mini-card">
+        <h4>Bayesian</h4>
+        <p>还要给 $\theta$ 一个先验分布：</p>
+        <p>$$ \theta \sim p(\theta) $$</p>
+        <p>例如：认为大概率在 20°C–30°C 之间</p>
+      </div>
+    </div>
+
+    <p><strong>问题：</strong>Bayesian 框架下，$Y$ 的分布是什么？</p>
+    <p>答案：需要知道 $p(\theta)$ 才能确定 $Y$ 的边缘分布——这就是 Bayesian 与非 Bayesian 的分水岭。</p>
+  </section>
+
+  <section id="prior-likelihood-posterior" class="section-card">
+    <h2>4. 先验、似然、后验</h2>
+    <p>贝叶斯估计的三大支柱：</p>
+
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>📦 先验 $p(\theta)$</h4>
+        <p>观测数据之前，我们对 $\theta$ 的信念。</p>
+        <p>反映已有知识（或无知）</p>
+      </div>
+      <div class="mini-card">
+        <h4>📐 似然 $p(x|\theta)$</h4>
+        <p>如果 $\theta$ 是真值，观测到 $x$ 的概率。</p>
+        <p>也叫"传感器模型"</p>
+      </div>
+      <div class="mini-card">
+        <h4>🎯 后验 $p(\theta|x)$</h4>
+        <p>观测到 $x$ 后，对 $\theta$ 的更新信念。</p>
+        <p>这就是我们要估计的</p>
+      </div>
+      <div class="mini-card">
+        <h4>📊 证据 $p(x)$</h4>
+        <p>观测数据的边缘概率。</p>
+        <p>就是归一化常数</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <p><strong>💡 核心关系：</strong>后验 $\propto$ 先验 $\times$ 似然。</p>
+      <p>$$ p(\theta|x) = \frac{p(\theta) \cdot p(x|\theta)}{p(x)} = \frac{\text{旧信念} \times \text{数据支持}}{\text{归一化}} $$</p>
+    </div>
+  </section>
+
+  <section id="bayes-rule" class="section-card">
+    <h2>5. Bayes Rule 的数学形式</h2>
+
+    <h3>形式 1：离散 $\theta$ + 离散 $X$</h3>
+    <div class="formula-box">
+      $$ P(\theta|x) = \frac{P(\theta) P(x|\theta)}{\sum_{\theta'} P(\theta') P(x|\theta')} $$
+    </div>
+
+    <h3>形式 2：连续 $\theta$ + 连续 $X$</h3>
+    <div class="formula-box">
+      $$ f(\theta|x) = \frac{f(\theta) f(x|\theta)}{\int f(\theta') f(x|\theta') \, d\theta'} $$
+    </div>
+
+    <h3>形式 3：混合（离散 $\theta$ + 连续 $X$ 等）</h3>
+    <div class="formula-box">
+      $$ p(\theta|x) = \frac{p(\theta) f(x|\theta)}{\sum_{\theta'} p(\theta') f(x|\theta')} \quad\text{或}\quad
+      f(\theta|x) = \frac{f(\theta) p(x|\theta)}{\int f(\theta') p(x|\theta') \, d\theta'} $$
+    </div>
+
+    <div class="callout">
+      <p><strong>💡 三层阅读：</strong></p>
+      <ol>
+        <li><strong>符号：</strong>分母是求和/积分，保证概率归一化</li>
+        <li><strong>含义：</strong>后验 = 先验 × 似然 × （1/证据）</li>
+        <li><strong>直觉：</strong>如果数据在某个 $\theta$ 值下很可能是（似然大），那这个 $\theta$ 的后验概率就会调高；同时如果先验就认为这个 $\theta$ 不太可能，那后验也不会太高。</li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="lottery" class="section-card">
+    <h2>6. 【课堂例子】抽奖号码与测量减熵</h2>
+    <p>施老师用中奖号码为例，直观展示测量如何逐步缩小不确定性。</p>
+
+    <ul>
+      <li>中奖号码有 6 位数字（000000–999999），共 $10^6$ 种可能</li>
+      <li>先验：均匀分布——每个号码等可能，$P(\theta) = 10^{-6}$</li>
+    </ul>
+
+    <p><strong>测量 1：</strong>有人告诉你第一位是 6。</p>
+    <div class="flow-formula">
+      $$ P(\theta|x_1) = \begin{cases} 1/10^5 & \text{如果 $\theta$ 以 6 开头} \\ 0 & \text{否则} \end{cases} $$
+    </div>
+    <p>候选号码从 $10^6$ 缩小到 $10^5$。</p>
+
+    <p><strong>测量 2：</strong>第二位是 2。候选变为 $10^4$。</p>
+
+    <p><strong>... 直到 6 位全知道：</strong></p>
+    <div class="flow-formula">
+      $$ P(\theta|x_1,\dots,x_6) \sim \mathcal{N}(627589, 0) $$
+    </div>
+    <p>不确定性几乎降到零。</p>
+
+    <div class="callout">
+      <p><strong>💡 核心启发：</strong>测量的作用不是"制造真相"，而是<strong>缩小可能性空间</strong>。每次测量都在减少 $\theta$ 的不确定性（方差减小）。Kalman Filter 的协方差更新 $P_{k|k} < P_{k|k-1}$ 正是这个思想的数学体现。</p>
+    </div>
+  </section>
+
+  <section id="romeo-juliet" class="section-card">
+    <h2>7. 【课堂例题】Romeo & Juliet 迟到问题</h2>
+    <p>这是 KF L5 的经典例题，板书有完整推导。</p>
+
+    <h3>问题设定</h3>
+    <p>Romeo 和 Juliet 开始约会。Juliet 每次迟到时间 $X$ 均匀分布在 $[0, \theta]$，其中 $\theta$ 是 Juliet 的"最大迟到时间"。$\theta$ 未知，Romeo 的先验是 $\theta \sim U[0,1]$。</p>
+    <p>第一次约会，Romeo 观测到 Juliet 迟到 $x$ 小时。Romeo 如何更新对 $\theta$ 的信念？</p>
+
+    <h3>Step 1：写先验</h3>
+    <div class="formula-box">
+      $$ f(\theta) = \begin{cases} 1, & 0 \le \theta \le 1 \\ 0, & \text{otherwise} \end{cases} $$
+    </div>
+
+    <h3>Step 2：写似然（传感器模型）</h3>
+    <div class="formula-box">
+      $$ f(x|\theta) = \begin{cases} 1/\theta, & 0 \le x \le \theta \\ 0, & \text{otherwise} \end{cases} $$
+    </div>
+
+    <h3>Step 3：套 Bayes Rule</h3>
+    <p>后验非零的条件：$x \le \theta \le 1$。</p>
+    <div class="formula-box">
+      $$ f(\theta|x) = \frac{f(\theta) f(x|\theta)}{\int_x^1 f(\theta') f(x|\theta') \, d\theta'}
+      = \frac{1/\theta}{\int_x^1 (1/\theta') \, d\theta'}
+      = \frac{1/\theta}{|\log x|}
+      = \frac{1}{\theta \, |\log x|}, \quad x \le \theta \le 1 $$
+    </div>
+
+    <h3>通俗解释</h3>
+    <div class="callout">
+      <p>如果 Juliet 已经迟到了 $x$ 小时，那 $\theta < x$ 是不可能的——因为最大迟到时间不能小于实际迟到时间。后验 $\theta$ 的范围被截断为 $[x, 1]$，且密度在 $\theta = x$ 处最大，随 $\theta$ 增大递减。</p>
+    </div>
+
+    <h3>极值情况：$x=1$</h3>
+    <p>如果 Juliet 迟到了整整 1 小时，则 $\theta = 1$ 唯一可能——后验退化成一个点。</p>
+
+    <div class="callout" style="border-left-color: var(--accent-light);">
+      <p><strong>📝 课堂板书练习：</strong>画出 $x=0.1,\; x=0.5,\; x=0.9$ 时的后验分布 $f(\theta|x)$。注意 $x$ 越大，$\theta$ 的定义域越窄，后验越"集中"。</p>
+    </div>
+  </section>
+
+  <section id="exercise" class="section-card">
+    <div class="exercise-box">
+      <h3>📝 课后练习</h3>
+      <ol>
+        <li>
+          <p><strong>【概念题】</strong>为什么 Bayes Rule 的分母被称为"归一化常数"？</p>
+          <details class="exercise-answer">
+            <summary>查看答案</summary>
+            <div class="content">
+              <p>分母确保后验 $p(\theta|x)$ 对 $\theta$ 的积分/求和等于 1。它不依赖于 $\theta$，只依赖于数据 $x$，因此只起归一化作用。</p>
+            </div>
+          </details>
+        </li>
+        <li>
+          <p><strong>【数值计算】</strong>在 Romeo & Juliet 例子中，设 $x = 0.4$。计算 $f(\theta|x)$ 在 $\theta=0.5$ 和 $\theta=0.8$ 处的值。</p>
+          <details class="exercise-answer">
+            <summary>查看计算</summary>
+            <div class="content">
+              <p>$|\log(0.4)| = | -0.9163| = 0.9163$</p>
+              <p>$f(0.5|0.4) = 1/(0.5 \times 0.9163) = 2.183$</p>
+              <p>$f(0.8|0.4) = 1/(0.8 \times 0.9163) = 1.364$</p>
+              <p>$\theta$ 越小，后验密度越大——因为先验均匀 + 似然 $1/\theta$ 随 $\theta$ 增大而减小。</p>
+            </div>
+          </details>
+        </li>
+        <li>
+          <p><strong>【推导】</strong>设 $\theta$ 连续、$x$ 离散。推导 Bayes Rule 公式 $f(\theta|x) = \frac{f(\theta) P(x|\theta)}{\int f(\theta') P(x|\theta') d\theta'}$。提示：由联合分布 $f(\theta, x) = f(\theta) P(x|\theta)$ 出发。</p>
+          <details class="exercise-answer">
+            <summary>查看提示</summary>
+            <div class="content">
+              <p>$f(\theta|x) = \frac{f(\theta, x)}{P(x)} = \frac{f(\theta) P(x|\theta)}{\int f(\theta') P(x|\theta') d\theta'}$，由条件概率定义得到。</p>
+            </div>
+          </details>
+        </li>
+        <li>
+          <p><strong>【开放思考】</strong>在抽奖号码例子中，如果只给了你前 3 位数字，你对 $\theta$ 的不确定性减少了多少？用"可能性空间缩小比例"来量化。</p>
+          <details class="exercise-answer">
+            <summary>查看答案</summary>
+            <div class="content">
+              <p>前 3 位确定，候选从 $10^6$ 缩小到 $10^3$，缩小了 1000 倍。不确定性（熵）从 $\log(10^6)$ 降到 $\log(10^3)$，减少了一半。</p>
+            </div>
+          </details>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section-card">
+    <h2>📌 小结</h2>
+    <div class="summary-grid">
+      <div class="mini-card">
+        <h4>🎲 Bayesian 估计</h4>
+        <p>$\theta$ 是随机变量。后验 $\propto$ 先验 $\times$ 似然。</p>
+      </div>
+      <div class="mini-card">
+        <h4>📏 Non-Bayesian 估计</h4>
+        <p>$\theta$ 是常数。目标：找一个最佳数值。</p>
+      </div>
+      <div class="mini-card">
+        <h4>🔗 下节预告</h4>
+        <p>KF L6：MAP、MMSE 与假设检验——从后验分布到点估计的三种方法。</p>
+      </div>
+    </div>
+    <div class="callout" style="border-left-color: var(--accent-light);margin-top:16px;">
+      <p><strong>📌 本讲在全系列中的位置：</strong>L1–L4 打下系统理论基础，L5 引入估计理论的核心思维——Bayesian 更新。接下来 L6（MAP/MMSE）和 L7（最大似然）将基于这讲的概念构建具体的估计器。最终这些全部汇入 Kalman Filter 的递归 Bayesian 更新框架。</p>
+    </div>
+  </section>
+
+  <div class="nav-links">
+    <a href="0007-KF-L4-最小能量控制.html">← 上一节：KF L4 最小能量控制与可观性</a>
+    <a href="0008-KF-L6-MAP-MMSE.html" class="next">下一节：KF L6 MAP、MMSE 与假设检验 →</a>
+    <a href="../index.html" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+  </div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 8 · KF L5 贝叶斯估计与 Bayes Rule</p>
+    <p>板书来源：<code>pdf-md/20251227_施凌_研讨会系列8_KF_L5 md文档/</code></p>
+    <p>课程笔记：<code>course-notes/08-KF L5：贝叶斯估计与 Bayes Rule.md</code></p>
+  </div>
+
+</div>
+</body>
+</html>

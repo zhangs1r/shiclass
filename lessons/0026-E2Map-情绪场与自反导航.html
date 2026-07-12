@@ -89,7 +89,7 @@ lead-grid">
     <p>上一讲我们定义了经验场 \$e(p)\$：</p>
     <div class="formula-box">
       \$$
-      e(p) = [n_{\\text{success}}(p),\\; n_{\\text{fail}}(p),\\; \\bar r(p)]
+      $e(p) = [n_{\\text{success}}(p),\\; n_{\\text{fail}}(p),\\; \\bar r(p)]$
       \$$
     </div>
     <p>经验场记录了每个位置的历史交互统计。但原始的经验向量——成功/失败次数——并不能直接用于路径规划。我们需要将其转化为一个统一的、可比较的代价指标。</p>
@@ -105,7 +105,7 @@ lead-grid">
 
     <div class="formula-box">
       \$$
-      \\boxed{s(p) = \\tanh\\left(\\alpha \\cdot \\frac{n_{\\text{success}} - n_{\\text{fail}}}{n_{\\text{success}} + n_{\\text{fail}} + \\epsilon} + \\beta \\cdot \\bar r(p)\\right)}
+      $\\boxed{s(p) = \\tanh\\left(\\alpha \\cdot \\frac{n_{\\text{success}} - n_{\\text{fail}}}{n_{\\text{success}} + n_{\\text{fail}} + \\epsilon} + \\beta \\cdot \\bar r(p)\\right)}$
       \$$
     </div>
 
@@ -131,7 +131,7 @@ lead-grid">
     <h3>公式详解</h3>
     <div class="formula-box">
       \$$
-      s(p) = \\tanh(\\alpha \\cdot \\text{成功率偏差} + \\beta \\cdot \\text{平均奖励})
+      $s(p) = \\tanh(\\alpha \\cdot \\text{成功率偏差} + \\beta \\cdot \\text{平均奖励})$
       \$$
     </div>
     <ul>
@@ -155,7 +155,7 @@ lead-grid">
 
     <div class="formula-box">
       \$$
-      s_{\\text{smooth}}(p) = \\frac{\\sum_{q \\in \\mathcal{N}(p)} K_\\sigma(\\|p - q\\|) \\cdot s(q)}{\\sum_{q \\in \\mathcal{N}(p)} K_\\sigma(\\|p - q\\|)}
+      $s_{\\text{smooth}}(p) = \\frac{\\sum_{q \\in \\mathcal{N}(p)} K_\\sigma(\\|p - q\\|) \\cdot s(q)}{\\sum_{q \\in \\mathcal{N}(p)} K_\\sigma(\\|p - q\\|)}$
       \$$
     </div>
 
@@ -181,7 +181,7 @@ lead-grid">
 
     <div class="formula-box">
       \$$
-      \\boxed{J(\\tau) = \\underbrace{\\int_\\tau w_{\\text{geo}} \\, ds}_{\\text{几何距离}} \\;+\\; \\lambda_e \\underbrace{\\int_\\tau \\phi(e(p)) \\, ds}_{\\text{经验代价}} \\;+\\; \\lambda_s \\underbrace{\\int_\\tau \\psi(s(p)) \\, ds}_{\\text{情绪代价}}}
+      $\\boxed{J(\\tau) = \\underbrace{\\int_\\tau w_{\\text{geo}} \\, ds}_{\\text{几何距离}} \\;+\\; \\lambda_e \\underbrace{\\int_\\tau \\phi(e(p)) \\, ds}_{\\text{经验代价}} \\;+\\; \\lambda_s \\underbrace{\\int_\\tau \\psi(s(p)) \\, ds}_{\\text{情绪代价}}}$
       \$$
     </div>
 
@@ -236,7 +236,7 @@ lead-grid">
     <h3>时空衰减函数</h3>
     <div class="formula-box">
       \$$
-      w(t, d) = \\exp\\left(-\\gamma_t \\cdot \\Delta t - \\gamma_d \\cdot \\Delta d\\right)
+      $w(t, d) = \\exp\\left(-\\gamma_t \\cdot \\Delta t - \\gamma_d \\cdot \\Delta d\\right)$
       \$$
     </div>
     <p>时间越久、距离越远的经验对当前情绪值的贡献越小。衰减机制确保地图能适应环境变化——如果某个区域之前经常出问题，但环境改变后再也没出过问题，它的负面情绪会逐渐衰退。</p>

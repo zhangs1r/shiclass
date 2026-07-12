@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>研究共同体与方向地图 · 施老师大课堂</title>
+<title>研讨会系列 1：研究共同体与方向地图 · 施老师大课堂</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -11,7 +11,7 @@
 <script>
 window.MathJax = {
   tex: {
-    inlineMath: [['$', '$'], ['\\\(', '\\\)']],
+    inlineMath: [['$', '$'], ['\\\\(', '\\\\)']],
     displayMath: [['$$', '$$'], ['\\[', '\\]']]
   },
   svg: { fontCache: 'global' }
@@ -22,94 +22,269 @@ window.MathJax = {
 <body>
 <div class="page">
 
-  <div class="hero">
-    <div class="eyebrow">研讨会系列 · 第1期</div>
+  <header class="hero">
+    <div class="eyebrow">研讨会系列 1 · 全局导航课</div>
     <h1>研究共同体与方向地图</h1>
-    <p class="subtitle">如何构建高效的研究共同体？绘制领域方向地图，找到自己的研究定位</p>
+    <p class="subtitle">海关检测、外骨骼、SLAM、隐私安全……它们都在问同一个问题：真实状态怎么看准？</p>
     <div class="hero-meta">
       <span>📅 2025-11-01</span>
-      <span>🧩 研究规范</span>
-      <span>🎯 学术入门</span>
-      <span>👤 施凌</span>
+      <span>⏱ ~45 分钟</span>
+      <span>📊 初级</span>
+      <span>🎯 全局认知</span>
+    </div>
+  </header>
+
+  <div class="lead-grid">
+    <div class="callout">
+      <h4>🎯 学完本节，你应能</h4>
+      <ul>
+        <li>看懂"状态估计"这条主线如何贯穿不同研究方向</li>
+        <li>理解海关检测、SLAM、外骨骼等项目中共同的"估计"本质</li>
+        <li>建立学习后续 KF 系列的真实动机</li>
+        <li>画出你自己领域中的状态估计问题</li>
+      </ul>
+    </div>
+    <div class="callout">
+      <h4>📖 前置知识</h4>
+      <p>无特殊要求。本讲是整套课的开场，从零开始建立认知框架。</p>
+      <p style="margin-top:8px;font-size:0.9rem;color:var(--text-secondary);">💡 建议先看 0000 特邀分享热身，再进入本讲了解研究方向版图。</p>
     </div>
   </div>
 
-  <main>
-    
-  <section class="section-card">
-    <h2>课程概览</h2>
-    <p>以下内容基于课堂实录整理：</p><blockquote style='background:var(--bg-subtle);padding:1rem;border-left:3px solid var(--accent);'>hello 师姐
-早上好我上来了
-我来笑一下 screen
-Okay
-好那我们差不多开始了
-对我还是差不多 9.50
-得要得要测还有好点其他的事情做
-啥子事说
-行那上节课我们就讲到了这个 list square
-然后讲到了这个 inter product space
-对
-然后我们也提出了对 inner product space 进行了一个定义
-然然后也看到了一些具体的例子
-比如说在 vector space inner product 可以是什么样子的
-然后一个 functional space 它的 inner product 是什么样子的</blockquote>
-  </section>
+  <nav class="toc">
+    <h3>📖 本讲目录</h3>
+    <ul>
+      <li><a href="#community">1. 什么是研究共同体</a></li>
+      <li><a href="#customs">2. 方向一：文本分析与海关检测</a></li>
+      <li><a href="#estimation">3. 什么是"状态估计"</a></li>
+      <li><a href="#slam">4. 方向二：SLAM 与机器人</a></li>
+      <li><a href="#security">5. 方向三：系统安全与隐私</a></li>
+      <li><a href="#nonlinear">6. 方向四：非线性系统与鲁棒估计</a></li>
+      <li><a href="#roadmap">7. 为什么学 KF：从主线看全局</a></li>
+      <li><a href="#exercise">8. 课后练习</a></li>
+    </ul>
+  </nav>
 
-  <section class="section-card">
-    <h2>01 研讨会系列1：研究共同体与方向地图</h2>
-    <p><em>（图片：研究共同体方向地图，请参见原始板书）</em></p>
-  </section>
+  <section id="community" class="section-card">
+    <h2>1. 什么是研究共同体</h2>
+    <p>施老师提出"研究共同体"的概念：一群人虽然做不同项目，但共享一套<strong>核心问题意识</strong>和<strong>方法论语言</strong>。</p>
 
-  <section class="section-card">
-    <h2>本讲目标</h2>
-    <p><br>这一讲不是公式课，而是整套课的开场。你需要学会三件事：</p><p>1. 看懂不同研究方向之间的联系。<br>2. 明白为什么“状态估计”会同时出现在机器人、SLAM、隐私安全、外骨骼、海关检测等方向里。<br>3. 建立一个学习后续 Kalman Filter 的动机。<br></p>
-  </section>
-
-  <section class="section-card">
-    <h2>通俗故事：为什么研究不是一个人闷头做</h2>
-    <p><br>想象你进入一个实验室。每个人都在做不同项目：有人做机器人抓取，有人做视觉 SLAM，有人做物理系统安全，有人做大模型文本抽取。表面看这些方向很散，但它们都在回答同一种问题：</p><p>&gt; 世界里有些重要东西我看不全、看不准、看得有噪声，我该怎样推断真实情况？</p><p>这就是 estimation 的核心。<br></p>
-  </section>
-
-  <section class="section-card">
-    <h2>1. 研究方向一：文本分析和海关检测</h2>
-    <p></p>
-  </section>
-
-  <section class="section-card">
-    <h2>问题背景</h2>
-    <p><br>有些境外商品会宣传“减肥”“兴奋”“增强体力”等功效。问题是：这些功效背后可能添加了某些在国内不合法的成分。</p><p>传统检测方式是化学实验：</p><p>- 有一个很长的违禁物质清单；<br>- 海关逐项排查；<br>- 每项检测都可能花 1 到 2 天；<br>- 如果清单太长，成本非常高。<br></p>
-  </section>
-
-  <section class="section-card">
-    <h2>研究思路</h2>
-    <p><br>用自然语言处理和大模型做前置筛查：</p><p>1. 从网页、数据库、文献中收集“某功效对应哪些物质”的信息。<br>2. 抽取物质名、功效、来源、证据。<br>3. 形成候选物质库。<br>4. 帮海关缩小检测范围。<br></p>
-  </section>
-
-  <section class="section-card">
-    <h2>练习与思考</h2>
-    
-        <div class="exercise-box">
-          <ol>
-            <li><details class="exercise-answer"><summary>回顾本节课的核心概念，你能用自己的话复述吗？</summary><div>尝试关闭视频，凭记忆把本节课讲的主要思路写下来。</div></details></li>
-            <li><details class="exercise-answer"><summary>板书中的关键公式，你能独立推导一遍吗？</summary><div>建议手推一遍，不要直接看板书。</div></details></li>
-          </ol>
-        </div>
-        
-  </section>
-
-  </main>
-
-  <footer class="section-card" style="margin-top:2rem;text-align:center;">
-    <div class="nav-links">
-      <a href="0000-图像算法安防应用.html">← 上节</a>
-      <a href="0002-学术规范职业习惯.html" class="next">下节 →</a>
-      <a href="../index.html" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
-      
+    <div class="callout">
+      <p><strong>💡 本实验室的共同主线：</strong></p>
+      <p>"世界上有些重要东西我看不全、看不准、看得有噪声——我该怎样推断真实情况？"</p>
     </div>
-    <p class="foot-note" style="margin-top:1.5rem;color:var(--text-light);font-size:0.85rem;">
-      内容基于施凌老师课堂录制整理，结合 SRT 字幕与板书笔记生成。
-    </p>
-  </footer>
+
+    <p>这就是 <strong>estimation（估计）</strong> 的核心问题。它出现在：</p>
+    <div class="grid-3">
+      <div class="mini-card">📦 海关检测</div>
+      <div class="mini-card">🤖 机器人 SLAM</div>
+      <div class="mini-card">🦿 外骨骼控制</div>
+      <div class="mini-card">🔐 系统安全</div>
+      <div class="mini-card">🕶️ 隐私保护</div>
+      <div class="mini-card">🧠 大模型推测</div>
+    </div>
+    <p>下面逐一看看这些方向是怎么和"估计"连在一起的。</p>
+  </section>
+
+  <section id="customs" class="section-card">
+    <h2>2. 方向一：文本分析与海关检测</h2>
+    <p><strong>情景：</strong>境外商品宣传"减肥""增强体力"——可能添加了国内不合法的成分。</p>
+    <p>传统做法：化学逐一检测违禁清单，每种测 1-2 天，成本极高。</p>
+
+    <p><strong>研究思路：</strong>用 NLP + 大模型做前置筛查。</p>
+    <ol>
+      <li>从网页、文献、数据库收集"某功效→某物质"的映射信息</li>
+      <li>抽取物质名、功效、来源、证据</li>
+      <li>形成候选物质库，帮海关缩小检测范围</li>
+    </ol>
+
+    <div class="callout">
+      <p><strong>🔍 这也是估计问题？</strong>对！真实状态是"有没有违禁成分"——你无法直接知道，只能通过文本线索推断。AI 不是替代实验，而是给实验排序——从"大海捞针"变成"小范围精查"。这就是估计的思维。</p>
+    </div>
+  </section>
+
+  <section id="estimation" class="section-card">
+    <h2>3. 什么是"状态估计"</h2>
+    <p>施老师用一个简单公式概括所有估计问题的本质：</p>
+    <div class="formula-box">
+      $$ y = x + v $$
+    </div>
+
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>$x$ — 真实状态</h4>
+        <p>你想知道但<strong>看不见</strong>的东西</p>
+        <p>例：车辆真实位置、房间真实温度、是否被攻击</p>
+      </div>
+      <div class="mini-card">
+        <h4>$y$ — 测量</h4>
+        <p>传感器给你的<strong>带噪声</strong>数据</p>
+        <p>例：GPS 信号、温度计读数、网络流量</p>
+      </div>
+      <div class="mini-card">
+        <h4>$v$ — 噪声</h4>
+        <p>测量中无法避免的<strong>不确定性</strong></p>
+        <p>可能是随机噪声，也可能是恶意篡改</p>
+      </div>
+      <div class="mini-card">
+        <h4>🎯 目标</h4>
+        <p>从 $y$ 推断 $x$，<strong>同时知道这个推断有多确定</strong></p>
+      </div>
+    </div>
+
+    <p>整个 KF 系列就是为你提供一套越来越精巧的工具来做这件事。</p>
+  </section>
+
+  <section id="slam" class="section-card">
+    <h2>4. 方向二：SLAM 与机器人</h2>
+    <p><strong>SLAM（Simultaneous Localization and Mapping）</strong>——同时定位与建图。</p>
+
+    <p>机器人一边走一边问自己两个问题：</p>
+    <ol>
+      <li>我在哪里？（定位）</li>
+      <li>周围地图长什么样？（建图）</li>
+    </ol>
+
+    <div class="callout">
+      <p><strong>🧩 核心困境：</strong>机器人看到的是摄像头图像、激光雷达点云、IMU 数据——<strong>都是带噪声的测量</strong>。它从来不知道"真实位置"。必须融合多个传感器的信息来估计。</p>
+    </div>
+
+    <h3>【课堂例子】机器人应该相信谁？</h3>
+    <p>机器人向前走 1 米，但轮子打滑只走了 0.8 米。摄像头因光照误差估计走了 0.9 米。该信哪个？</p>
+    <p><strong>答案：</strong>不能只信一个。应根据模型和测量的不确定性加权——</p>
+    <ul>
+      <li>轮速计误差大 → 少信运动模型</li>
+      <li>视觉误差大 → 少信摄像头</li>
+      <li>两者都有用 → 融合它们（Kalman Filter 的思想！）</li>
+    </ul>
+  </section>
+
+  <section id="security" class="section-card">
+    <h2>5. 方向三：系统安全与隐私</h2>
+    <p>如果传感器被攻击，测量不仅仅是"有随机噪声"，还可能被<strong>恶意篡改</strong>。</p>
+
+    <div class="callout">
+      <p><strong>🔐 安全状态估计要回答：</strong></p>
+      <ul>
+        <li>哪些测量可信？</li>
+        <li>系统真实状态还能恢复吗？</li>
+        <li>能不能在保护隐私的同时完成估计？</li>
+      </ul>
+    </div>
+
+    <p>这已经不是纯数学问题了——还涉及博弈论、信息论。但从数学基础上说，它和标准 KF 共享同一套状态空间模型，区别在于噪声假设不同。</p>
+  </section>
+
+  <section id="nonlinear" class="section-card">
+    <h2>6. 方向四：非线性系统与鲁棒估计</h2>
+    <p>标准 Kalman Filter 假设：</p>
+    <ul>
+      <li>系统线性</li>
+      <li>噪声高斯</li>
+      <li>状态是普通向量</li>
+    </ul>
+    <p>但真实世界不是这样的：</p>
+    <div class="grid-2">
+      <div class="mini-card">姿态是旋转（李群），不是普通向量加减</div>
+      <div class="mini-card">噪声可能有离群点</div>
+      <div class="mini-card">传感器可能被攻击</div>
+      <div class="mini-card">模型可能非线性</div>
+    </div>
+    <p>所以后续会有扩展方向：鲁棒滤波、非线性状态估计、李群上的状态估计、变分滤波、平滑 Smoothing。</p>
+  </section>
+
+  <section id="roadmap" class="section-card">
+    <h2>7. 为什么学 KF：从主线看全局</h2>
+    <div class="callout">
+      <p>这套课的核心链条：</p>
+      <div class="flow-formula">
+        $$ \text{真实状态} \;\rightarrow\; \text{带噪声测量} \;\rightarrow\; \text{估计状态} $$
+      </div>
+    </div>
+
+    <p>工具会一步步登场：</p>
+    <table>
+      <tr><th>工具</th><th>要解决的问题</th></tr>
+      <tr><td>线性代数（L1-L2）</td><td>描述系统、协方差、特征分解</td></tr>
+      <tr><td>概率统计（L5-L6）</td><td>描述噪声和不确定性</td></tr>
+      <tr><td>最小二乘（L8-L9）</td><td>处理没有精确解的数据</td></tr>
+      <tr><td>投影定理（L10-L13）</td><td>最优估计的几何本质</td></tr>
+      <tr><td>LMMSE（L10-L12）</td><td>线性估计器中找最优</td></tr>
+      <tr><td>Kalman Filter (L14+)</td><td>把 LMMSE 递归化、在线化</td></tr>
+    </table>
+
+    <div class="callout" style="border-left-color: var(--accent-light);">
+      <p><strong>📌 一句话总结本讲：</strong>Kalman Filter 不是孤立数学技巧，而是现代工程问题的共同底层语言。只要遇到"真实状态看不准，只能通过噪声数据推断"，就会遇到估计。</p>
+    </div>
+  </section>
+
+  <section id="exercise" class="section-card">
+    <div class="exercise-box">
+      <h3>📝 课后练习</h3>
+      <ol>
+        <li>
+          <p><strong>【思考】</strong>为什么海关检测项目也可以看作"估计问题"？它估计的是什么状态？</p>
+          <details class="exercise-answer">
+            <summary>查看提示</summary>
+            <div class="content">
+              <p>真实状态是"商品是否含违禁物"（0 或 1 变量），测量是文本描述+成分表。文本分析给出一个置信度，帮助判断。</p>
+            </div>
+          </details>
+        </li>
+        <li>
+          <p><strong>【思考】</strong>SLAM 中机器人要估计哪些状态？</p>
+          <details class="exercise-answer">
+            <summary>查看提示</summary>
+            <div class="content">
+              <p>至少包括：机器人自身的位置/姿态、环境地图中每个特征点的位置。随着运动，这些状态不断更新。</p>
+            </div>
+          </details>
+        </li>
+        <li>
+          <p><strong>【开放题】</strong>画出你所在领域的一个"状态估计问题"——识别出 $x$（真实状态）、$y$（测量）、$v$（噪声/不确定性）。</p>
+          <details class="exercise-answer">
+            <summary>参考格式</summary>
+            <div class="content">
+              <p>例（自动驾驶领域）：$x$ = 前方车辆的速度和位置；$y$ = 雷达和摄像头回波；$v$ = 传感器噪声+遮挡不确定性。</p>
+            </div>
+          </details>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section-card">
+    <h2>📌 小结</h2>
+    <div class="summary-grid">
+      <div class="mini-card">
+        <h4>🧭 统一问题</h4>
+        <p>从噪声测量中推断真实状态——这是全系列的共同主题</p>
+      </div>
+      <div class="mini-card">
+        <h4>🗺️ 方向地图</h4>
+        <p>海关检测、SLAM、安全、外骨骼、隐私——全可建模为估计问题</p>
+      </div>
+      <div class="mini-card">
+        <h4>📐 工具路径</h4>
+        <p>线性代数 → 概率论 → 最小二乘 → 投影 → LMMSE → KF</p>
+      </div>
+    </div>
+    <div class="callout" style="border-left-color: var(--accent-light);margin-top:16px;">
+      <p><strong>👉 下一节：</strong>0002 学术规范与职业习惯——在动手做研究之前，先建立正确的科研习惯。</p>
+    </div>
+  </section>
+
+  <div class="nav-links">
+    <a href="0000-图像算法安防应用.html">← 上一节：图像算法安防应用</a>
+    <a href="0002-学术规范职业习惯.html" class="next">下一节：学术规范与职业习惯 →</a>
+    <a href="../index.html" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+  </div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 1 · 研究共同体与方向地图</p>
+    <p>字幕来源：<code>subtitles/20251101_施凌_研讨会系列1_audio_2d2d506557e863f2.srt</code></p>
+    <p>课程笔记：<code>course-notes/01-研讨会系列1：研究共同体与方向地图.md</code></p>
+  </div>
 
 </div>
 </body>

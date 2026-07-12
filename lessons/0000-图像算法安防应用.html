@@ -11,7 +11,7 @@
 <script>
 window.MathJax = {
   tex: {
-    inlineMath: [['$', '$'], ['\\\(', '\\\)']],
+    inlineMath: [['$', '$'], ['\\\\(', '\\\\)']],
     displayMath: [['$$', '$$'], ['\\[', '\\]']]
   },
   svg: { fontCache: 'global' }
@@ -22,69 +22,284 @@ window.MathJax = {
 <body>
 <div class="page">
 
-  <div class="hero">
-    <div class="eyebrow">特邀分享 · 杨熙丞</div>
+  <header class="hero">
+    <div class="eyebrow">特邀分享 · 业界实战</div>
     <h1>图像算法在安防行业的应用</h1>
-    <p class="subtitle">特邀杨熙丞分享图像算法在安防行业中的实际应用案例与技术经验</p>
+    <p class="subtitle">从大华荧光相机到宇视科技——一个图像算法工程师的行业落地思考</p>
     <div class="hero-meta">
       <span>📅 2025-10-25</span>
-      <span>🧩 图像算法</span>
-      <span>🎯 安防应用</span>
-      <span>👤 杨熙丞</span>
+      <span>⏱ ~30 分钟</span>
+      <span>📊 初级</span>
+      <span>🎯 特邀 · 杨熙丞</span>
+    </div>
+  </header>
+
+  <div class="lead-grid">
+    <div class="callout">
+      <h4>🎯 学完本节，你应能</h4>
+      <ul>
+        <li>理解安防行业图像算法落地的完整流程</li>
+        <li>区分"论文算法"和"工程落地算法"的核心差异</li>
+        <li>了解安防行业的各类岗位分工</li>
+        <li>建立从学术到工业的产品化思维</li>
+      </ul>
+    </div>
+    <div class="callout">
+      <h4>📖 前置知识</h4>
+      <p>无特殊要求。本文所有内容都源自一线工程经验，0 基础可理解。</p>
+      <p style="margin-top:8px;font-size:0.9rem;color:var(--text-secondary);">💡 本课程是全系列的热身第一节，与后续 KF 数学无关，重在建立"行业认知"。</p>
     </div>
   </div>
 
-  <main>
-    
-  <section class="section-card">
-    <h2>课程概览</h2>
-    <p>以下内容基于课堂实录整理：</p><blockquote style='background:var(--bg-subtle);padding:1rem;border-left:3px solid var(--accent);'>那这样大家能看得见吗？
-可以的，全屏的。
-哦，好，嗯。
-呃，那您，您老师好，然后那个各位同学好，然后也很感谢您，您老师能邀请我这个给大家做一个简单的讲座，分享一下。
-然后，嗯，我叫杨希成，然后我现在在这个宇视科技担任这个图像算法工程师。
-然后，嗯，可能大家就是不是这个领域的，呃，也可能是这个领域的，这个我不太清楚啊。
-但是主要其实这个就是，呃，是这样的。
-然后呢，就是说到这个，其实很多就是我这个项目呢，是有，之前可能比如说没有算法，就是，几家，厂家都是没有这些算法的时候，那接下来呢，就是开发一些算法，然后去使用到这个产品中，它其实也算一个子项目。
-那接下来就是，反正这几个问题呢，那我后面也列了一下，呃，比如说，呃，针对这几个问题可能的一些方案，那比如说这个图像效果，呃，图像，夜观，曝光不足，图像噪声大的时候，呃，那首先呢，就是传统呢，肯定就是调整一些SP图像参数，比如说调高一些曝光时间，呃，调高一些增益，这样子，嗯，来解决这个事儿。
-呃，那刚才还说到一些这种车牌增强的一些算法，包括车窗去惨的算法，它们其实是一类。
-呃，这一类呢，就是，呃，它可以算作这种图像翻译这种领域，包括这种图像上色的领域，跟这一类就比较像。
-那它的难点是什么呢？
-就是完全是没有这个成对数据的。
-就是因为是，你是没有办法去收集到这种车牌效果好跟效果不好同时存在的这种图片，车窗去惨，这个惨跟前跟惨后的图片也是收集不到的。
-这种是第一个难点。</blockquote>
+  <nav class="toc">
+    <h3>📖 本讲目录</h3>
+    <ul>
+      <li><a href="#intro">1. 主讲人介绍</a></li>
+      <li><a href="#fluorescent">2. 案例一：大华荧光抓拍相机</a></li>
+      <li><a href="#window">3. 车窗增强系统架构</a></li>
+      <li><a href="#algorithm">4. 算法开发 = 论文→部署全流程</a></li>
+      <li><a href="#other">5. 激光相机、红绿灯涂色等案例</a></li>
+      <li><a href="#roles">6. 安防行业岗位分工</a></li>
+      <li><a href="#school-vs-company">7. 学校 vs 公司：算法工程师的差异</a></li>
+      <li><a href="#advice">8. 校招建议与技能树</a></li>
+      <li><a href="#exercise">9. 课后思考</a></li>
+    </ul>
+  </nav>
+
+  <section id="intro" class="section-card">
+    <h2>1. 主讲人介绍</h2>
+    <p><strong>杨熙丞</strong>，图像算法工程师。本科和硕士毕业于浙江工业大学，先后就职于大华科技（图像算法工程师）和宇视科技（图像算法工程师），在安防行业深耕多年。</p>
+    <p>主要工作内容：安防摄像头上的图像算法设计、嵌入式算法部署、画质增强相关业务。</p>
   </section>
 
-  <section class="section-card">
-    <h2>内容提要</h2>
-    <p>本课程内容基于课堂实录整理。建议配合视频学习。</p>
-  </section>
+  <section id="fluorescent" class="section-card">
+    <h2>2. 案例一：大华荧光抓拍相机</h2>
+    <p>抓拍相机就是我们开车经过路口时"闪一下"的那个设备——它抓拍车辆及车内图像作为交通执法的依据。</p>
 
-  <section class="section-card">
-    <h2>练习与思考</h2>
-    
-        <div class="exercise-box">
-          <ol>
-            <li><details class="exercise-answer"><summary>回顾本节课的核心概念，你能用自己的话复述吗？</summary><div>尝试关闭视频，凭记忆把本节课讲的主要思路写下来。</div></details></li>
-            <li><details class="exercise-answer"><summary>板书中的关键公式，你能独立推导一遍吗？</summary><div>建议手推一遍，不要直接看板书。</div></details></li>
-          </ol>
-        </div>
-        
-  </section>
+    <h3>行业背景</h3>
+    <ul>
+      <li><strong>过去</strong>：闪光灯强度很大（上千 lux），拍得清楚但晃眼</li>
+      <li><strong>现在</strong>：交规要求闪光灯强度不能超标，补光越来越弱</li>
+      <li><strong>挑战</strong>：低照度下既要看清车内人脸、车牌，又不能过曝</li>
+    </ul>
 
-  </main>
+    <h3>荧光相机的核心技术：AI-ISP</h3>
+    <p>用 AI 技术赋能 ISP（Image Signal Processor，图像信号处理器），在极低照度（80 lux）下实现清晰抓拍。大华将其包装为"银质暗光引擎技术"。</p>
 
-  <footer class="section-card" style="margin-top:2rem;text-align:center;">
-    <div class="nav-links">
-      <a class="disabled" href="#">← 首节</a>
-      <a href="0001-研究共同体方向地图.html" class="next">下节 →</a>
-      <a href="../index.html" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
-      
+    <div class="callout">
+      <p><strong>💡 业界宣传 vs 技术本质：</strong></p>
+      <ul>
+        <li>宣传：AI-ISP 算法、机器学习降噪、暗光模型、神经网络压缩至嵌入式芯片</li>
+        <li>本质：一个完整的画质增强 pipeline，含暗光增强、降噪、人脸恢复等多个模块</li>
+      </ul>
     </div>
-    <p class="foot-note" style="margin-top:1.5rem;color:var(--text-light);font-size:0.85rem;">
-      内容基于施凌老师课堂录制整理，结合 SRT 字幕与板书笔记生成。
-    </p>
-  </footer>
+  </section>
+
+  <section id="window" class="section-card">
+    <h2>3. 车窗增强系统架构</h2>
+    <p>这是杨工详细展开的核心算法案例——一个典型的工业级图像算法系统。</p>
+
+    <h3>输入问题</h3>
+    <div class="grid-2">
+      <div class="mini-card" style="border:2px solid #e74c3c;">
+        <h4>❌ 原始问题</h4>
+        <ul>
+          <li>夜晚车窗内看不清人像</li>
+          <li>图像噪点大</li>
+          <li>白天车窗彩虹膜</li>
+          <li>车牌过曝</li>
+        </ul>
+      </div>
+      <div class="mini-card" style="border:2px solid #22c55e;">
+        <h4>✅ 系统解决</h4>
+        <ul>
+          <li>多路 ISP + 针对性参数</li>
+          <li>深度学习增强模型</li>
+          <li>人脸检测 + 人脸恢复</li>
+          <li>仿射变换 + 图像回贴</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>算法流程</h3>
+    <ol>
+      <li><strong>车窗角点检测</strong>：获取车窗四边形的四个角点，确定 ROI</li>
+      <li><strong>人脸检测 + 关键点</strong>：检测人脸位置和眼睛/鼻子/嘴巴关键点</li>
+      <li><strong>仿射变换</strong>：将歪头/扭头的人脸矫正到标准位置</li>
+      <li><strong>人脸恢复</strong>：重点处理人脸区域（客户最关注的部分）</li>
+      <li><strong>全图降噪</strong>：车窗其他区域做降噪处理</li>
+      <li><strong>回贴</strong>：将处理后的车窗区域贴回到原始抓拍大图</li>
+    </ol>
+
+    <h3>三个核心难点</h3>
+    <table>
+      <tr><th>难点</th><th>解决思路</th></tr>
+      <tr>
+        <td>成对数据难以收集</td>
+        <td>合成噪声（高斯噪声/ELD 噪声模型）、大模型蒸馏、闪光灯/非闪光灯同时拍摄</td>
+      </tr>
+      <tr>
+        <td>嵌入式 NPU 算力有限</td>
+        <td>只能用卷积类简单结构（单帧 200-300ms），复杂算子/大模型无法部署</td>
+      </tr>
+      <tr>
+        <td>无成对数据的图像翻译任务（车牌/彩虹膜）</td>
+        <td>CycleGAN + 注意力机制，保证背景一致性的前提下转换前景</td>
+      </tr>
+    </table>
+  </section>
+
+  <section id="algorithm" class="section-card">
+    <h2>4. 算法开发 = 论文→部署全流程</h2>
+    <p>杨工详细拆解了工业界算法落地的完整流程：</p>
+
+    <div class="callout">
+      <p><strong>完整链路：</strong>需求评估 → 算法调研 → 数据收集 → 仿真验证 → 评审 → 算法部署 → 接口联调 → 测试验收 → 现场运维</p>
+    </div>
+
+    <ol>
+      <li><strong>需求评估</strong>：和领导一起评估可行性、落地产品范围、开发周期、风险点</li>
+      <li><strong>算法调研</strong>：看论文、开源方法、做 baseline（跟学校里很像）</li>
+      <li><strong>数据收集</strong>：测试点位自动采集 + 建立测试集</li>
+      <li><strong>仿真验证</strong>：用 Python/Matlab 跑初始效果</li>
+      <li><strong>评审</strong>：给领导和项目经理看效果，认可后才推进</li>
+      <li><strong>算法部署</strong>：Python → C++，PyTorch → ONNX → 各家 NPU 工具链量化</li>
+      <li><strong>接口联调</strong>：与应用层同事制定接口规范</li>
+      <li><strong>测试 + 现场支持</strong>：测试验收，技术支持反馈现场问题</li>
+    </ol>
+
+    <div class="callout" style="border-left-color: var(--accent-light);">
+      <p><strong>💡 与学校的核心差异：</strong>学校从模型到论文只要效果好就行；公司里从需求到部署再到运维，每个环节都不可或缺。耗时、算力、Corner Case 处理比论文指标更重要。</p>
+    </div>
+  </section>
+
+  <section id="other" class="section-card">
+    <h2>5. 更多案例</h2>
+
+    <h3>激光相机：近红外 + 可见光融合</h3>
+    <p>采用分光棱镜将一束光分为两路：一路近红外（夜晚效果好但无颜色），一路可见光（有颜色但有噪声），两路 ISP 处理后融合。同样技术也用在医疗内窥镜（荧光内窥镜）领域。</p>
+
+    <h3>交通灯涂色算法</h3>
+    <p>夜晚红灯因过曝拍出来是黄色，需要算法"涂红"。流程：粗定位 → YOLO 检测 → 二次确认（区分红/黄）→ 涂色。看起来简单但全国各点位泛化很难。</p>
+  </section>
+
+  <section id="roles" class="section-card">
+    <h2>6. 安防行业岗位分工</h2>
+    <table>
+      <tr><th>岗位</th><th>职责</th></tr>
+      <tr><td>项目经理</td><td>统筹协调整个项目</td></tr>
+      <tr><td>应用软件工程师</td><td>开发上层业务功能</td></tr>
+      <tr><td>系统软件工程师</td><td>底层 Linux 驱动、系统配置</td></tr>
+      <tr><td>图像调试工程师</td><td>3A 策略、ISP 参数调试（几百个参数）</td></tr>
+      <tr><td>图像算法工程师</td><td>开发特定领域图像算法</td></tr>
+      <tr><td>测试工程师</td><td>质量把关</td></tr>
+      <tr><td>技术支持工程师</td><td>现场问题处理与反馈</td></tr>
+    </tr></table>
+  </section>
+
+  <section id="school-vs-company" class="section-card">
+    <h2>7. 学校 vs 公司：算法工程师的差异</h2>
+    <table>
+      <tr><th>维度</th><th>学校（论文）</th><th>公司（产品）</th></tr>
+      <tr><td>核心指标</td><td>PSNR/SSIM 等客观指标</td><td>客户满意、领导认可</td></tr>
+      <tr><td>算法耗时</td><td>一般不在意</td><td>极为重要（多算法抢 NPU 资源）</td></tr>
+      <tr><td>Corner Case</td><td>不太关注</td><td>占 80% 时间（难处理的数据）</td></tr>
+      <tr><td>评判标准</td><td>论文指标提升</td><td>客户不投诉、领导点头</td></tr>
+      <tr><td>代码实现</td><td>Python/Matlab 仿真即可</td><td>C++ 嵌入式部署、模型量化</td></tr>
+      <tr><td>开发周期</td><td>按论文节奏</td><td>按项目里程碑、Sprint</td></tr>
+    </table>
+
+    <div class="callout">
+      <p><strong>📌 Corner Case 的重要性：</strong>"大部分时间其实都在花在这个上面。简单场景很容易就达到了，但重点是要处理那些很难的地方。"——杨熙丞</p>
+    </div>
+  </section>
+
+  <section id="advice" class="section-card">
+    <h2>8. 校招建议与技能树</h2>
+    <div class="callout">
+      <p><strong>杨工的校招建议：</strong></p>
+      <ol>
+        <li>把科研尽量做好，发表优秀论文是最好敲门砖</li>
+        <li>大模型技术一定要懂原理——不管做算法还是开发都受用</li>
+        <li>明确自身规划（工作/深造）</li>
+        <li>掌握通用技能：Git 版本管理、文档能力、代码质量</li>
+      </ol>
+    </div>
+
+    <h3>以海康图像算法岗位为例</h3>
+    <table>
+      <tr><th>岗位要求</th><th>对应技能</th></tr>
+      <tr><td>C/C++</td><td>算法部署</td></tr>
+      <tr><td>Python</td><td>算法仿真</td></tr>
+      <tr><td>图像算法</td><td>论文检索、文献阅读</td></tr>
+      <tr><td>深度学习</td><td>相关项目经验</td></tr>
+      <tr><td>视频处理</td><td>增强/复原/拼接/融合</td></tr>
+    </table>
+  </section>
+
+  <section id="exercise" class="section-card">
+    <div class="exercise-box">
+      <h3>📝 课后思考</h3>
+      <ol>
+        <li>
+          <p><strong>【业务理解】</strong>为什么低照度下车牌容易过曝，而车内人脸却看不清？如果两种区域需要不同的曝光参数，如何在一张照片上同时兼顾？</p>
+          <details class="exercise-answer">
+            <summary>参考思路</summary>
+            <div class="content">
+              <p>车牌反光率高，补光时容易过曝；车内光线弱，需要更多曝光。解决思路：多路 ISP 对不同 ROI 使用不同参数，或后期用 HDR/多帧融合技术。</p>
+            </div>
+          </details>
+        </li>
+        <li>
+          <p><strong>【工程思维】</strong>论文中提升算法指标（如 PSNR +0.5dB）和公司中解决 Corner Case，哪个在实际产品中更重要？为什么？</p>
+          <details class="exercise-answer">
+            <summary>参考答案</summary>
+            <div class="content">
+              <p>在公司中解决 Corner Case 更重要。因为主流场景大部分算法都能做好，但一个没处理好的极端 case 可能导致客户投诉甚至法律问题。指标提升 0.5dB 在用户感知上几乎无差别。</p>
+            </div>
+          </details>
+        </li>
+        <li>
+          <p><strong>【流程理解】</strong>一个算法从论文到产品，需要经过哪些环节？哪个环节最容易被低估？</p>
+          <details class="exercise-answer">
+            <summary>参考答案</summary>
+            <div class="content">
+              <p>需求→调研→数据→仿真→评审→部署→联调→测试→运维。部署环节最容易被低估——模型量化带来的精度损失、算子不支持、NPU 算力限制等，都可能导致算法无法落地。</p>
+            </div>
+          </details>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section-card">
+    <h2>📌 小结</h2>
+    <div class="summary-grid">
+      <div class="mini-card">
+        <h4>📷 核心业务</h4>
+        <p>荧光抓拍、车窗增强、车牌/彩虹膜处理、红绿灯涂色——都是日常安防场景</p>
+      </div>
+      <div class="mini-card">
+        <h4>🏭 工程差异</h4>
+        <p>论文指标 ≠ 产品效果。耗时、算力、Corner Case 才是产品重点</p>
+      </div>
+      <div class="mini-card">
+        <h4>🚀 下节预告</h4>
+        <p>0001 研究共同体与方向地图——从"行业认知"进入"学术研究"的全局导航</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="nav-links">
+    <a href="#" class="disabled">← 上一节</a>
+    <a href="0001-研究共同体方向地图.html" class="next">下一节：研究共同体与方向地图 →</a>
+    <a href="../index.html" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+  </div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 特邀分享 · 杨熙丞：图像算法在安防行业的应用</p>
+    <p>字幕来源：<code>subtitles/20251025_杨熙丞_图像算法安防应用.srt</code></p>
+  </div>
 
 </div>
 </body>

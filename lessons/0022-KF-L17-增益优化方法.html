@@ -122,7 +122,7 @@ lead-grid">
 
     <div class="formula-box">
       \$$
-      \\hat x_{k+1} = A \\hat x_k + K_{k+1} (y_{k+1} - C A \\hat x_k)
+      $\\hat x_{k+1} = A \\hat x_k + K_{k+1} (y_{k+1} - C A \\hat x_k)$
       \$$
     </div>
 
@@ -132,7 +132,7 @@ lead-grid">
 
     <div class="formula-box">
       \$$
-      \\boxed{\\text{Find } K_{k+1} \\text{ s.t. } P_{k+1} = E[(x_{k+1} - \\hat x_{k+1})(x_{k+1} - \\hat x_{k+1})'] \\text{ is minimized}}
+      $\\boxed{\\text{Find } K_{k+1} \\text{ s.t. } P_{k+1} = E[(x_{k+1} - \\hat x_{k+1})(x_{k+1} - \\hat x_{k+1})'] \\text{ is minimized}}$
       \$$
     </div>
 
@@ -148,9 +148,9 @@ lead-grid">
     <div class="formula-box">
       \$$
       \\begin{aligned}
-      \\tilde x_{k+1|k} &= x_{k+1} - A \\hat x_k \\\\\\\\
-      &= (A x_k + w_k) - A \\hat x_k \\\\\\\\
-      &= A \\tilde x_k + w_k
+      $\\tilde x_{k+1|k} &= x_{k+1} - A \\hat x_k \\\\\\\\$
+      $&= (A x_k + w_k) - A \\hat x_k \\\\\\\\$
+      $&= A \\tilde x_k + w_k$
       \\end{aligned}
       \$$
     </div>
@@ -160,9 +160,9 @@ lead-grid">
     <div class="formula-box">
       \$$
       \\begin{aligned}
-      \\tilde x_{k+1} &= x_{k+1} - \\hat x_{k+1} \\\\\\\\
-      &= x_{k+1} - [A \\hat x_k + K_{k+1} (y_{k+1} - C A \\hat x_k)] \\\\\\\\
-      &= \\tilde x_{k+1|k} - K_{k+1} (C \\tilde x_{k+1|k} + v_{k+1})
+      $\\tilde x_{k+1} &= x_{k+1} - \\hat x_{k+1} \\\\\\\\$
+      $&= x_{k+1} - [A \\hat x_k + K_{k+1} (y_{k+1} - C A \\hat x_k)] \\\\\\\\$
+      $&= \\tilde x_{k+1|k} - K_{k+1} (C \\tilde x_{k+1|k} + v_{k+1})$
       \\end{aligned}
       \$$
     </div>
@@ -171,7 +171,7 @@ lead-grid">
     <div class="formula-box">
       \$$
       \\begin{aligned}
-      P_{k+1}(K_{k+1}) &= E[\\tilde x_{k+1} \\tilde x_{k+1}'] \\\\\\\\
+      $P_{k+1}(K_{k+1}) &= E[\\tilde x_{k+1} \\tilde x_{k+1}'] \\\\\\\\$
       &= (I - K_{k+1} C) P_{k+1|k} (I - K_{k+1} C)' + K_{k+1} R K_{k+1}'
       \\end{aligned}
       \$$

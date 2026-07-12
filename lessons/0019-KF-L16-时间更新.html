@@ -91,7 +91,7 @@ lead-grid">
       <div class="mini-card" style="border-left: 4px solid #3b82f6;">
         <h4>⏱ Time Update（预测步）</h4>
         \$$
-        \\hat x_{k+1|k} = A \\hat x_{k|k}
+        $\\hat x_{k+1|k} = A \\hat x_{k|k}$
         \$$
         \$$
         P_{k+1|k} = A P_{k|k} A' + Q
@@ -100,13 +100,13 @@ lead-grid">
       <div class="mini-card" style="border-left: 4px solid var(--accent);">
         <h4>📏 Measurement Update（更新步）</h4>
         \$$
-        e_k = y_k - C \\hat x_{k|k-1}
+        $e_k = y_k - C \\hat x_{k|k-1}$
         \$$
         \$$
         K_k = P_{k|k-1} C' [C P_{k|k-1} C' + R]^{-1}
         \$$
         \$$
-        \\hat x_{k|k} = \\hat x_{k|k-1} + K_k e_k
+        $\\hat x_{k|k} = \\hat x_{k|k-1} + K_k e_k$
         \$$
         \$$
         P_{k|k} = P_{k|k-1} - K_k C P_{k|k-1}
@@ -125,7 +125,7 @@ lead-grid">
 
     <div class="formula-box">
       \$$
-      \\boxed{\\hat x_{k+1|k} = A \\hat x_{k|k}}
+      $\\boxed{\\hat x_{k+1|k} = A \\hat x_{k|k}}$
       \\qquad
       \\boxed{P_{k+1|k} = A P_{k|k} A' + Q}
       \$$
@@ -137,11 +137,11 @@ lead-grid">
     <div class="formula-box">
       \$$
       \\begin{aligned}
-      \\hat x_{k+1|k} &= \\text{proj}\\{x_{k+1} \\mid \\mathcal{L}_k\\} \\\\\\\\
-      &= \\text{proj}\\{A x_k + w_k \\mid \\mathcal{L}_k\\} \\\\\\\\
-      &= \\text{proj}\\{A x_k \\mid \\mathcal{L}_k\\} + \\text{proj}\\{w_k \\mid \\mathcal{L}_k\\} \\\\\\\\
-      &= A \\cdot \\text{proj}\\{x_k \\mid \\mathcal{L}_k\\} + 0 \\\\\\\\
-      &= A \\hat x_{k|k}
+      $\\hat x_{k+1|k} &= \\text{proj}\\{x_{k+1} \\mid \\mathcal{L}_k\\} \\\\\\\\$
+      $&= \\text{proj}\\{A x_k + w_k \\mid \\mathcal{L}_k\\} \\\\\\\\$
+      $&= \\text{proj}\\{A x_k \\mid \\mathcal{L}_k\\} + \\text{proj}\\{w_k \\mid \\mathcal{L}_k\\} \\\\\\\\$
+      $&= A \\cdot \\text{proj}\\{x_k \\mid \\mathcal{L}_k\\} + 0 \\\\\\\\$
+      $&= A \\hat x_{k|k}$
       \\end{aligned}
       \$$
     </div>
@@ -153,9 +153,9 @@ lead-grid">
     <div class="formula-box">
       \$$
       \\begin{aligned}
-      \\tilde x_{k+1|k} &= x_{k+1} - \\hat x_{k+1|k} \\\\\\\\
-      &= (A x_k + w_k) - A \\hat x_{k|k} \\\\\\\\
-      &= A \\tilde x_{k|k} + w_k
+      $\\tilde x_{k+1|k} &= x_{k+1} - \\hat x_{k+1|k} \\\\\\\\$
+      $&= (A x_k + w_k) - A \\hat x_{k|k} \\\\\\\\$
+      $&= A \\tilde x_{k|k} + w_k$
       \\end{aligned}
       \$$
     </div>
@@ -164,10 +164,10 @@ lead-grid">
     <div class="formula-box">
       \$$
       \\begin{aligned}
-      P_{k+1|k} &= \\langle \\tilde x_{k+1|k},\\; \\tilde x_{k+1|k} \\rangle \\\\\\\\
-      &= \\langle A \\tilde x_{k|k} + w_k,\\; A \\tilde x_{k|k} + w_k \\rangle \\\\\\\\
-      &= A \\underbrace{\\langle \\tilde x_{k|k}, \\tilde x_{k|k} \\rangle}_{P_{k|k}} A' + \\underbrace{\\langle w_k, w_k \\rangle}_{Q} \\\\\\\\
-      &\\quad + \\underbrace{A \\langle \\tilde x_{k|k}, w_k \\rangle}_{=0} + \\underbrace{\\langle w_k, \\tilde x_{k|k} \\rangle A'}_{=0} \\\\\\\\
+      $P_{k+1|k} &= \\langle \\tilde x_{k+1|k},\\; \\tilde x_{k+1|k} \\rangle \\\\\\\\$
+      $&= \\langle A \\tilde x_{k|k} + w_k,\\; A \\tilde x_{k|k} + w_k \\rangle \\\\\\\\$
+      $&= A \\underbrace{\\langle \\tilde x_{k|k}, \\tilde x_{k|k} \\rangle}_{P_{k|k}} A' + \\underbrace{\\langle w_k, w_k \\rangle}_{Q} \\\\\\\\$
+      $&\\quad + \\underbrace{A \\langle \\tilde x_{k|k}, w_k \\rangle}_{=0} + \\underbrace{\\langle w_k, \\tilde x_{k|k} \\rangle A'}_{=0} \\\\\\\\$
       &= A P_{k|k} A' + Q
       \\end{aligned}
       \$$
@@ -218,7 +218,7 @@ lead-grid">
     <div class="formula-box">
       \$$
       \\begin{aligned}
-      \\hat x_{k|k-1} &= A \\hat x_{k-1|k-1} \\\\\\\\
+      $\\hat x_{k|k-1} &= A \\hat x_{k-1|k-1} \\\\\\\\$
       P_{k|k-1} &= A P_{k-1|k-1} A' + Q
       \\end{aligned}
       \$$
@@ -229,7 +229,7 @@ lead-grid">
       \$$
       \\begin{aligned}
       K_k &= P_{k|k-1} C' [C P_{k|k-1} C' + R]^{-1} \\\\\\\\
-      \\hat x_{k|k} &= \\hat x_{k|k-1} + K_k (y_k - C \\hat x_{k|k-1}) \\\\\\\\
+      $\\hat x_{k|k} &= \\hat x_{k|k-1} + K_k (y_k - C \\hat x_{k|k-1}) \\\\\\\\$
       P_{k|k} &= P_{k|k-1} - K_k C P_{k|k-1}
       \\end{aligned}
       \$$
@@ -250,9 +250,9 @@ lead-grid">
     <div class="formula-box">
       \$$
       \\begin{aligned}
-      P_{k|k-1} &\\;\\text{only depends on}\\; P_{k-1|k-1} \\\\\\\\
-      K_k &\\;\\text{only depends on}\\; P_{k|k-1} \\\\\\\\
-      P_{k|k} &\\;\\text{only depends on}\\; P_{k|k-1} \\\\\\\\
+      $P_{k|k-1} &\\;\\text{only depends on}\\; P_{k-1|k-1} \\\\\\\\$
+      $K_k &\\;\\text{only depends on}\\; P_{k|k-1} \\\\\\\\$
+      $P_{k|k} &\\;\\text{only depends on}\\; P_{k|k-1} \\\\\\\\$
       \\end{aligned}
       \$$
     </div>
@@ -290,14 +290,14 @@ lead-grid">
       <div class="mini-card">
         <h4>📌 可观性（Observability）</h4>
         \$$
-        (A, C)\\; \\text{observable}
+        $(A, C)\\; \\text{observable}$
         \$$
         <p style="font-size:0.85rem">系统的所有模态都能通过测量被观测到。如果某个模态不可观，它的不确定性永远不会降低。</p>
       </div>
       <div class="mini-card">
         <h4>📌 能控性（Controllability）</h4>
         \$$
-        (A, \\sqrt{Q})\\; \\text{controllable}
+        $(A, \\sqrt{Q})\\; \\text{controllable}$
         \$$
         <p style="font-size:0.85rem">过程噪声能激励系统的所有模态。如果某个模态不受噪声驱动，它的不确定性就是"冻结"的。</p>
       </div>
@@ -308,7 +308,7 @@ lead-grid">
 
     <div class="formula-box">
       \$$
-      \\hat x_{k+1|k} = A \\hat x_{k|k-1} + K^* [y_k - C \\hat x_{k|k-1}]
+      $\\hat x_{k+1|k} = A \\hat x_{k|k-1} + K^* [y_k - C \\hat x_{k|k-1}]$
       \$$
     </div>
 

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KF L2（上）：矩阵求逆引理 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/shiclass.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\\\(', '\\\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']]
+  },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <div class="eyebrow">研讨会系列 5 · Kalman Filter L2（上）</div>
+    <h1>矩阵求逆引理（MIL）</h1>
+    <p class="subtitle">一个大矩阵求逆 = 一个小矩阵求逆 + 几步矩阵乘法——MIL 是 Kalman Gain 计算效率的关键一手。</p>
+    <div class="hero-meta">
+      <span>📅 2025-11-29</span>
+      <span>⏱ ~40 分钟</span>
+      <span>📊 中高级</span>
+      <span>🎯 KF 数学工具</span>
+    </div>
+  </header>
+
+  <div class="lead-grid">
+    <div class="callout">
+      <h4>🎯 学完本节，你应能</h4>
+      <ul>
+        <li>写出矩阵求逆引理的标准形式</li>
+        <li>理解每一步推导的代数变换</li>
+        <li>用几何直觉解释"大求逆变小小求逆"</li>
+        <li>预判它在 Kalman Filter 中的角色</li>
+      </ul>
+    </div>
+    <div class="callout">
+      <h4>📖 前置知识</h4>
+      <ul>
+        <li>矩阵乘法与逆矩阵基本操作</li>
+        <li>KF L1 特征值与 SVD（0004）</li>
+        <li>熟悉 $(I+P)^{-1}$ 的展开式</li>
+      </ul>
+      <p style="margin-top:8px;font-size:0.9rem;color:var(--text-secondary);">💡 本讲是 0005 第 1 节，下一节讲状态空间与协方差。</p>
+    </div>
+  </div>
+
+  <nav class="toc">
+    <h3>📖 本讲目录</h3>
+    <ul>
+      <li><a href="#motivation">1. 为什么要学矩阵求逆引理</a></li>
+      <li><a href="#formula">2. 标准形式</a></li>
+      <li><a href="#identity-lemma">3. 两个预备恒等式</a></li>
+      <li><a href="#proof">4. 完整推导（三层阅读）</a></li>
+      <li><a href="#intuition">5. 几何直觉</a></li>
+      <li><a href="#special">6. 常用特例</a></li>
+      <li><a href="#kf-preview">7. 在 KF 中的用途预告</a></li>
+      <li><a href="#exercise">8. 课后练习</a></li>
+    </ul>
+  </nav>
+
+  <section id="motivation" class="section-card">
+    <h2>1. 为什么要学矩阵求逆引理</h2>
+    <div class="callout">
+      <p><strong>❓ 问题：</strong>在 Kalman Filter 中，我们要实时更新 $P_{k|k-1}$（先验协方差），然后计算 Kalman Gain：</p>
+      <div class="formula-box">
+        $$ K = P_{k|k-1} H^T (H P_{k|k-1} H^T + R)^{-1} $$
+      </div>
+      <p>这个逆矩阵的维度等于<strong>测量维度</strong> $m$。如果 $m$ 很大（比如 GPS 有几十个卫星信号），直接求逆计算量极大。</p>
+    </div>
+    <p><strong>MIL 的核心思想：</strong>把 $m \times m$ 矩阵求逆转化为对 $n \times n$ 矩阵求逆（$n$ 是状态维度），当 $m \gg n$ 时大幅节省计算。</p>
+    <div class="callout" style="border-left-color: var(--accent-light);">
+      <p><strong>💡 一句话：</strong>MIL = "把大求逆分解成小求逆 + 矩阵乘法"。</p>
+    </div>
+  </section>
+
+  <section id="formula" class="section-card">
+    <h2>2. MIL 标准形式</h2>
+    <p>对于任意兼容维度的矩阵 $A,B,C,D$（$A$ 和 $C$ 可逆），且 $A + BCD$ 可逆：</p>
+    <div class="formula-box">
+      $$ (A + B C D)^{-1} = A^{-1} - A^{-1} B (C^{-1} + D A^{-1} B)^{-1} D A^{-1} $$
+    </div>
+
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>📐 命名</h4>
+        <p>又称 Woodbury identity 或 Sherman-Morrison-Woodbury 公式。</p>
+      </div>
+      <div class="mini-card">
+        <h4>🔑 关键</h4>
+        <p>左边是 $n \times n$ 求逆，右边转为 $m \times m$ 求逆（$B$ 的列数）。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="identity-lemma" class="section-card">
+    <h2>3. 两个预备恒等式</h2>
+    <p>推导前先建立两个标量类比推广到矩阵的恒等式：</p>
+
+    <h3>恒等式 1：$(I+P)^{-1}$ 展开</h3>
+    <div class="formula-box">
+      $$ (I+P)^{-1} = I - (I+P)^{-1} P \qquad \text{[e1]} $$
+    </div>
+    <p><strong>验证：</strong>$(I+P)^{-1}(I+P-P) = I - (I+P)^{-1}P$，✓</p>
+
+    <h3>恒等式 2：$P + PQP = P(I+QP) = (I+PQ)P$</h3>
+    <div class="formula-box">
+      $$ P(I+QP) = (I+PQ)P \qquad \text{[e2]} $$
+    </div>
+
+    <h3>恒等式 3：$P(I+QP)^{-1} = (I+PQ)^{-1}P$</h3>
+    <div class="formula-box">
+      $$ P(I+QP)^{-1} = (I+PQ)^{-1} P \qquad \text{[e3]} $$
+    </div>
+    <p>这个等式由 e2 两边同时右乘 $(I+QP)^{-1}$ 或左乘 $(I+PQ)^{-1}$ 得到。</p>
+
+    <div class="callout">
+      <p><strong>💡 直觉：</strong>这三个恒等式都是在说"$P$ 和 $(I+\dots)^{-1}$ 可以交换位置"。核心在于 $P$ 左乘 $(I+QP)^{-1}$ 等价于右乘 $(I+PQ)^{-1}$。</p>
+    </div>
+  </section>
+
+  <section id="proof" class="section-card">
+    <h2>4. 完整推导</h2>
+
+    <p><strong>三层公式阅读法：</strong></p>
+
+    <h3>🔹 第一层：符号</h3>
+    <p>目标是展开 $(A + BCD)^{-1}$。将它改写为 $A(I + A^{-1}BCD)$，利用 $(XY)^{-1} = Y^{-1}X^{-1}$：</p>
+    <div class="flow-formula">
+      $$ (A + BCD)^{-1} = (I + A^{-1}BCD)^{-1} A^{-1} $$
+    </div>
+
+    <h3>🔹 第二层：推导</h3>
+    <p><strong>Step 1：</strong>令 $P = A^{-1}BCD$，应用 e1：</p>
+    <div class="formula-box">
+      $$ (I + P)^{-1} A^{-1} = [I - (I+P)^{-1} P] A^{-1} $$
+      $$ = A^{-1} - (I + A^{-1}BCD)^{-1} A^{-1}BCD A^{-1} $$
+    </div>
+
+    <p><strong>Step 2：</strong>在中间插入 $A^{-1}A = I$，整理：</p>
+    <div class="formula-box">
+      $$ = A^{-1} - (I + A^{-1}BCD)^{-1} A^{-1} B C D A^{-1} $$
+      $$ = A^{-1} - A^{-1} (I + B C D A^{-1})^{-1} B C D A^{-1} \quad\text{(利用 e3)} $$
+    </div>
+
+    <p><strong>Step 3：</strong>提取因子 $C$：</p>
+    <div class="formula-box">
+      $$ = A^{-1} - A^{-1} B (I + C D A^{-1} B)^{-1} C D A^{-1} $$
+      $$ = A^{-1} - A^{-1} B (C^{-1} + D A^{-1} B)^{-1} D A^{-1} \quad \blacksquare $$
+    </div>
+
+    <h3>🔹 第三层：直觉</h3>
+    <div class="callout">
+      <p>MIL 本质上在说：如果你已经知道 $A^{-1}$，那么给 $A$ 加一个<strong>低秩修正</strong> $BCD$ 后，新逆矩阵可以通过对 $C^{-1} + D A^{-1} B$（一个小得多的矩阵）求逆来更新。KF 中每次测量更新就是一次低秩修正。</p>
+    </div>
+  </section>
+
+  <section id="intuition" class="section-card">
+    <h2>5. 几何直觉</h2>
+    <p>把 MIL 看成<strong>秩更新</strong>：</p>
+    <ul>
+      <li>$A$ 是原来的"系数矩阵"</li>
+      <li>$B C D$ 是一个<strong>低秩修正</strong>（假设 $B \in \mathbb{R}^{n \times m}$，$m \ll n$）</li>
+      <li>MIL 告诉你：不需要重新对 $n \times n$ 矩阵求逆，只需对 $m \times m$ 矩阵求逆</li>
+    </ul>
+    <div class="callout">
+      <p><strong>🌰 类比：</strong>你已经知道整栋楼的蓝图（$A^{-1}$），现在只改了一个房间的布局（$BCD$）。你不需要重新画整栋楼——只需更新这一个房间的影响。MIL 就是矩阵世界里的"局部更新公式"。</p>
+    </div>
+  </section>
+
+  <section id="special" class="section-card">
+    <h2>6. 常用特例</h2>
+
+    <h3>Sherman-Morrison 公式（$B$ 和 $D$ 是向量）</h3>
+    <div class="formula-box">
+      $$ (A + uv^T)^{-1} = A^{-1} - \frac{A^{-1} u v^T A^{-1}}{1 + v^T A^{-1} u} $$
+    </div>
+    <p>向量情况（$B=u$, $C=1$, $D=v^T$），分母退化成一个标量 $1 + v^T A^{-1} u$，连矩阵求逆都不需要了！</p>
+
+    <h3>KF 中最常见的形式</h3>
+    <div class="formula-box">
+      $$ (H P H^T + R)^{-1} = R^{-1} - R^{-1} H (P^{-1} + H^T R^{-1} H)^{-1} H^T R^{-1} $$
+    </div>
+    <p>其中 $A = R$（测量噪声协方差），$B = H$，$C = P$，$D = H^T$。</p>
+  </section>
+
+  <section id="kf-preview" class="section-card">
+    <h2>7. 在 KF 中的用途预告</h2>
+    <p>在 KF 中，后验协方差更新有两种等价形式：</p>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>📐 标准形式</h4>
+        <p>$$ P_{k|k} = (I - K H) P_{k|k-1} $$</p>
+        <p>需要先算 $K$，$K$ 里有个 $m \times m$ 求逆</p>
+      </div>
+      <div class="mini-card">
+        <h4>🔄 信息形式</h4>
+        <p>$$ P_{k|k}^{-1} = P_{k|k-1}^{-1} + H^T R^{-1} H $$</p>
+        <p>利用 MIL 从协方差形式推出！当 $m > n$ 时更高效</p>
+      </div>
+    </div>
+    <p>信息形式在传感器融合（KF L16 固定增益）中极为重要——多传感器时，只需叠加 $H_i^T R_i^{-1} H_i$ 项，即插即用。</p>
+  </section>
+
+  <section id="exercise" class="section-card">
+    <div class="exercise-box">
+      <h3>📝 课后练习</h3>
+      <ol>
+        <li>
+          <p><strong>【标量验证】</strong>设 $a=2$, $b=1$, $c=3$, $d=1$。用标量版本的 MIL $(a + bcd)^{-1} = a^{-1} - a^{-1} b (c^{-1} + d a^{-1} b)^{-1} d a^{-1}$ 验证左右相等。</p>
+          <details class="exercise-answer">
+            <summary>查看计算</summary>
+            <div class="content">
+              <p>左边: $(2 + 1\cdot3\cdot1)^{-1} = 5^{-1} = 0.2$</p>
+              <p>右边: $0.5 - 0.5\cdot1\cdot(1/3 + 1\cdot0.5\cdot1)^{-1}\cdot1\cdot0.5$</p>
+              <p>$= 0.5 - 0.5 \cdot (1/3 + 0.5)^{-1} \cdot 0.5 = 0.5 - 0.5 \cdot (5/6)^{-1} \cdot 0.5$</p>
+              <p>$= 0.5 - 0.5 \cdot 1.2 \cdot 0.5 = 0.5 - 0.3 = 0.2$ ✓</p>
+            </div>
+          </details>
+        </li>
+        <li>
+          <p><strong>【矩阵验证】</strong>设 $A = \begin{bmatrix}2 & 0 \\ 0 & 3\end{bmatrix}$, $B = \begin{bmatrix}1 \\ 1\end{bmatrix}$, $C = 2$, $D = \begin{bmatrix}1 & 1\end{bmatrix}$。用 MIL 计算 $(A+BCD)^{-1}$，并与直接求逆对比。</p>
+          <details class="exercise-answer">
+            <summary>查看提示</summary>
+            <div class="content">
+              <p>$A+BCD = \begin{bmatrix}2 & 0 \\ 0 & 3\end{bmatrix} + \begin{bmatrix}1 \\ 1\end{bmatrix} \cdot 2 \cdot \begin{bmatrix}1 & 1\end{bmatrix} = \begin{bmatrix}2 & 0 \\ 0 & 3\end{bmatrix} + \begin{bmatrix}2 & 2 \\ 2 & 2\end{bmatrix} = \begin{bmatrix}4 & 2 \\ 2 & 5\end{bmatrix}$</p>
+              <p>直接求逆: $\begin{bmatrix}4 & 2 \\ 2 & 5\end{bmatrix}^{-1} = \frac{1}{16}\begin{bmatrix}5 & -2 \\ -2 & 4\end{bmatrix} = \begin{bmatrix}0.3125 & -0.125 \\ -0.125 & 0.25\end{bmatrix}$</p>
+              <p>用 MIL: $A^{-1} = \begin{bmatrix}0.5 & 0 \\ 0 & 0.333\end{bmatrix}$, $C^{-1}+D A^{-1} B = 0.5 + \begin{bmatrix}1&1\end{bmatrix}\begin{bmatrix}0.5&0\\0&0.333\end{bmatrix}\begin{bmatrix}1\\1\end{bmatrix} = 0.5 + 0.833 = 1.333$</p>
+              <p>$A^{-1}BC^{-1}+DA^{-1}^{-1}DA^{-1} = \dots$ 最终结果应与直接求逆一致。</p>
+            </div>
+          </details>
+        </li>
+        <li>
+          <p><strong>【推导】</strong>从标准 MIL $(A+BCD)^{-1}$ 推导 Sherman-Morrison 公式 $(A + uv^T)^{-1}$。</p>
+          <details class="exercise-answer">
+            <summary>查看提示</summary>
+            <div class="content">
+              <p>令 $B = u$, $C = 1$, $D = v^T$。则 $C^{-1} + D A^{-1} B = 1 + v^T A^{-1} u$（标量）。</p>
+              <p>代入即得: $A^{-1} - \frac{A^{-1} u v^T A^{-1}}{1 + v^T A^{-1} u}$。</p>
+            </div>
+          </details>
+        </li>
+        <li>
+          <p><strong>【思考】</strong>在 KF 中，为什么 $m \gg n$ 时信息形式比标准形式更高效？计算复杂度分别是多少？</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section-card">
+    <h2>📌 小结</h2>
+    <div class="summary-grid">
+      <div class="mini-card">
+        <h4>📝 公式</h4>
+        <p>$(A+BCD)^{-1} = A^{-1} - A^{-1}B(C^{-1}+DA^{-1}B)^{-1}DA^{-1}$</p>
+      </div>
+      <div class="mini-card">
+        <h4>💡 直觉</h4>
+        <p>"低秩更新"——大求逆 → 小求逆。KF 中每步测量更新就是一次秩更新。</p>
+      </div>
+      <div class="mini-card">
+        <h4>🔗 下节</h4>
+        <p>KF L2（下）：状态空间模型与协方差传播。把 MIL 放到系统建模场景中理解。</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="nav-links">
+    <a href="0004-KF-L1-矩阵特征值.html">← 上一节：KF L1 特征值/SVD</a>
+    <a href="0005b-KF-L2-状态空间协方差.html" class="next">下一节：KF L2（下）状态空间与协方差 →</a>
+    <a href="../index.html" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+  </div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 5 · KF L2（上）矩阵求逆引理</p>
+    <p>字幕来源：<code>subtitles/20251129_施凌_研讨会系列5_KF_L2_audio_00742037997074f5.srt</code></p>
+  </div>
+
+</div>
+</body>
+</html>

@@ -124,7 +124,7 @@ lead-grid">
         <h4>② 代价函数</h4>
         <p>代价随时间可加（或可乘）：</p>
         \$$
-        J = \\mathbb{E}\\left\\{g_N(x_N) + \\sum_{k=0}^{N-1} g_k(x_k, u_k, w_k)\\right\\}
+        $J = \\mathbb{E}\\left\\{g_N(x_N) + \\sum_{k=0}^{N-1} g_k(x_k, u_k, w_k)\\right\\}$
         \$$
         <p style="font-size:0.85rem">\$g_k\$=运行代价，\$g_N\$=终端代价</p>
       </div>
@@ -132,7 +132,7 @@ lead-grid">
         <h4>③ 最优目标</h4>
         <p>目标：选择控制序列使总期望代价最小：</p>
         \$$
-        \\min_{u_0, \\dots, u_{N-1}} J(x_0)
+        $\\min_{u_0, \\dots, u_{N-1}} J(x_0)$
         \$$
         <p style="font-size:0.85rem">序贯决策，后一步受前一步影响</p>
       </div>
@@ -148,7 +148,7 @@ lead-grid">
     <h3>① 离散时间动态系统</h3>
     <div class="formula-box">
       \$$
-      x_{k+1} = f_k(x_k, u_k, w_k), \\quad k = 0, 1, \\dots, N-1
+      $x_{k+1} = f_k(x_k, u_k, w_k), \\quad k = 0, 1, \\dots, N-1$
       \$$
     </div>
     <ul>
@@ -160,7 +160,7 @@ lead-grid">
     <h3>② 累加代价函数</h3>
     <div class="formula-box">
       \$$
-      J = \\mathbb{E}\\left\\{ g_N(x_N) + \\sum_{k=0}^{N-1} g_k(x_k, u_k, w_k) \\right\\}
+      $J = \\mathbb{E}\\left\\{ g_N(x_N) + \\sum_{k=0}^{N-1} g_k(x_k, u_k, w_k) \\right\\}$
       \$$
     </div>
     <ul>
@@ -202,7 +202,7 @@ lead-grid">
       <div class="mini-card">
         <h4>代价函数</h4>
         \$$
-        J = \\mathbb{E}\\left\\{ R(x_N) + \\sum_{k=0}^{N-1} \\left[ r(x_k) + c u_k - \\beta w_k \\right] \\right\\}
+        $J = \\mathbb{E}\\left\\{ R(x_N) + \\sum_{k=0}^{N-1} \\left[ r(x_k) + c u_k - \\beta w_k \\right] \\right\\}$
         \$$
         <ul>
           <li>\$r(x_k)\$：库存惩罚（如 \$r(x_k) = |x_k|^2\$）</li>
@@ -241,7 +241,7 @@ lead-grid">
         <p><strong>例 1：</strong>\$u_k = 100, \\forall k\$（每天固定订 100 罐）</p>
         <p><strong>例 2：</strong>根据季节预设</p>
         \$$
-        u_k = \\begin{cases} 200, & \\text{春秋} \\\\ 500, & \\text{夏天} \\\\ 50, & \\text{冬天} \\end{cases}
+        $u_k = \\begin{cases} 200, & \\text{春秋} \\\\ 500, & \\text{夏天} \\\\ 50, & \\text{冬天} \\end{cases}$
         \$$
         <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:8px">⚠️ 如果某天卖得多导致库存为负，也无能为力</p>
       </div>
@@ -253,7 +253,7 @@ lead-grid">
         \$$
         <p>例如：</p>
         \$$
-        u_k = \\begin{cases} 200, & \\text{若 } x_k < 50 \\\\ 50, & \\text{若 } x_k \\ge 50 \\end{cases}
+        $u_k = \\begin{cases} 200, & \\text{若 } x_k < 50 \\\\ 50, & \\text{若 } x_k \\ge 50 \\end{cases}$
         \$$
         <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:8px">✅ 可以根据实际情况动态调整，更鲁棒</p>
       </div>
