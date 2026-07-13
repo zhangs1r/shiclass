@@ -271,40 +271,6 @@ body {
     return '<div class="col-progress"><span class="col-bar">' + bar + '</span> <span class="col-progress-text">' + done + '/' + total + ' \u8282\u5df2\u5b66</span></div>';
   }
 
-  // ---- Bookmark section for formulas / snippets ----
-  function renderBookmarks(key, icon, titleText) {
-    const items = lsGet(key, []);
-    if (items.length === 0) return '';
-    // Build lesson path lookup
-    const pathMap = {};
-    for (const l of data.lessons) {
-      const sid = shortId(l.id || l.path || '');
-      pathMap[sid] = l.path;
-    }
-    let html = '<section class="collection-section"><div class="collection-header"><h2>' + icon + ' \u6211\u7684' + titleText + '</h2></div><div class="bookmark-grid">';
-    for (const item of items) {
-      const lp = pathMap[item.lessonId];
-      const link = lp ? ' href="' + escAttr(lp) + '"' : '';
-      const time = item.timestamp ? new Date(item.timestamp).toLocaleString('zh-CN') : '';
-      // Use item.html if available (strip any captured bookmark buttons for backward compat), else fall back to escHtml text
-      let content = escHtml(item.formula || item.code || '');
-      if (item.html && item.html.trim()) {
-        content = item.html.replace(/<button[^>]*class="[^"]*scl-inline-btn[^"]*"[^>]*>[\s\S]*?<\/button>/g, '');
-      }
-      const lang = item.language ? '<span class="bm-lang">[' + escHtml(item.language) + ']</span>' : '';
-      const ctx = item.context ? '<span class="bm-ctx">\u2014 ' + escHtml(item.context) + '</span>' : '';
-      html += '<div class="bookmark-card"><div class="bm-content">' + content + '</div>'
-        + '<div class="bm-meta">'
-        + (lang || ctx ? '<span class="bm-tags">' + lang + ctx + '</span>' : '<span></span>')
-        + (link ? '<a' + link + '>\uD83D\uDCD6 \u67E5\u770B\u8BFE\u7A0B</a>' : '<span></span>')
-        + '<button class="bm-del-btn" data-bm-key="' + key + '" data-bm-id="' + escAttr(item.id) + '" title="\u53D6\u6D88\u6536\u85CF">\uD83D\uDDD1\uFE0F</button>'
-        + '<span class="bm-time">' + time + '</span>'
-        + '</div></div>';
-    }
-    html += '</div></section>';
-    return html;
-  }
-
   // ---- Escaping helpers ----
   function escHtml(str) {
     const d = document.createElement('div');
@@ -366,10 +332,6 @@ body {
       html += '</div></section>';
     }
 
-    // Append bookmark sections
-    html += renderBookmarks('shiclass_formulas', '\uD83D\uDCD0', '\u516c\u5f0f\u6536\u85cf');
-    html += renderBookmarks('shiclass_snippets', '\uD83D\uDCBE', '\u4ee3\u7801\u6536\u85cf');
-
     main.innerHTML = html;
   }
 
@@ -380,35 +342,12 @@ body {
     s.id = 'scl-index-style';
     s.textContent = '.col-progress{display:flex;align-items:center;gap:8px;margin:6px 0 4px}'
       + '.col-bar{font-size:1rem;letter-spacing:1px;color:var(--accent,#CC785C)}'
-      + '.col-progress-text{font-size:0.8rem;color:var(--accent,#CC785C);font-weight:500}'
-      + '.bookmark-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}'
-      + '.bookmark-card{background:var(--card-bg,#fff);border:1px solid var(--border,#E8E4DC);border-radius:var(--radius,12px);padding:14px 16px;box-shadow:var(--shadow,0 2px 12px rgba(0,0,0,0.06))}'
-      + '.bookmark-card .bm-content{font-family:\'JetBrains Mono\',monospace;font-size:0.85rem;line-height:1.5;word-break:break-all;margin-bottom:8px}'
-      + '.bookmark-card .bm-meta{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:4px;font-size:0.78rem;color:var(--text-secondary,#888)}'
-      + '.bookmark-card .bm-meta a{color:var(--accent,#CC785C);text-decoration:none;font-weight:500}'
-      + '.bookmark-card .bm-meta a:hover{text-decoration:underline}'
-      + '.bookmark-card .bm-lang{color:var(--accent-light,#E8A88C);font-weight:500}'
-      + '.bookmark-card .bm-ctx{color:var(--text-secondary,#888)}'
-      + '.bookmark-card .bm-time{font-size:0.72rem;color:#bbb}'
-      + '.bm-del-btn{background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;opacity:0.5;transition:opacity 0.15s;line-height:1}'
-      + '.bm-del-btn:hover{opacity:1}';
+      + '.col-progress-text{font-size:0.8rem;color:var(--accent,#CC785C);font-weight:500}';
     document.head.appendChild(s);
   })();
 
   render();
 
-  // ---- Bookmark delete handler (event delegation) ----
-  document.addEventListener('click', function(e) {
-    var btn = e.target.closest('[data-bm-key]');
-    if (!btn) return;
-    var bmKey = btn.getAttribute('data-bm-key');
-    var bmId = btn.getAttribute('data-bm-id');
-    if (!bmKey || !bmId) return;
-    var items = lsGet(bmKey, []);
-    items = items.filter(function(item) { return item.id !== bmId; });
-    try { localStorage.setItem(bmKey, JSON.stringify(items)); } catch (_) {}
-    render();
-  });
 })();
 </script>
 </body>
