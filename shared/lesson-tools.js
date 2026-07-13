@@ -4,8 +4,11 @@
  * Features:
  *   1. Mark lesson as completed (shiclass_done + shiclass_vtally)
  *   2. Auto-save / restore scroll position (shiclass_scroll_{lessonId})
- *   3. Inline formula bookmarking — 📌 button on .formula-box elements
- *   4. Inline code snippet bookmarking — 💾 button on <pre> elements
+ *   3. Inline formula bookmarking — 📌/✅ toggle on .formula-box elements
+ *   4. Inline code snippet bookmarking — 💾/✅ toggle on <pre> elements
+ *
+ * Bookmark toggle: click 📌 to save, click ✅ to unsave.
+ * Stores both raw text (for matching) and innerHTML (for rendered display).
  *
  * Auto-detects lesson ID from the URL path. Injects UI after .nav-links
  * on lesson pages. All localStorage access is wrapped in try-catch.
@@ -70,7 +73,9 @@
       '.scl-done,.scl-done:hover{background:#4CAF50;color:#fff;border-color:#4CAF50;opacity:1}' +
       '.scl-inline-btn{position:absolute;top:4px;right:4px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border:1px solid #CC785C;border-radius:4px;background:#fff;cursor:pointer;font-size:13px;line-height:1;padding:0;z-index:10;opacity:0.6;transition:opacity 0.15s,background 0.15s}' +
       '.scl-inline-btn:hover{opacity:1;background:#f9f4ee}' +
-      '.scl-inline-btn.scl-saved{border-color:#4CAF50;opacity:1;cursor:default;background:#e8f5e9}';
+      '.scl-inline-btn.scl-saved{border-color:#4CAF50;opacity:1;background:#e8f5e9}' +
+      '.scl-inline-btn.scl-saved:hover{background:#fce4ec;border-color:#E53935}' +
+      '.scl-inline-btn.scl-marked{border-color:#2196F3;opacity:1;background:#e3f2fd}';
     document.head.appendChild(css);
   })();
 
@@ -135,13 +140,20 @@
   })();
 
   /* ===================================================================
-     3. Inline formula bookmarking — 📌 on .formula-box elements
+     3. Inline formula bookmarking — 📌/✅ toggle on .formula-box elements
      =================================================================== */
   function getFormulas()       { return getJSON('shiclass_formulas', []); }
   function setFormulas(arr)    { setJSON('shiclass_formulas', arr); }
 
   function deleteFormula(id) {
     setFormulas(getFormulas().filter(function (f) { return f.id !== id; }));
+  }
+
+  /** Delete saved formulas whose raw text matches, within this lesson. */
+  function deleteFormulaByText(text) {
+    setFormulas(getFormulas().filter(function (f) {
+      return !(f.lessonId === LID && f.formula === text);
+    }));
   }
 
   function findSavedFormula(text) {
@@ -152,14 +164,23 @@
     return null;
   }
 
-  function saveInlineFormula(text) {
+  /**
+   * Toggle formula bookmark.
+   * If text is already saved: remove it and return null.
+   * Otherwise: save with both raw text and innerHTML, return the new id.
+   */
+  function saveInlineFormula(text, html) {
     var existingId = findSavedFormula(text);
-    if (existingId) return existingId;
+    if (existingId) {
+      deleteFormulaByText(text);
+      return null;
+    }
     var list = getFormulas();
     list.push({
       id: 'f_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
       lessonId: LID,
       formula: text,
+      html: html || text,
       context: '',
       timestamp: new Date().toISOString()
     });
@@ -187,21 +208,27 @@
         btn.textContent = saved ? '\u2705' : '\uD83D\uDCCC';
         btn.setAttribute('data-scl-inline-formula', '1');
         btn.setAttribute('data-scl-text', text);
-        if (saved) btn.disabled = true;
-        btn.title = saved ? '\u5df2\u6536\u85cf' : '\u6536\u85cf\u516c\u5f0f';
+        btn.title = saved ? '\u5df2\u6536\u85cf \u70b9\u51fb\u53d6\u6d88' : '\u6536\u85cf\u516c\u5f0f';
         el.appendChild(btn);
       })(boxes[i]);
     }
   }
 
   /* ===================================================================
-     4. Inline code snippet bookmarking — 💾 on <pre> elements
+     4. Inline code snippet bookmarking — 💾/✅ toggle on <pre> elements
      =================================================================== */
   function getSnippets()       { return getJSON('shiclass_snippets', []); }
   function setSnippets(arr)    { setJSON('shiclass_snippets', arr); }
 
   function deleteSnippet(id) {
     setSnippets(getSnippets().filter(function (f) { return f.id !== id; }));
+  }
+
+  /** Delete saved snippets whose raw text matches, within this lesson. */
+  function deleteSnippetByText(text) {
+    setSnippets(getSnippets().filter(function (f) {
+      return !(f.lessonId === LID && f.code === text);
+    }));
   }
 
   function findSavedSnippet(text) {
@@ -212,14 +239,23 @@
     return null;
   }
 
-  function saveInlineSnippet(text) {
+  /**
+   * Toggle snippet bookmark.
+   * If text is already saved: remove it and return null.
+   * Otherwise: save with both raw text and innerHTML, return the new id.
+   */
+  function saveInlineSnippet(text, html) {
     var existingId = findSavedSnippet(text);
-    if (existingId) return existingId;
+    if (existingId) {
+      deleteSnippetByText(text);
+      return null;
+    }
     var list = getSnippets();
     list.push({
       id: 's_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
       lessonId: LID,
       code: text,
+      html: html || text,
       language: '',
       context: '',
       timestamp: new Date().toISOString()
@@ -247,15 +283,14 @@
         btn.textContent = saved ? '\u2705' : '\uD83D\uDCBE';
         btn.setAttribute('data-scl-inline-snippet', '1');
         btn.setAttribute('data-scl-text', text);
-        if (saved) btn.disabled = true;
-        btn.title = saved ? '\u5df2\u6536\u85cf' : '\u6536\u85cf\u4ee3\u7801';
+        btn.title = saved ? '\u5df2\u6536\u85cf \u70b9\u51fb\u53d6\u6d88' : '\u6536\u85cf\u4ee3\u7801';
         el.appendChild(btn);
       })(pres[i]);
     }
   }
 
   /* ===================================================================
-     HTML escaping helper (kept for backward compat, not used by inline)
+     HTML escaping helper (kept for backward compat)
      =================================================================== */
   function escHtml(str) {
     var d = document.createElement('div');
@@ -264,8 +299,7 @@
   }
 
   /* ===================================================================
-     Inject UI — done button only (formula/snippet sections removed,
-     replaced by inline buttons on page elements)
+     Inject UI — done button only
      =================================================================== */
   function injectUI() {
     var nav = document.querySelector('.nav-links');
@@ -285,38 +319,56 @@
   }
 
   /* ===================================================================
-     Event delegation
+     Event delegation — toggle bookmark on click
      =================================================================== */
   function setupDelegation() {
     document.addEventListener('click', function (e) {
       var target = e.target;
 
-      // Inline formula bookmark
+      // Inline formula bookmark toggle
       if (target.hasAttribute('data-scl-inline-formula')) {
         var fText = target.getAttribute('data-scl-text');
-        if (fText) {
-          var fId = saveInlineFormula(fText);
-          if (fId) {
-            target.textContent = '\u2705';
-            target.className = 'scl-inline-btn scl-saved';
-            target.disabled = true;
-            target.title = '\u5df2\u6536\u85cf';
-          }
+        if (!fText) return;
+
+        // Find the parent formula-box to get innerHTML
+        var parentEl = target.parentElement;
+        var html = parentEl ? parentEl.innerHTML : fText;
+
+        var fId = saveInlineFormula(fText, html);
+        if (fId === null) {
+          // Un-saved: switch back to 📌
+          target.textContent = '\uD83D\uDCCC';
+          target.className = 'scl-inline-btn';
+          target.title = '\u6536\u85cf\u516c\u5f0f';
+        } else {
+          // Saved: switch to ✅
+          target.textContent = '\u2705';
+          target.className = 'scl-inline-btn scl-saved';
+          target.title = '\u5df2\u6536\u85cf \u70b9\u51fb\u53d6\u6d88';
         }
         return;
       }
 
-      // Inline snippet bookmark
+      // Inline snippet bookmark toggle
       if (target.hasAttribute('data-scl-inline-snippet')) {
         var sText = target.getAttribute('data-scl-text');
-        if (sText) {
-          var sId = saveInlineSnippet(sText);
-          if (sId) {
-            target.textContent = '\u2705';
-            target.className = 'scl-inline-btn scl-saved';
-            target.disabled = true;
-            target.title = '\u5df2\u6536\u85cf';
-          }
+        if (!sText) return;
+
+        // Find the parent <pre> to get innerHTML
+        var parentPre = target.parentElement;
+        var shtml = parentPre ? parentPre.innerHTML : sText;
+
+        var sId = saveInlineSnippet(sText, shtml);
+        if (sId === null) {
+          // Un-saved: switch back to 💾
+          target.textContent = '\uD83D\uDCBE';
+          target.className = 'scl-inline-btn';
+          target.title = '\u6536\u85cf\u4ee3\u7801';
+        } else {
+          // Saved: switch to ✅
+          target.textContent = '\u2705';
+          target.className = 'scl-inline-btn scl-saved';
+          target.title = '\u5df2\u6536\u85cf \u70b9\u51fb\u53d6\u6d88';
         }
         return;
       }
