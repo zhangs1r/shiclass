@@ -330,9 +330,15 @@
         var fText = target.getAttribute('data-scl-text');
         if (!fText) return;
 
-        // Find the parent formula-box to get innerHTML
+        // Find the parent formula-box to get innerHTML (excluding the toggle button)
         var parentEl = target.parentElement;
-        var html = parentEl ? parentEl.innerHTML : fText;
+        var html = fText;
+        if (parentEl) {
+          var clone = parentEl.cloneNode(true);
+          var btnClone = clone.querySelector('.scl-inline-btn');
+          if (btnClone) btnClone.remove();
+          html = clone.innerHTML;
+        }
 
         var fId = saveInlineFormula(fText, html);
         if (fId === null) {
@@ -354,9 +360,15 @@
         var sText = target.getAttribute('data-scl-text');
         if (!sText) return;
 
-        // Find the parent <pre> to get innerHTML
+        // Find the parent <pre> to get innerHTML (excluding the toggle button)
         var parentPre = target.parentElement;
-        var shtml = parentPre ? parentPre.innerHTML : sText;
+        var shtml = sText;
+        if (parentPre) {
+          var clone = parentPre.cloneNode(true);
+          var btnClone = clone.querySelector('.scl-inline-btn');
+          if (btnClone) btnClone.remove();
+          shtml = clone.innerHTML;
+        }
 
         var sId = saveInlineSnippet(sText, shtml);
         if (sId === null) {

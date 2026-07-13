@@ -286,13 +286,18 @@ body {
       const lp = pathMap[item.lessonId];
       const link = lp ? ' href="' + escAttr(lp) + '"' : '';
       const time = item.timestamp ? new Date(item.timestamp).toLocaleString('zh-CN') : '';
-      const content = escHtml(item.formula || item.code || '');
+      // Use item.html if available (strip any captured bookmark buttons for backward compat), else fall back to escHtml text
+      let content = escHtml(item.formula || item.code || '');
+      if (item.html && item.html.trim()) {
+        content = item.html.replace(/<button[^>]*class="[^"]*scl-inline-btn[^"]*"[^>]*>[\s\S]*?<\/button>/g, '');
+      }
       const lang = item.language ? '<span class="bm-lang">[' + escHtml(item.language) + ']</span>' : '';
       const ctx = item.context ? '<span class="bm-ctx">\u2014 ' + escHtml(item.context) + '</span>' : '';
       html += '<div class="bookmark-card"><div class="bm-content">' + content + '</div>'
         + '<div class="bm-meta">'
         + (lang || ctx ? '<span class="bm-tags">' + lang + ctx + '</span>' : '<span></span>')
         + (link ? '<a' + link + '>\uD83D\uDCD6 \u67E5\u770B\u8BFE\u7A0B</a>' : '<span></span>')
+        + '<button class="bm-del-btn" data-bm-key="' + key + '" data-bm-id="' + escAttr(item.id) + '" title="\u53D6\u6D88\u6536\u85CF">\uD83D\uDDD1\uFE0F</button>'
         + '<span class="bm-time">' + time + '</span>'
         + '</div></div>';
     }
@@ -384,11 +389,26 @@ body {
       + '.bookmark-card .bm-meta a:hover{text-decoration:underline}'
       + '.bookmark-card .bm-lang{color:var(--accent-light,#E8A88C);font-weight:500}'
       + '.bookmark-card .bm-ctx{color:var(--text-secondary,#888)}'
-      + '.bookmark-card .bm-time{font-size:0.72rem;color:#bbb}';
+      + '.bookmark-card .bm-time{font-size:0.72rem;color:#bbb}'
+      + '.bm-del-btn{background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;opacity:0.5;transition:opacity 0.15s;line-height:1}'
+      + '.bm-del-btn:hover{opacity:1}';
     document.head.appendChild(s);
   })();
 
   render();
+
+  // ---- Bookmark delete handler (event delegation) ----
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-bm-key]');
+    if (!btn) return;
+    var bmKey = btn.getAttribute('data-bm-key');
+    var bmId = btn.getAttribute('data-bm-id');
+    if (!bmKey || !bmId) return;
+    var items = lsGet(bmKey, []);
+    items = items.filter(function(item) { return item.id !== bmId; });
+    try { localStorage.setItem(bmKey, JSON.stringify(items)); } catch (_) {}
+    render();
+  });
 })();
 </script>
 </body>
