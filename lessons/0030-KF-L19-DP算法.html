@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KF L19(2/2)：DP 算法与维度灾难 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="assets/shiclass.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+</head>
+<body>
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · KF L19 · 动态规划理论深化 · 第二部分</div>
+    <h1>DP 算法与维度灾难</h1>
+    <p class="subtitle">Bellman 方程的递推求解、最优策略提取、维度灾难的本质与应对思路</p>
+    <div class="hero-meta">
+      <span>📅 2026-07-15</span>
+      <span>🧩 DP 算法</span>
+      <span>🏆 Backward Induction</span>
+      <span>🔄 Curse of Dimensionality</span>
+    </div>
+  </div>
+
+  <!-- Lead Grid -->
+  <div class="lead-grid">
+    <div class="callout">
+      <h4>🎯 学完本节，你应能</h4>
+      <ul>
+        <li>写出 DP 算法的反向递推公式（Bellman 方程）</li>
+        <li>理解 $J_{k}(x_{k})$ 如何从 $J_{N}(x_{N})$ 反向递推到 $J_{0}(x_{0})$</li>
+        <li>掌握从最优值函数提取最优策略的方法</li>
+        <li>认识维度灾难（Curse of Dimensionality）的本质与常用应对策略</li>
+      </ul>
+    </div>
+    <div class="callout">
+      <h4>🔑 核心思想</h4>
+      <p>DP 算法从终端状态 $N$ 开始反向递推到初始时刻 $0$，在每个状态 $x_{k}$ 上只需求解一个单步优化问题。然而状态空间随维度指数增长——"维度灾难"是 DP 最大的实际障碍，催生了值函数近似、蒙特卡洛方法等现代强化学习技术。</p>
+    </div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3>📖 目录</h3>
+    <ul>
+      <li><a href="#sec1">1. 回顾：最优性原理与值函数</a></li>
+      <li><a href="#sec2">2. DP 算法的形式化表述</a></li>
+      <li><a href="#sec3">3. 递推过程的直观理解</a></li>
+      <li><a href="#sec4">4. 最优策略的提取</a></li>
+      <li><a href="#sec5">5. 维度灾难（Curse of Dimensionality）</a></li>
+      <li><a href="#sec6">6. 应对策略概览</a></li>
+      <li><a href="#quiz">📝 练习与自测</a></li>
+    </ul>
+  </div>
+
+  <!-- 1. 回顾 -->
+  <div id="sec1" class="section-card">
+    <h2>1. 回顾：最优性原理与值函数</h2>
+
+    <p>上一讲我们学习了 Bellman 最优性原理——最优策略的子策略也是最优的。这个原理告诉我们：全局优化可以分解为一系列嵌套的单步优化。</p>
+
+    <p>为了把这个原理变成可计算的算法，定义<strong>最优值函数（optimal cost-to-go）</strong>如下：</p>
+
+    <div class="formula-box">
+      $$
+      J_{k}(x_{k}) = \text{从状态 } x_{k} \text{ 开始、执行最优策略到终点的最小期望代价}
+      $$
+    </div>
+
+    <p>特别地，在终端时刻 $N$：</p>
+
+    <div class="formula-box">
+      $$
+      \boxed{J_{N}(x_{N}) = g_{N}(x_{N})}
+      $$
+      <p style="margin-top:8px;font-size:0.9rem">终端代价只取决于最终状态</p>
+    </div>
+
+    <p>根据最优性原理，$J_{k}(x_{k})$ 可以通过 $J_{k+1}(x_{k+1})$ 计算出来。这就是我们将要推导的 DP 算法。</p>
+  </div>
+
+  <!-- 2. DP 算法 -->
+  <div id="sec2" class="section-card">
+    <h2>2. DP 算法的形式化表述</h2>
+
+    <p>对于基本问题的每一个初始状态 $x_{0}$，最优代价 $J^{*}(x_{0})$ 等于 $J_{0}(x_{0})$，由以下从 $N-1$ 到 $0$ 反向递推的 DP 算法给出：</p>
+
+    <div class="callout" style="border-left-color: #8b5cf6;">
+      <p><strong>⚙️ DP 算法（Bellman 方程）</strong></p>
+      <p>终端条件：</p>
+      $$
+      J_{N}(x_{N}) = g_{N}(x_{N})
+      $$
+      <p>反向递推（$k = N-1, N-2, \dots, 0$）：</p>
+      $$
+      J_{k}(x_{k}) = \min_{u_{k}} \mathbb{E}_{w_{k}} \left\{ g_{k}(x_{k}, u_{k}, w_{k}) + J_{k+1}(f_{k}(x_{k}, u_{k}, w_{k})) \right\}
+      $$
+      <p style="margin-top:8px;font-size:0.9rem">其中 $x_{k+1} = f_{k}(x_{k}, u_{k}, w_{k})$</p>
+    </div>
+
+    <p>进一步地，如果对每个 $x_{k}$ 和 $k$ 有：</p>
+
+    <div class="formula-box">
+      $$
+      u_{k}^{*} = \mu_{k}^{*}(x_{k}) = \arg\min_{u_{k}} \mathbb{E}_{w_{k}} \left\{ g_{k}(x_{k}, u_{k}, w_{k}) + J_{k+1}(f_{k}(x_{k}, u_{k}, w_{k})) \right\}
+      $$
+      <p style="margin-top:8px;font-size:0.9rem">则 $\pi^{*} = \{ \mu_{0}^{*}, \mu_{1}^{*}, \dots, \mu_{N-1}^{*} \}$ 就是最优策略</p>
+    </div>
+
+    <figure style="text-align:center;margin:20px 0">
+      <img src="../pdf-md/KF_L19/f9c8f9d1565de0d928bfdd233af05d0991b2817a7891867c06c105cc136725af.jpg" alt="DP算法示意图" style="max-width:100%;border-radius:8px;" loading="lazy">
+      <figcaption style="font-size:0.85rem;color:#666;margin-top:8px">DP 算法从 $k=N$ 反向递推到 $k=0$ 的示意</figcaption>
+    </figure>
+
+    <h3>2.1 方程的含义拆解</h3>
+
+    <p>Bellman 方程将多步优化分解为单步优化。让我们逐项拆解：</p>
+
+    <div class="grid-3">
+      <div class="mini-card">
+        <h4>$g_{k}(x_{k}, u_{k}, w_{k})$</h4>
+        <p><strong>即时代价</strong>（immediate cost）</p>
+        <p>在当前状态 $x_{k}$ 下采取控制 $u_{k}$，遇到扰动 $w_{k}$ 所付出的代价。</p>
+      </div>
+      <div class="mini-card">
+        <h4>$J_{k+1}(f_{k}(x_{k}, u_{k}, w_{k}))$</h4>
+        <p><strong>未来最优代价</strong>（optimal future cost）</p>
+        <p>从下一个状态开始的最优代价——由最优性原理保证其最优性。</p>
+      </div>
+      <div class="mini-card">
+        <h4>$\min_{u_{k}} \mathbb{E}_{w_{k}}$</h4>
+        <p><strong>最小化期望</strong></p>
+        <p>对随机扰动取期望后，选择使"即时代价 + 未来代价"最小的控制。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 递推过程的直观理解 -->
+  <div id="sec3" class="section-card">
+    <h2>3. 递推过程的直观理解</h2>
+
+    <p>为了更好地理解反向递推过程，我们用一个简单例子来说明。</p>
+
+    <h3>3.1 从海盗问题看递推</h3>
+
+    <p>海盗分钻石问题本质上就是 DP 算法的生动体现。让我们将两者对应起来：</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>DP 算法</th>
+          <th>海盗分钻石</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>$k = N$（终端）</strong><br>$J_{N}(x_{N}) = g_{N}(x_{N})$</td>
+          <td>只剩最后 1 个海盗时，他独吞 100 颗钻石</td>
+        </tr>
+        <tr>
+          <td><strong>$k = N-1$</strong><br>$J_{N-1} = \min\{ \text{即时代价} + J_{N} \}$</td>
+          <td>4 号海盗知道自己如果死了 5 号独吞，所以给 5 号 0 颗即可</td>
+        </tr>
+        <tr>
+          <td><strong>$k = N-2$</strong><br>$J_{N-2} = \min\{ \text{即时代价} + J_{N-1} \}$</td>
+          <td>3 号海盗知道如果自己死了 4 号得 100，所以花 1 颗收买 5 号</td>
+        </tr>
+        <tr>
+          <td><strong>$\dots$</strong></td>
+          <td>$\dots$</td>
+        </tr>
+        <tr>
+          <td><strong>$k = 0$</strong><br>$J_{0}(x_{0})$ 就是整个问题的最优代价</td>
+          <td>海盗 1 得到 98 颗钻石——整个问题的"最优代价"</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>这个对应关系说明：DP 算法本质上就是把上一讲学到的向后归纳思维，变成了一个可以在计算机上执行的数学递推公式。</p>
+
+    <h3>3.2 向量化表示</h3>
+
+    <p>在实际计算中，我们通常将每个时刻 $k$ 的 $J_{k}$ 存储为一个向量（或表），每个维度对应一个可能的状态值。当状态是离散的且取值有限时，这个表可以直接查：</p>
+
+    <div class="formula-box">
+      $$
+      k \quad
+      \begin{bmatrix}
+      x_{k} & u_{k} & J_{k}(x_{k}) \\
+      (1, 1) & - & J_{k}(1,1) \\
+      (2, 1) & - & J_{k}(2,1) \\
+      (-1, -1) & - & J_{k}(-1, -1) \\
+      \vdots & \vdots & \vdots
+      \end{bmatrix}
+      $$
+      <p style="margin-top:8px;font-size:0.9rem">每个状态 $x_{k}$ 对应一个最优值 $J_{k}(x_{k})$ 和一个最优控制 $u_{k}^{*}$</p>
+    </div>
+
+    <div class="callout">
+      <p><strong>💡 DP 的"空间换时间"哲学</strong></p>
+      <p>DP 的核心理念是：<strong>用空间换时间</strong>。原本我们需要考虑所有可能的路径组合（指数级），但 DP 通过存储每个状态的最优值函数，将复杂度降为 $O(N \times |S| \times |A|)$，其中 $|S|$ 是状态数，$|A|$ 是动作数。这正是 DP 高效的关键。</p>
+    </div>
+  </div>
+
+  <!-- 4. 最优策略的提取 -->
+  <div id="sec4" class="section-card">
+    <h2>4. 最优策略的提取</h2>
+
+    <p>DP 算法完成后，我们不仅得到了最优代价 $J_{0}(x_{0})$，还得到了在每个状态下应该如何行动——即最优策略。</p>
+
+    <h3>4.1 提取方法</h3>
+
+    <p>在反向递推的过程中，对每个 $k$ 和每个 $x_{k}$，记录使 Bellman 方程取到最小值的那一控制：</p>
+
+    <div class="formula-box">
+      $$
+      \mu_{k}^{*}(x_{k}) = \arg\min_{u_{k}} \mathbb{E}_{w_{k}} \left\{ g_{k}(x_{k}, u_{k}, w_{k}) + J_{k+1}(f_{k}(x_{k}, u_{k}, w_{k})) \right\}
+      $$
+    </div>
+
+    <h3>4.2 正向执行</h3>
+
+    <p>在实际运行中，我们不需要再解优化问题——只需查表：</p>
+
+    <div class="flow-formula">
+      🔄 观测当前状态 $x_{k}$ → 查表得到 $u_{k} = \mu_{k}^{*}(x_{k})$ → 执行 $u_{k}$ → 观测下一状态 $x_{k+1}$ → 重复
+    </div>
+
+    <h3>4.3 完整的 DP 四步流程</h3>
+
+    <div class="grid-2">
+      <div class="mini-card" style="border-left: 4px solid #8b5cf6;">
+        <h4>1️⃣ 初始化</h4>
+        <p>设置终端代价函数：</p>
+        $$
+        J_{N}(x_{N}) = g_{N}(x_{N}), \quad \forall x_{N}
+        $$
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #3b82f6;">
+        <h4>2️⃣ 反向递推</h4>
+        <p>对 $k = N-1, N-2, \dots, 0$：</p>
+        $$
+        J_{k}(x_{k}) = \min_{u_{k}} \mathbb{E}[g_{k} + J_{k+1}]
+        $$
+        <p>对每个可能的状态 $x_{k}$ 计算。</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #22c55e;">
+        <h4>3️⃣ 提取策略</h4>
+        <p>记录每个状态下的最优决策：</p>
+        $$
+        \mu_{k}^{*}(x_{k}) = \arg\min_{u_{k}} \mathbb{E}[g_{k} + J_{k+1}]
+        $$
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #f59e0b;">
+        <h4>4️⃣ 正向执行</h4>
+        <p>运行时根据当前状态查表：</p>
+        $$
+        u_{k} = \mu_{k}^{*}(x_{k})
+        $$
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. 维度灾难 -->
+  <div id="sec5" class="section-card">
+    <h2>5. 维度灾难（Curse of Dimensionality）</h2>
+
+    <div class="callout" style="border-left-color: #ef4444;">
+      <p><strong>📌 维度灾难</strong></p>
+      <p>DP 算法理论上可以解决任何离散状态和离散控制的序贯决策问题，但<strong>状态空间的维度</strong>会导致计算量和存储量指数增长，这是 DP 在实际应用中的主要限制。</p>
+    </div>
+
+    <h3>5.1 问题的根源</h3>
+
+    <p>假设状态 $x_{k}$ 是一个 10 维向量，每一维离散化为 10 个值：</p>
+
+    <div class="formula-box" style="text-align:center">
+      <p>状态总数 = $\underbrace{10 \times 10 \times \dots \times 10}_{10\text{次}}$ = $10^{10}$ = <strong>100 亿</strong></p>
+    </div>
+
+    <p>这意味着我们需要存储 100 亿个 $J_{k}(x_{k})$ 值——显然不可行。而且对每个状态，还需要计算 $\min_{u_{k}}$，计算量更加巨大。</p>
+
+    <h3>5.2 指数增长的规律</h3>
+
+    <p>更一般地，如果状态是 $d$ 维向量，每维离散化为 $m$ 个值：</p>
+
+    <div class="formula-box" style="text-align:center">
+      <p>状态总数 = $m^{d}$</p>
+    </div>
+
+    <p>计算量和存储量都随维度 $d$ <strong>指数增长</strong>：</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>维度 $d$</th>
+          <th>离散化水平 $m = 10$</th>
+          <th>内存需求（假设 8 bytes/状态）</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>$10$</td><td>80 bytes</td></tr>
+        <tr><td>2</td><td>$100$</td><td>800 bytes</td></tr>
+        <tr><td>3</td><td>$1{,}000$</td><td>8 KB</td></tr>
+        <tr><td>4</td><td>$10{,}000$</td><td>80 KB</td></tr>
+        <tr><td>5</td><td>$100{,}000$</td><td>800 KB</td></tr>
+        <tr><td>6</td><td>$1{,}000{,}000$</td><td>8 MB</td></tr>
+        <tr><td style="color:#ef4444"><strong>10</strong></td><td style="color:#ef4444"><strong>$10^{10}$</strong></td><td style="color:#ef4444"><strong>80 GB</strong></td></tr>
+      </tbody>
+    </table>
+
+    <p>当 $d = 10$ 时，即使每个状态只存一个浮点数，也需要 80 GB 的内存——这还只是存储一个时刻的值函数！</p>
+
+    <figure style="text-align:center;margin:16px 0">
+      <img src="../pdf-md/KF_L19/4372a40d6d055384c028ee46919718cb62c59ff44ceda710993554d6b424934a.jpg" alt="维度灾难示意图" style="max-width:100%;border-radius:8px;" loading="lazy">
+    </figure>
+
+    <h3>5.3 维度灾难 vs 最优性原理</h3>
+
+    <p>需要注意的是：维度灾难并<strong>不否定</strong>最优性原理的正确性。即使状态空间大到无法穷举，最优性原理本身始终成立。维度灾难只是说：<strong>如果我们试图用查表的方式精确求解 DP，计算代价可能高到不可接受</strong>。这就需要引入近似方法。</p>
+  </div>
+
+  <!-- 6. 应对策略 -->
+  <div id="sec6" class="section-card">
+    <h2>6. 应对策略概览</h2>
+
+    <p>面对维度灾难，研究人员提出了多种应对策略。理解这些思路，能帮助你建立起从 DP 到现代强化学习（RL）的桥梁。</p>
+
+    <div class="grid-2">
+      <div class="mini-card" style="border-left: 4px solid #3b82f6;">
+        <h4>📉 值函数近似</h4>
+        <p>用参数化模型（如神经网络、线性基函数）来近似 $J_{k}(x_{k})$，而不是精确存储每个状态的值。这是深度强化学习的核心思路。</p>
+        <p style="font-size:0.85rem;color:#666;margin-top:4px">代表方法：DQN、DDPG、PPO</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #22c55e;">
+        <h4>🎯 蒙特卡洛方法</h4>
+        <p>通过采样而非穷举来估计期望值。只访问"高概率"的状态路径，忽略极不可能的状态，从而大幅降低计算量。</p>
+        <p style="font-size:0.85rem;color:#666;margin-top:4px">代表方法：Monte Carlo Tree Search (MCTS)</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #f59e0b;">
+        <h4>🔗 问题分解</h4>
+        <p>将高维问题分解为若干低维子问题，利用问题的特殊结构（如稀疏性、可分性、对称性）来降低复杂度。</p>
+        <p style="font-size:0.85rem;color:#666;margin-top:4px">代表方法：分布式 DP、分层强化学习</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #8b5cf6;">
+        <h4>⚡ LQR 特例（解析解）</h4>
+        <p>对于线性系统 + 二次代价 + 高斯噪声（LQG），Bellman 方程有解析解——Riccati 方程。这正是 Kalman Filter 与 LQR 对偶的来源。</p>
+        <p style="font-size:0.85rem;color:#666;margin-top:4px">代表方法：离散 Riccati 方程递推</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <p><strong>🔗 与 KF 的联系</strong></p>
+      <p>Kalman Filter 本质上可以看作是 DP/Bellman 方程在线性高斯系统下的特例。KF 的协方差更新方程（Riccati 方程）与 LQR 的 Riccati 方程互为对偶关系。这正是我们把 DP 放在 KF 系列最后的原因——它们是同一个理论框架的不同侧面。</p>
+    </div>
+  </div>
+
+  <!-- 练习 -->
+  <div id="quiz" class="section-card">
+    <h2>📝 练习与自测</h2>
+
+    <div class="interactive-card">
+      <h3>练习 1：概念理解</h3>
+      <p>为什么 DP 算法是从 $k = N-1$ 反向递推到 $k = 0$，而不是从 $k = 0$ 正向递推到 $k = N-1$？正向递推会有什么问题？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>反向递推是 DP 算法的核心，原因在于：</p>
+          <ul>
+            <li><strong>终端条件已知</strong>：在 $k = N$ 时，$J_{N}(x_{N}) = g_{N}(x_{N})$ 是已知的——终端代价只取决于最终状态。这是递推的起点。</li>
+            <li><strong>信息传递方向</strong>：$J_{k}(x_{k})$ 依赖于 $J_{k+1}(x_{k+1})$——未来最优代价是当前决策的"输入"。我们只能从已知的未来倒推到现在。</li>
+            <li><strong>正向递推的困境</strong>：如果从 $k=0$ 正向递推，我们需要知道 $J_{1}(x_{1})$ 才能决定 $u_{0}$，但 $J_{1}$ 此时还未计算出来。这就像"先有鸡还是先有蛋"的问题。</li>
+          </ul>
+          <p>正向递推通常需要知道所有可能的路径，然后比较这些路径的代价——这本质上就是穷举法，复杂度为 $O(|A|^{N})$，而不是 DP 的 $O(N \cdot |S| \cdot |A|)$。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="interactive-card">
+      <h3>练习 2：数值计算</h3>
+      <p>假设一个简单 DP 问题：终端时刻 $N=3$，状态空间 $\{A, B, C\}$，控制空间 $\{\alpha, \beta\}$。终端代价为：</p>
+      $$
+      J_{3}(A) = 10, \quad J_{3}(B) = 20, \quad J_{3}(C) = 30
+      $$
+      <p>在 $k=2$ 时刻，状态 $A$ 下：</p>
+      <ul>
+        <li>选择 $\alpha$：即时代价 $= 5$，确定性转移到 $B$</li>
+        <li>选择 $\beta$：即时代价 $= 2$，确定性转移到 $C$</li>
+      </ul>
+      <p>请计算 $J_{2}(A)$ 和 $\mu_{2}^{*}(A)$。</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>应用 Bellman 方程（本题中无随机扰动，$\mathbb{E}$ 退化为确定性）：</p>
+          <p>对于 $\alpha$ 选项：<br>
+          $J_{2}^{\alpha}(A) = g_{2}(A, \alpha) + J_{3}(B) = 5 + 20 = 25$</p>
+          <p>对于 $\beta$ 选项：<br>
+          $J_{2}^{\beta}(A) = g_{2}(A, \beta) + J_{3}(C) = 2 + 30 = 32$</p>
+          <p>取最小值：$J_{2}(A) = \min\{25, 32\} = 25$</p>
+          <p>最优决策：$\mu_{2}^{*}(A) = \alpha$（因为 $\alpha$ 的代价 25 小于 $\beta$ 的代价 32）</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="interactive-card">
+      <h3>练习 3：维度灾难分析</h3>
+      <p>假设一个无人机路径规划问题，状态空间包含位置 $(x, y, z)$ 和速度 $(v_{x}, v_{y}, v_{z})$，每维离散化为 50 个值。</p>
+      <p>(a) 状态空间的总维度是多少？总状态数是多少？<br>
+      (b) 如果每个状态的 $J_{k}$ 值用 8 bytes 的浮点数存储，仅存储一个时刻的值函数需要多少内存？<br>
+      (c) 如果时间步长 $N = 100$，存储所有时刻的值函数需要多少内存？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>(a) 状态维度 $d = 6$（3 个位置 + 3 个速度）。每个维度离散化为 50 个值，总状态数 = $50^{6} = 15{,}625{,}000{,}000 \approx \mathbf{1.56 \times 10^{10}}$（约 156 亿个状态）。</p>
+          <p>(b) 每个状态 8 bytes：$1.56 \times 10^{10} \times 8 \approx 125$ GB。仅存储一个时刻就需要 <strong>125 GB</strong> 内存。</p>
+          <p>(c) $N = 100$ 个时刻：$125 \times 100 = 12{,}500$ GB ≈ <strong>12.5 TB</strong>。这远远超出了普通计算机的存储能力。</p>
+          <p>这个例子说明：即使是一个看似简单的问题（6 维状态），精确 DP 查表法也是不可行的。这也是为什么现代强化学习需要使用值函数近似等方法。</p>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="nav-links">
+    <a href="0029-KF-L19-最优性原理.html" class="prev">← KF L19(1/2)：最优性原理与海盗分钻石</a>
+    <a href="../index.html" class="next">🏠 返回课程馆</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+  </div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 KF L19(2/2) · DP 算法与维度灾难</p>
+    <p style="font-size:0.8rem;color:#888;margin-top:4px">板书来源：KF L19 · 研讨会系列 24 · 施凌老师</p>
+  </div>
+</div>
+<script src="assets/shiclass.js"></script>
+<script src="../shared/lesson-tools.js"></script>
+</body>
+</html>

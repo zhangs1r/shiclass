@@ -160,6 +160,16 @@ window.SHICLASS_DATA = {
       description: "第 0027-0028 课。动态规划（DP）入门——离散时间动态系统、7-11 库存控制例子、策略与 Bellman 方程推导。",
       quickOpen: "lessons/0027-KF-L18-动态规划基础.html",
       meta: ["2 节课", "~60 分钟", "动态规划 / Bellman"]
+    },
+    {
+      id: "kf-series-19",
+      groupId: "seminars",
+      kind: "KF 系列",
+      title: "KF L19：最优性原理、DP 算法与维度灾难",
+      subtitle: "Kalman Filter 延伸系列 (2 节)",
+      description: "第 0029-0030 课。动态规划理论深化——Bellman 最优性原理形式化证明、海盗分钻石经典案例（向后归纳）、DP 算法反向递推、维度灾难与应对。",
+      quickOpen: "lessons/0029-KF-L19-最优性原理.html",
+      meta: ["2 节课", "~60 分钟", "最优性原理 / 维度灾难"]
     }
   ],
     lessons: [
@@ -441,6 +451,24 @@ window.SHICLASS_DATA = {
       subtitle: "策略形式化、最优性原理、DP求解流程",
       duration: "30 min",
       tags: ["动态规划"]
+    },
+    {
+      id: "0029-KF-L19-最优性原理",
+      collectionId: "kf-series-19",
+      path: "lessons/0029-KF-L19-最优性原理.html",
+      title: "KF L19(1/2)：最优性原理与海盗分钻石",
+      subtitle: "最优性原理表述、向后归纳、海盗分钻石经典案例",
+      duration: "30 min",
+      tags: ["动态规划", "博弈论"]
+    },
+    {
+      id: "0030-KF-L19-DP算法",
+      collectionId: "kf-series-19",
+      path: "lessons/0030-KF-L19-DP算法.html",
+      title: "KF L19(2/2)：DP算法与维度灾难",
+      subtitle: "DP算法递推、最优策略提取、维度灾难与应对",
+      duration: "30 min",
+      tags: ["动态规划", "DP算法"]
     },
   ]
 };
