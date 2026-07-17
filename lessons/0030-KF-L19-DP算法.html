@@ -118,7 +118,7 @@
 
     <figure style="text-align:center;margin:20px 0">
       <img src="assets/board/KF_L19/f9c8f9d1565de0d928bfdd233af05d0991b2817a7891867c06c105cc136725af.jpg" alt="DP算法示意图" style="max-width:100%;border-radius:8px;" loading="lazy">
-      <figcaption style="font-size:0.85rem;color:#666;margin-top:8px">DP 算法从 $k=N$ 反向递推到 $k=0$ 的示意</figcaption>
+      <figcaption style="font-size:0.85rem;color:var(--text-secondary);margin-top:8px">DP 算法从 $k=N$ 反向递推到 $k=0$ 的示意</figcaption>
     </figure>
 
     <h3>2.1 方程的含义拆解</h3>
@@ -339,22 +339,22 @@
       <div class="mini-card" style="border-left: 4px solid #3b82f6;">
         <h4>📉 值函数近似</h4>
         <p>用参数化模型（如神经网络、线性基函数）来近似 $J_{k}(x_{k})$，而不是精确存储每个状态的值。这是深度强化学习的核心思路。</p>
-        <p style="font-size:0.85rem;color:#666;margin-top:4px">代表方法：DQN、DDPG、PPO</p>
+        <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:4px">代表方法：DQN、DDPG、PPO</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #22c55e;">
         <h4>🎯 蒙特卡洛方法</h4>
         <p>通过采样而非穷举来估计期望值。只访问"高概率"的状态路径，忽略极不可能的状态，从而大幅降低计算量。</p>
-        <p style="font-size:0.85rem;color:#666;margin-top:4px">代表方法：Monte Carlo Tree Search (MCTS)</p>
+        <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:4px">代表方法：Monte Carlo Tree Search (MCTS)</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #f59e0b;">
         <h4>🔗 问题分解</h4>
         <p>将高维问题分解为若干低维子问题，利用问题的特殊结构（如稀疏性、可分性、对称性）来降低复杂度。</p>
-        <p style="font-size:0.85rem;color:#666;margin-top:4px">代表方法：分布式 DP、分层强化学习</p>
+        <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:4px">代表方法：分布式 DP、分层强化学习</p>
       </div>
       <div class="mini-card" style="border-left: 4px solid #8b5cf6;">
         <h4>⚡ LQR 特例（解析解）</h4>
         <p>对于线性系统 + 二次代价 + 高斯噪声（LQG），Bellman 方程有解析解——Riccati 方程。这正是 Kalman Filter 与 LQR 对偶的来源。</p>
-        <p style="font-size:0.85rem;color:#666;margin-top:4px">代表方法：离散 Riccati 方程递推</p>
+        <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:4px">代表方法：离散 Riccati 方程递推</p>
       </div>
     </div>
 
