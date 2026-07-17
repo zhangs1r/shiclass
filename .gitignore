@@ -28,6 +28,9 @@ pdfs/
 # Board note images (MinerU output - can be regenerated)
 pdf-md/
 pdf-md-verified/
+
+# But board images used by lessons ARE tracked (copied to lessons/assets/board/)
+!lessons/assets/board/
 *.jpg
 *.png
 *.jpeg
