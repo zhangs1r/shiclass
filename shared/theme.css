@@ -377,6 +377,11 @@ li { margin-bottom: var(--space-2); }
     background: rgba(232, 168, 140, 0.25);
     color: #EDEDEE;
   }
+  .site-header .meta span {
+    background: rgba(34, 34, 58, 0.7);
+    border: 1px solid var(--border);
+    color: var(--ink-80);
+  }
   blockquote {
     background: rgba(232, 168, 140, 0.08);
     border-left-color: var(--accent);
@@ -385,6 +390,10 @@ li { margin-bottom: var(--space-2); }
     background: var(--code-bg);
     color: var(--ink-80);
   }
+
+  /* Tag colors — remain distinct in dark mode */
+  .tag-blue { color: #5b9cf5; }
+  .tag-green { color: var(--success); }
   pre {
     background: var(--code-bg);
   }
