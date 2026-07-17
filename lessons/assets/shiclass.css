@@ -261,7 +261,7 @@ th {
   padding: 10px 16px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: white;
+  background: var(--card-bg);
   cursor: pointer;
   font-size: 0.9rem;
   transition: all 0.2s;
@@ -470,4 +470,61 @@ li {
 
 .toc a:hover {
   text-decoration: underline;
+}
+
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1A1A2E;
+    --card-bg: #22223A;
+    --text: #EDEDEE;
+    --text-secondary: #A0A0B0;
+    --accent: #E8A88C;
+    --accent-light: #CC8A70;
+    --accent-subtle: #2A2A42;
+    --border: #2E2E44;
+    --shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+
+  pre {
+    background: #1E1E32;
+    color: #D4D4D8;
+  }
+
+  code {
+    background: #1E1E32;
+  }
+
+  .quiz-options button {
+    background: var(--card-bg);
+  }
+
+  .quiz-options button:hover {
+    background: #2A2A42;
+    border-color: var(--accent);
+  }
+
+  .quiz-options button.correct {
+    background: #0A2E1A;
+    border-color: #22c55e;
+  }
+
+  .quiz-options button.wrong {
+    background: #2E0A0A;
+    border-color: #ef4444;
+  }
+
+  .quiz-feedback.correct {
+    background: #0A2E1A;
+    border-color: #22c55e;
+  }
+
+  .quiz-feedback.wrong {
+    background: #2E0A0A;
+    border-color: #ef4444;
+  }
+
+  img {
+    opacity: 0.85;
+  }
 }
