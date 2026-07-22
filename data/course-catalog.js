@@ -170,6 +170,16 @@ window.SHICLASS_DATA = {
       description: "第 0029-0030 课。动态规划理论深化——Bellman 最优性原理形式化证明、海盗分钻石经典案例（向后归纳）、DP 算法反向递推、维度灾难与应对。",
       quickOpen: "lessons/0029-KF-L19-最优性原理.html",
       meta: ["2 节课", "~60 分钟", "最优性原理 / 维度灾难"]
+    },
+    {
+      id: "kf-series-20",
+      groupId: "seminars",
+      kind: "KF 系列",
+      title: "KF L20：线性二次型调节器（LQR）",
+      subtitle: "Kalman Filter 延伸系列 (2 节)",
+      description: "第 0031-0032 课。LQR 问题建模与 DP 求解——配方法、离散时间 Riccati 方程、稳态 LQR、能控能观性条件，以及 LQR 与 Kalman Filter 的对偶性。",
+      quickOpen: "lessons/0031-KF-L20-LQR-1.html",
+      meta: ["2 节课", "~60 分钟", "LQR / Riccati / 对偶性"]
     }
   ],
     lessons: [
@@ -469,6 +479,24 @@ window.SHICLASS_DATA = {
       subtitle: "DP算法递推、最优策略提取、维度灾难与应对",
       duration: "30 min",
       tags: ["动态规划", "DP算法"]
+    },
+    {
+      id: "0031-KF-L20-LQR-1",
+      collectionId: "kf-series-20",
+      path: "lessons/0031-KF-L20-LQR-1.html",
+      title: "KF L20(1/2)：LQR问题与DP求解",
+      subtitle: "LQR问题建模、配方法、Riccati方程推导",
+      duration: "30 min",
+      tags: ["LQR", "最优控制"]
+    },
+    {
+      id: "0032-KF-L20-LQR-2",
+      collectionId: "kf-series-20",
+      path: "lessons/0032-KF-L20-LQR-2.html",
+      title: "KF L20(2/2)：稳态LQR与KF对偶性",
+      subtitle: "稳态LQR、ARE、能控能观性、控制与估计的对偶",
+      duration: "30 min",
+      tags: ["LQR", "对偶性"]
     },
   ]
 };

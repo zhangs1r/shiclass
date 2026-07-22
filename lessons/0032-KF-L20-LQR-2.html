@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KF L20(2/2)：稳态LQR与对偶性 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/shiclass.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+</head>
+<body>
+<div class="page">
+
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · KF L20 · 线性二次型调节器 · 第二部分</div>
+    <h1>稳态 LQR 与 KF 对偶性</h1>
+    <p class="subtitle">从时变增益到恒定增益、能控性能观性条件、LQR 与 Kalman Filter 的对偶关系</p>
+    <div class="hero-meta">
+      <span>📅 2026-07-22</span>
+      <span>🧩 稳态 LQR</span>
+      <span>🏆 对偶性</span>
+      <span>🔄 能控性 / 能观性</span>
+    </div>
+  </div>
+
+  <div class="lead-grid">
+    <div class="callout">
+      <h4>🎯 学完本节，你应能</h4>
+      <ul>
+        <li>理解时变增益 LQR 的实际局限</li>
+        <li>解释稳态 LQR 的收敛条件（能控+能观）</li>
+        <li>推导并求解代数 Riccati 方程（ARE）</li>
+        <li>发现 LQR 与 Kalman Filter 之间的对偶关系</li>
+      </ul>
+    </div>
+    <div class="callout">
+      <h4>🔑 核心思想</h4>
+      <p>上节推导的时变增益 LQR 需要预先计算并存储所有 $L_k$——当 $N$ 很大时这不可行。但若 $(A,B)$ 能控、$(A,\sqrt{Q})$ 能观，$L_k$ 会收敛到常数 $L$。更妙的是，LQR 与 KF 在数学结构上完全对偶：KF 的协方差递推就是 LQR 的 Riccati 方程的转置版本。</p>
+    </div>
+  </div>
+
+  <div class="toc">
+    <h3>📖 目录</h3>
+    <ul>
+      <li><a href="#sec1">1. 时变增益的问题</a></li>
+      <li><a href="#sec2">2. 稳态 LQR 与收敛条件</a></li>
+      <li><a href="#sec3">3. 代数 Riccati 方程（ARE）</a></li>
+      <li><a href="#sec4">4. LQR 与 Kalman Filter 的对偶性</a></li>
+      <li><a href="#sec5">5. 综合对比与总结</a></li>
+      <li><a href="#quiz">📝 练习与自测</a></li>
+    </ul>
+  </div>
+
+  <div id="sec1" class="section-card">
+    <h2>1. 时变增益的问题</h2>
+
+    <p>上节我们推导了完整的时变 LQR 解：</p>
+
+    <div class="formula-box">
+      $$ \begin{cases}
+      u_k^* = -L_k x_k \\
+      L_k = (B^\top P_{k+1} B + R)^{-1} B^\top P_{k+1} A \\
+      P_k = A^\top P_{k+1} A + Q - A^\top P_{k+1} B (B^\top P_{k+1} B + R)^{-1} B^\top P_{k+1} A \\
+      P_N = Q
+      \end{cases} $$
+    </div>
+
+    <div class="callout" style="border-left-color: #ef4444;">
+      <p><strong>⚠️ 实际问题</strong>：必须提前计算出并存储所有 $L_0, L_1, \dots, L_{N-1}$ 才能在系统开始运行时施加控制。如果 $N$ 非常大（例如 $N = 10^6$），这既不现实也没必要。</p>
+    </div>
+
+    <p>观察上节的数值例子，$L_k$ 随着逆向递推快速收敛到常数。这引出一个自然的想法：<strong>能否在 $N$ 足够大时直接用稳态增益 $L$ 替代所有时变 $L_k$？</strong></p>
+
+    <figure style="text-align:center;margin:16px 0">
+      <img src="assets/board/KF_L20/897d98963fbf1e1c2dad9a2d53a75345e5dcc556e8edc2ec1528c05b1a6f3d86.jpg" alt="P_k收敛示意" style="max-width:100%;border-radius:8px;" loading="lazy">
+      <figcaption style="font-size:0.85rem;color:var(--text-secondary);margin-top:8px">逆向递推时 $P_k$ 的收敛趋势（与 KF 中协方差 $P_{k|k-1}$ 的收敛对称）</figcaption>
+    </figure>
+  </div>
+
+  <div id="sec2" class="section-card">
+    <h2>2. 稳态 LQR 与收敛条件</h2>
+
+    <h3>2.1 收敛直觉</h3>
+
+    <p>考虑 Riccati 逆向递推：</p>
+
+    <div class="flow-formula">
+      🔄 $P_N \to P_{N-1} \to P_{N-2} \to \cdots \to P_0$
+    </div>
+
+    <p>当 $N$ 足够大时，从初始值 $P_N = Q$ 出发，经过若干步逆向迭代后，$P_k$ 趋于一个稳态值 $P$。这个 $P$ 满足：</p>
+
+    <div class="formula-box">
+      $$ P = A^\top P A + Q - A^\top P B (B^\top P B + R)^{-1} B^\top P A $$
+    </div>
+
+    <p>这与 KF 中协方差向前收敛到稳态的直觉完全对称——只是方向相反。</p>
+
+    <h3>2.2 收敛条件</h3>
+
+    <div class="callout" style="border-left-color: #22c55e;">
+      <p><strong>📐 定理：LQR Riccati 收敛条件</strong></p>
+      <ul>
+        <li>$(A, B)$ <strong>能控</strong>（controllable）</li>
+        <li>$(A, \sqrt{Q})$ <strong>能观</strong>（observable），其中 $\sqrt{Q}$ 满足 $(\sqrt{Q})^\top \sqrt{Q} = Q$</li>
+      </ul>
+      <p style="margin-top:8px">在这两个条件下，从任意 $P_N \geq 0$ 出发，逆向 Riccati 递推都收敛到唯一正定稳态解 $P$。</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="mini-card" style="border-left: 4px solid #3b82f6;">
+        <h4>控制视角：能控性 $(A,B)$</h4>
+        <p>系统能够被控制从任意初始状态驱动到任意目标状态。若 $(A,B)$ 不能控，则存在不可控子空间——Riccati 方程在该子空间上没有确定解。</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #8b5cf6;">
+        <h4>观测视角：能观性 $(A,\sqrt{Q})$</h4>
+        <p>所有状态分量都在代价函数中被观测到。如果某些状态方向在 $Q$ 中没有权重（$q_i = 0$），它们可以被任意驱动而不被惩罚——控制器对这些方向是"盲"的。</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="sec3" class="section-card">
+    <h2>3. 代数 Riccati 方程（ARE）</h2>
+
+    <h3>3.1 定义</h3>
+
+    <p>当 $N \to \infty$（无限时域 LQR），Riccati 方程退化为代数方程：</p>
+
+    <div class="formula-box" style="border-left: 4px solid #22c55e;background:var(--accent-subtle)">
+      <h4 style="margin-top:0">📐 DARE（离散时间代数 Riccati 方程）</h4>
+      $$ P = A^\top P A + Q - A^\top P B (B^\top P B + R)^{-1} B^\top P A $$
+    </div>
+
+    <p>这是一个关于 $P$ 的矩阵方程，不是递推——需要直接求解。</p>
+
+    <h3>3.2 求解方法</h3>
+
+    <p>求解 ARE 的常见方法：</p>
+
+    <div class="callout" style="border-left-color: #3b82f6;">
+      <p><strong>🔧 ARE 求解方法</strong></p>
+      <ol>
+        <li><strong>迭代法</strong>：从 $P_N = Q$ 开始逆向递推，直到 $\|P_{k+1} - P_k\| < \varepsilon$——最简单、最可靠</li>
+        <li><strong>Schur 法</strong>：构造 $2n \times 2n$ 的 Hamiltonian 矩阵，取 stable invariant subspace——适用于高维系统</li>
+        <li><strong>代数求解</strong>：Python/Matlab 的 <code>scipy.linalg.solve_discrete_are</code> / <code>dlqr</code></li>
+      </ol>
+    </div>
+
+    <h3>3.3 稳态增益</h3>
+
+    <p>一旦求得 $P$，稳态最优增益为：</p>
+
+    <div class="formula-box">
+      $$ L = (B^\top P B + R)^{-1} B^\top P A $$
+      <p style="margin-top:8px">最优控制律简化为：$u_k^* = -L x_k$——恒定增益状态反馈！</p>
+    </div>
+  </div>
+
+  <div id="sec4" class="section-card">
+    <h2>4. LQR 与 Kalman Filter 的对偶性</h2>
+
+    <p>这是一个本课程最"漂亮"的发现之一：<strong>LQR 和 KF 在数学结构上完全对偶</strong>。</p>
+
+    <h3>4.1 结构对比</h3>
+
+    <div style="overflow-x:auto;">
+      <table style="width:100%;margin:16px 0">
+        <thead>
+          <tr>
+            <th style="width:15%">概念</th>
+            <th style="width:42.5%">Kalman Filter（估计）</th>
+            <th style="width:42.5%">LQR（控制）</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>系统</strong></td>
+            <td>$x_{k+1} = A x_k + w_k$</td>
+            <td>$x_{k+1} = A x_k + B u_k$</td>
+          </tr>
+          <tr>
+            <td><strong>量测/代价</strong></td>
+            <td>$y_k = C x_k + v_k$</td>
+            <td>$J = \sum (x_k^\top Q x_k + u_k^\top R u_k)$</td>
+          </tr>
+          <tr>
+            <td><strong>协方差递推</strong></td>
+            <td>$P_{k+1|k} = A P_{k|k-1} A^\top + Q$ <br> $\qquad - A P_{k|k-1} C^\top (C P_{k|k-1} C^\top + R)^{-1} C P_{k|k-1} A^\top$</td>
+            <td>$P_k = A^\top P_{k+1} A + Q$ <br> $\qquad - A^\top P_{k+1} B (B^\top P_{k+1} B + R)^{-1} B^\top P_{k+1} A$</td>
+          </tr>
+          <tr>
+            <td><strong>增益</strong></td>
+            <td>$K_k = P_{k|k-1} C^\top (C P_{k|k-1} C^\top + R)^{-1}$</td>
+            <td>$L_k = (B^\top P_{k+1} B + R)^{-1} B^\top P_{k+1} A$</td>
+          </tr>
+          <tr>
+            <td><strong>更新</strong></td>
+            <td>$\hat{x}_{k|k} = \hat{x}_{k|k-1} + K_k (y_k - C \hat{x}_{k|k-1})$</td>
+            <td>$u_k = -L_k x_k$</td>
+          </tr>
+          <tr>
+            <td><strong>收敛条件</strong></td>
+            <td>$(A, C)$ 能观，$(A, \sqrt{Q})$ 能控</td>
+            <td>$(A, B)$ 能控，$(A, \sqrt{Q})$ 能观</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>4.2 对偶对应关系</h3>
+
+    <div class="callout" style="border-left-color: #8b5cf6;">
+      <p><strong>🔄 对偶映射</strong></p>
+      <p style="margin-top:8px">如果将 KF 中的以下替换应用到 LQR：</p>
+      <div class="formula-box" style="border:none;background:transparent;padding:0;">
+        $$ A \leftrightarrow A^\top, \quad C \leftrightarrow B^\top, \quad Q \leftrightarrow Q, \quad R \leftrightarrow R $$
+      </div>
+      <p style="margin-top:8px">则 KF 的协方差前向递推 <strong>完全相同</strong> 于 LQR 的 Riccati 逆向递推！</p>
+    </div>
+
+    <figure style="text-align:center;margin:16px 0">
+      <img src="assets/board/KF_L20/d605c6dba279d349ad56684df0407b6ce4e96a67fdd7903385f6bf24b16350e7.jpg" alt="LQR_KF对偶" style="max-width:100%;border-radius:8px;" loading="lazy">
+      <figcaption style="font-size:0.85rem;color:var(--text-secondary);margin-top:8px">LQR 与 KF 在结构上的完美对偶性——控制与估计的一体两面</figcaption>
+    </figure>
+
+    <h3>4.3 这个对偶为什么重要？</h3>
+
+    <div class="grid-2">
+      <div class="mini-card" style="border-left: 4px solid #22c55e;">
+        <h4>✅ 理论意义</h4>
+        <p>控制（通过反馈影响状态）和估计（从噪声数据中推断状态）是同一枚硬币的两面。学会 KF 就等于学会了 LQR 的一半。</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #f59e0b;">
+        <h4>💡 实用意义</h4>
+        <p>很多控制系统的设计流程为：先用 LQR 设计控制器（假设完全状态反馈），再用 KF 估计不可直接量测的状态——两者结合为 <strong>LQG（线性二次型高斯）</strong> 控制器。</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="sec5" class="section-card">
+    <h2>5. 综合对比与总结</h2>
+
+    <h3>5.1 LQR 设计要点</h3>
+    <div class="callout" style="border-left-color: #3b82f6;">
+      <p><strong>📋 LQR 设计流程</strong></p>
+      <ol>
+        <li><strong>建模</strong>：确定系统矩阵 $(A, B)$</li>
+        <li><strong>选权</strong>：选择 $Q \geq 0$ 和 $R > 0$（通常 $Q = C^\top C$，$R = \rho I$）</li>
+        <li><strong>验证</strong>：检查 $(A, B)$ 能控，$(A, \sqrt{Q})$ 能观</li>
+        <li><strong>求解</strong>：解 ARE 得到 $P$</li>
+        <li><strong>计算</strong>：$L = (B^\top P B + R)^{-1} B^\top P A$</li>
+        <li><strong>应用</strong>：$u_k = -L x_k$</li>
+      </ol>
+    </div>
+
+    <h3>5.2 与 KF 的联合使用（LQG）</h3>
+    <div class="flow-formula">
+      🔄 LQR 设计控制器 + KF 估计不可量测状态 = LQG 控制器
+    </div>
+    <p style="margin-top:8px">这是分离原理（Separation Principle）的体现：最优控制律的设计可以和状态估计解耦——先用 KF 得到最优估计 $\hat{x}_k$，然后代入 LQR 控制律 $u_k = -L \hat{x}_k$。</p>
+  </div>
+
+  <div id="quiz" class="section-card">
+    <h2>📝 练习与自测</h2>
+
+    <div class="mini-card" style="border-left: 4px solid #22c55e;margin-bottom:16px">
+      <h4>1️⃣ 验证对偶性</h4>
+      <p>写出 KF 的协方差递推方程，然后做替换 $A \to A^\top, C \to B^\top$，验证是否得到 LQR 的 Riccati 方程。</p>
+    </div>
+
+    <div class="mini-card" style="border-left: 4px solid #3b82f6;margin-bottom:16px">
+      <h4>2️⃣ 能控性检验</h4>
+      <p>$A = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix}, B = \begin{bmatrix} 0 \\ 1 \end{bmatrix}$，检验 $(A, B)$ 是否能控。</p>
+    </div>
+
+    <div class="mini-card" style="border-left: 4px solid #8b5cf6;margin-bottom:16px">
+      <h4>3️⃣ 稳态增益计算</h4>
+      <p>对标量系统 $a = 0.9, b = 1, r = 0.1$，求代数 Riccati 方程的解 $p$ 和稳态增益 $L$。</p>
+    </div>
+  </div>
+
+</div>
+<script src="assets/shiclass.js"></script>
+<script src="../shared/lesson-tools.js"></script>
+</body>
+</html>
