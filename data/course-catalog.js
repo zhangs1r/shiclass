@@ -180,6 +180,16 @@ window.SHICLASS_DATA = {
       description: "第 0031-0032 课。LQR 问题建模与 DP 求解——配方法、离散时间 Riccati 方程、稳态 LQR、能控能观性条件，以及 LQR 与 Kalman Filter 的对偶性。",
       quickOpen: "lessons/0031-KF-L20-LQR-1.html",
       meta: ["2 节课", "~60 分钟", "LQR / Riccati / 对偶性"]
+    },
+    {
+      id: "shares",
+      groupId: "seminars",
+      kind: "分享",
+      title: "组内/北理工分享",
+      subtitle: "系列 26-27",
+      description: "第 0033-0034 课。北理工同学分享信念传播与概率图模型，陈义航分享足式机器人端到端视觉导航。",
+      quickOpen: "lessons/0033-北理工分享-信念传播.html",
+      meta: ["2 节课", "~120 分钟", "信念传播 / 端到端导航"]
     }
   ],
     lessons: [
