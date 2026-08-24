@@ -498,5 +498,23 @@ window.SHICLASS_DATA = {
       duration: "30 min",
       tags: ["LQR", "对偶性"]
     },
+    {
+      id: "0033",
+      collectionId: "shares",
+      path: "lessons/0033-北理工分享-信念传播.html",
+      title: "信念传播与概率图模型",
+      subtitle: "Belief Propagation · 成对MRF · Hammersley-Clifford定理",
+      duration: "60 min",
+      tags: ["信念传播", "概率图模型", "北理工分享"]
+    },
+    {
+      id: "0034",
+      collectionId: "shares",
+      path: "lessons/0034-组内分享-陈奕航-足式机器人导航.html",
+      title: "足式机器人动态环境导航",
+      subtitle: "端到端视觉导航 · 辅助预测任务 · 对抗模仿学习",
+      duration: "60 min",
+      tags: ["足式机器人", "端到端导航", "组内分享"]
+    },
   ]
 };

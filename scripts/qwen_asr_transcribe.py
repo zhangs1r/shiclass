@@ -34,9 +34,9 @@ from qwen_asr import Qwen3ASRModel
 # 模型路径（直接从本地缓存加载，不需要联网）
 # 已经通过 ModelScope 下载到本地：
 #   /home/zjq/models/qwen3-asr/models/Qwen--Qwen3-ASR-0.6B/snapshots/master/
-MODEL_PATH = "/home/zjq/models/qwen3-asr/models/Qwen--Qwen3-ASR-0.6B/snapshots/master"
+MODEL_PATH = "/home/zjq/models/qwen3-asr/models/Qwen--Qwen3-ASR-1.7B/snapshots/master"
 # 备用：如果上面的路径不存在，自动从 ModelScope 下载
-MODEL_NAME = "Qwen/Qwen3-ASR-0.6B"
+MODEL_NAME = "Qwen/Qwen3-ASR-1.7B"
 MODEL_CACHE_DIR = os.path.expanduser("~/models/qwen3-asr")
 
 # 音频处理参数
@@ -56,7 +56,7 @@ def get_model():
     if _model_instance is not None:
         return _model_instance
 
-    print("🔄 加载 Qwen3-ASR-0.6B 模型（首次加载约 10-30 秒）...")
+    print("🔄 加载 Qwen3-ASR-1.7B 模型（首次加载约 10-30 秒）...")
     t0 = time.time()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"

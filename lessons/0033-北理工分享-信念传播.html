@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>信念传播与概率图模型 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="assets/shiclass.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+</head>
+<body>
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · 系列26 · 北理工分享</div>
+    <h1>信念传播与概率图模型</h1>
+    <p class="subtitle">Belief Propagation on Probabilistic Graphical Models —— 从成对马尔可夫随机场到 Hammersley-Clifford 定理</p>
+    <div class="hero-meta">
+      <span>📅 2026-08-08</span>
+      <span>🎙️ 北京理工大学同学分享</span>
+      <span>📚 信念传播 · 概率图模型 · 变分推断</span>
+    </div>
+  </div>
+
+  <!-- Lead Grid -->
+  <section class="lead-grid">
+    <div class="callout callout-mission">
+      <h3>🎯 本讲目标</h3>
+      <p>理解信念传播（Belief Propagation）算法在概率图模型上的工作原理：从树形图上的精确推断，到有环图上的近似推断（Loopy BP），再到 Hammersley-Clifford 定理所揭示的马尔可夫随机场与吉布斯分布的等价关系。</p>
+    </div>
+    <div class="callout callout-key">
+      <h3>🔑 核心思想</h3>
+      <p>概率图模型用图结构编码变量间的依赖关系。信念传播通过"消息传递"的方式，在图上逐节点计算边际概率——在树形图上这是精确的，在有环图上则是近似的迭代过程。Hammersley-Clifford 定理保证了任何满足马尔可夫性的无向图模型都可以表示为团势函数乘积的形式（吉布斯分布），这为 BP 算法提供了理论基础。</p>
+    </div>
+  </section>
+
+  <!-- TOC -->
+  <nav class="toc">
+    <h3>📑 本讲导航</h3>
+    <ul>
+      <li><a href="#sec-intro">1. 引言：为什么需要信念传播</a></li>
+      <li><a href="#sec-clique">2. 团与极大团</a></li>
+      <li><a href="#sec-mrf">3. 成对马尔可夫随机场</a></li>
+      <li><a href="#sec-factor">4. 因式分解与消息传递</a></li>
+      <li><a href="#sec-loopy">5. Loopy BP：有环图上的近似推断</a></li>
+      <li><a href="#sec-hc">6. Hammersley-Clifford 定理</a></li>
+      <li><a href="#sec-exercise">7. 课后练习</a></li>
+    </ul>
+  </nav>
+
+  <!-- Section 1: Introduction -->
+  <section class="section-card" id="sec-intro">
+    <h2>1. 引言：为什么需要信念传播</h2>
+
+    <p>在变分推断中，我们经常假设模型的表达能力有限。信念传播（Belief Propagation, BP）提供了一种在概率图模型上进行近似推断的方法，其表达能力比传统方法更好。</p>
+
+    <p>分享者提到，把图结构引入概率图是一个他之前没有接触过的方向。概率图模型中有一些更复杂的概率结构，而信念传播正是处理这些结构的核心工具。</p>
+
+    <div class="callout callout-note">
+      <h3>📝 分享背景</h3>
+      <p>本次分享来自北京理工大学同学对 Belief Propagation 相关文献的调研。内容涵盖概率图模型的基础概念、BP 算法的消息传递机制，以及 Hammersley-Clifford 定理的理论意义。以下内容严格基于 SRT 转录整理。</p>
+    </div>
+  </section>
+
+  <!-- Section 2: Cliques -->
+  <section class="section-card" id="sec-clique">
+    <h2>2. 团与极大团</h2>
+
+    <p>在无向图中，<strong>团（clique）</strong>是一个完全子图——子图中任意两个节点之间都有边相连。</p>
+
+    <ul>
+      <li><strong>二元团</strong>：两个节点之间有一条边相连，就是一个最简单的团</li>
+      <li><strong>三元团</strong>：三个节点两两相连，构成一个更大的团</li>
+      <li><strong>极大团（maximal clique）</strong>：在当前团中，去掉任何一个节点就不再是团；多加一个节点也不再是团</li>
+    </ul>
+
+    <p>从概率意义上理解，团代表了变量之间的<strong>相互关联</strong>：二元团表示两个变量之间的两两关联，三元团表示三个变量之间更复杂的相互影响，四元团则更复杂。</p>
+
+    <div class="callout callout-intuition">
+      <h3>💡 直觉理解</h3>
+      <p>团就像一个"关系紧密的小圈子"——圈子里每个人都互相认识。极大团则是这个小圈子已经大到不能再加人了（加进来就有人不认识了），也不能减人（减了就不够"紧密"了）。</p>
+    </div>
+  </section>
+
+  <!-- Section 3: Pairwise MRF -->
+  <section class="section-card" id="sec-mrf">
+    <h2>3. 成对马尔可夫随机场</h2>
+
+    <p><strong>成对马尔可夫随机场（Pairwise Markov Random Field）</strong>是一种特殊的无向图概率模型，其特点是：无向图中的极大团恰好都是二元的（即只含两个节点）。</p>
+
+    <p>为什么只关注二元团？因为所有关系中最基本的就是二元关系，所有更高阶的关系都可以从二元关系推导出来。具体来说：</p>
+
+    <ul>
+      <li>更高阶的团（如三元团、四元团）可以将其节点状态"收缩"为一个新节点</li>
+      <li>这个新节点作为团的整体代表，重新放回全图中与其他节点连接</li>
+      <li>这样就把高阶团化简为二元团来处理</li>
+    </ul>
+
+    <p>因此，先讨论只含二元关系的马尔可夫随机场就足够了——这是概率图的一种基本表达形式。</p>
+  </section>
+
+  <!-- Section 4: Factorization and Message Passing -->
+  <section class="section-card" id="sec-factor">
+    <h2>4. 因式分解与消息传递</h2>
+
+    <p>在成对 MRF 上，联合概率分布可以分解为节点势函数和边势函数的乘积。求和顺序可以交换，这使得我们可以逐步消去变量。</p>
+
+    <p>以一个简单图为例（节点1-2-3-4），求边际概率的过程：</p>
+
+    <ol>
+      <li><strong>消去节点1</strong>：只涉及节点1的势函数 $\psi_1(x_1)$ 和边势函数 $\psi_{12}(x_1, x_2)$，求和后得到一个关于 $x_2$ 的因子</li>
+      <li><strong>消去节点4</strong>：涉及 $\psi_{34}(x_3, x_4)$ 和 $\psi_4(x_4)$，求和后得到关于 $x_3$ 的因子</li>
+      <li><strong>消去节点3</strong>：将前一步的因子乘入，再对 $x_3$ 求和</li>
+    </ol>
+
+    <p>这个过程中产生的每个因子就是一条<strong>消息</strong>。例如：</p>
+
+    <ul>
+      <li><strong>从节点1到节点2的消息</strong>：节点1结合自身势函数和边势函数，对 $x_1$ 求和后传递给节点2的"看法"</li>
+      <li><strong>从节点4到节点3的消息</strong>：节点4对 $x_4$ 求和后传递给节点3的信息</li>
+    </ul>
+
+    <p>本质上，每个消息代表了一个节点"从自己的角度看来，邻居节点取哪个值更合理"的度量。所有消息累积相乘，就得到了目标节点的边际概率分布。</p>
+
+    <div class="callout callout-key">
+      <h3>🔑 消息的物理意义</h3>
+      <p>消息传递可以理解为：每个节点把自己的"意见"（结合自身势函数和与邻居的兼容性）汇总后告诉邻居。邻居收到所有方向的消息后，综合判断自己取各个值的概率。</p>
+    </div>
+  </section>
+
+  <!-- Section 5: Loopy BP -->
+  <section class="section-card" id="sec-loopy">
+    <h2>5. Loopy BP：有环图上的近似推断</h2>
+
+    <p>上面的因式分解在<strong>树形图</strong>（无环图）上是精确的——对某个节点来说，消息传播就是一次"前向-后向"遍历，追溯到底就结束了，不会循环。</p>
+
+    <p>但当概率图模型<strong>有环</strong>时，情况就不同了：</p>
+
+    <ul>
+      <li>追溯消息来源时会遇到循环——"要知道A的消息需要B，要知道B的消息需要C，要知道C的消息又需要A"</li>
+      <li>这时需要给一个<strong>初始值</strong>，然后不断迭代更新消息</li>
+      <li>每次迭代用最新的消息值重新计算，直到消息不再变化（收敛）</li>
+    </ul>
+
+    <p>这就是<strong>Loopy BP</strong>（循环信念传播）。</p>
+
+    <div class="callout callout-warning">
+      <h3>⚠️ 收敛性问题</h3>
+      <p>在树形图上，BP 有精确值保证。但在有环图上，Loopy BP <strong>不保证收敛</strong>——消息可能振荡、可能发散、也可能碰巧收敛到一个近似解。这是 Loopy BP 的理论局限。</p>
+    </div>
+  </section>
+
+  <!-- Section 6: Hammersley-Clifford -->
+  <section class="section-card" id="sec-hc">
+    <h2>6. Hammersley-Clifford 定理</h2>
+
+    <p>分享者指出，整个 BP 理论中<strong>最重要的理论贡献</strong>是 Hammersley-Clifford 定理：</p>
+
+    <div class="callout callout-mission">
+      <h3>📐 定理内容</h3>
+      <p>任何满足马尔可夫性的无向图概率模型，其联合概率密度<strong>总是可以</strong>分解为图上团的势函数的乘积——即总是能写成吉布斯分布的形式。</p>
+      <p>反过来也成立：任何吉布斯分布都可以对应一个满足马尔可夫性的无向图概率模型。</p>
+    </div>
+
+    <p>这个定理的意义在于：</p>
+
+    <ul>
+      <li>它建立了<strong>马尔可夫性</strong>（局部条件独立）与<strong>吉布斯分布</strong>（全局因子分解）之间的等价关系</li>
+      <li>它保证了 BP 算法的消息传递形式是有理论基础的——因为联合分布确实可以写成势函数乘积</li>
+      <li>它也说明了为什么变分推断中的近似假设（用有限表达力的分布去近似）在图模型上是可行的</li>
+    </ul>
+
+    <p>分享者提到原本想讲 Hammersley-Clifford 定理的证明，但"要讲完 BP 以及后面的东西，一个小时不太够"，所以把 PPT 中关于 Hammersley Construction 的文件分享到了聊天框供大家自行参考。</p>
+  </section>
+
+  <!-- Exercise -->
+  <section class="section-card exercise-box" id="sec-exercise">
+    <h2>7. 课后练习</h2>
+
+    <div class="exercise">
+      <h4>练习1：团的识别</h4>
+      <p>给定一个无向图，节点为 {A, B, C, D}，边为 {A-B, B-C, A-C, C-D}。请列出所有的团和极大团。</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>团有：{A,B}、{A,C}、{B,C}、{A,B,C}、{C,D}。极大团有：{A,B,C}（三元团，无法再扩展）和 {C,D}（二元团，无法再扩展）。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习2：消息传递直觉</h4>
+      <p>在一个链状图 A—B—C 上，如果要计算节点 B 的边际概率，节点 A 传给 B 的消息和节点 C 传给 B 的消息分别代表什么含义？为什么最终的边际概率是这两个消息的乘积（再归一化）？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>节点A传给B的消息代表"A从自己的角度看来，B取各个值的合理程度"——它综合了A的自身势函数和A-B的边势函数。同理，C传给B的消息代表"C看来B取各个值的合理程度"。B的边际概率综合了来自两个方向的"意见"，所以是两个消息的乘积再归一化。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习3：Loopy BP 的困境</h4>
+      <p>考虑一个简单的环形图 A—B—C—A（三个节点构成一个环）。如果用 Loopy BP 来计算节点A的边际概率，消息传递的顺序会怎样？为什么说结果可能不精确？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>在环形图上，A→B 的消息依赖 C→B 的消息，而 C→B 的消息又依赖 A→C 的消息，A→C 的消息又依赖 B→A 的消息……形成循环依赖。必须给一个初始值开始迭代。由于存在循环，消息可能不会收敛到精确值（不同于树形图上的有限步精确推断），最终结果只是一个近似。</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- Nav Links -->
+  <div class="nav-links">
+    <a href="0032-KF-L20-LQR-2.html" class="prev">← KF L20(2/2)：稳态LQR与KF对偶性</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+    <a href="0034-组内分享-陈奕航-足式机器人导航.html" class="next">组内分享：足式机器人动态环境导航 →</a>
+  </div>
+
+  <!-- Footnote -->
+  <div class="foot-note">
+    <p>📖 来源：研讨会系列26 · 北京理工大学同学分享 · 2026-08-08 · 内容基于ASR转录整理</p>
+    <p>⚠️ 本节为分享类课程，内容严格基于SRT转录。因ASR转录存在识别误差，部分表述已做语义修正，但未添加转录中未提及的公式或数据。</p>
+  </div>
+
+</div>
+
+<script src="assets/shiclass.js"></script>
+<script src="../shared/lesson-tools.js"></script>
+</body>
+</html>

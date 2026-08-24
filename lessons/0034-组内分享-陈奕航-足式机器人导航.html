@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>组内分享：足式机器人动态环境导航 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="assets/shiclass.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+</head>
+<body>
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · 系列27 · 组内分享</div>
+    <h1>足式机器人动态环境导航</h1>
+    <p class="subtitle">Anticipatory Prediction and Dynamic Optimization of a Legged Robot's Trajectory——面向高度动态环境的端到端视觉导航方法</p>
+    <div class="hero-meta">
+      <span>📅 2026-08-15</span>
+      <span>🎙️ 陈义航（西安大学）</span>
+      <span>🤝 合作：张建强 · 指导：李青老师</span>
+    </div>
+  </div>
+
+  <div class="lead-grid">
+    <div class="callout">
+      <h4>🎯 本节内容</h4>
+      <p>分享足式机器人在高度动态环境下的端到端视觉导航方法：传统方法（AP/AF）的局限性、辅助预测任务的设计、对抗模仿学习框架，以及未来工作方向。</p>
+    </div>
+    <div class="callout">
+      <h4>📖 内容性质</h4>
+      <p>本次分享由组内陈义航同学（大三升大四）汇报其课题工作，侧重问题动机、方法设计思路与实验分析。</p>
+    </div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3>📖 目录</h3>
+    <ul>
+      <li><a href="#sec1">1. 问题背景：传统导航方法的局限</a></li>
+      <li><a href="#sec2">2. 问题定义：端到端视觉导航</a></li>
+      <li><a href="#sec3">3. 方法设计：辅助预测任务</a></li>
+      <li><a href="#sec4">4. 方法设计：对抗模仿学习</a></li>
+      <li><a href="#sec5">5. 实验分析</a></li>
+      <li><a href="#sec6">6. 局限与未来工作</a></li>
+      <li><a href="#quiz">📝 自测题</a></li>
+    </ul>
+  </div>
+
+  <!-- 1. 问题背景 -->
+  <div id="sec1" class="section-card">
+    <h2>1. 问题背景：传统导航方法的局限</h2>
+    <p>传统的路径规划方法，如 <strong>AP（Artificial Potential Field，人工势场）</strong> 和 <strong>AF（A*</strong> 搜索），在静态场景中通常是有效的。但在<strong>高度动态环境</strong>中，会出现两个关键问题：</p>
+
+    <div class="callout" style="border-left-color: #ef4444;">
+      <p><strong>⚠️ 问题一：动态障碍导致局部最小值</strong></p>
+      <p>动态障碍会不断改变局部空间，局部方法容易出现<strong>停滞</strong>甚至陷入<strong>局部最小值</strong>。</p>
+    </div>
+
+    <div class="callout" style="border-left-color: #ef4444;">
+      <p><strong>⚠️ 问题二：对运动趋势建模能力弱</strong></p>
+      <p>传统方法通常只能看到当前的空间位置，不能很好地利用短时历史信息，对<strong>运动趋势建模</strong>能力不足。</p>
+    </div>
+
+    <p>这两个问题表明：传统方法依赖全局地图和预定义规则，在动态环境中缺乏适应性。因此，本工作探索了一种基于局部感知的端到端视觉导航方法。</p>
+  </div>
+
+  <!-- 2. 问题定义 -->
+  <div id="sec2" class="section-card">
+    <h2>2. 问题定义：端到端视觉导航</h2>
+    <p>本工作的核心关注点是：在<strong>高度动态</strong>、<strong>局部观测</strong>以及<strong>真实步态约束</strong>条件下，机器人能否仅凭自身的局部感知，学会一个<strong>稳定、安全、可迁移</strong>的视觉导航策略。</p>
+
+    <p>核心工作题目为：<em>Anticipatory Prediction and Dynamic Optimization of a Legged Robot's Trajectory</em>，由陈义航与张建强合作完成，指导老师为李青老师。</p>
+
+    <div class="callout">
+      <p><strong>💡 关键条件</strong></p>
+      <p>高度动态环境 · 局部观测（无全局地图） · 真实步态约束 · 端到端学习（无手工特征工程）</p>
+    </div>
+  </div>
+
+  <!-- 3. 辅助预测任务 -->
+  <div id="sec3" class="section-card">
+    <h2>3. 方法设计：辅助预测任务</h2>
+    <h3>为什么需要辅助预测？</h3>
+    <p>端到端导航策略依赖<strong>MP（Multi-Layer Perceptron，多层感知机）</strong>编码器和 Actor-Critic 网络。这些网络需要经过训练才能学会期望的行为。</p>
+
+    <p>如果没有辅助预测任务，虽然网络理论上也能训练，但会<strong>完全依赖于最终策略的奖励信号</strong>。而策略奖励信号存在以下问题：</p>
+
+    <ul>
+      <li><strong>奖励延迟</strong>——奖励通常有延迟，不是即时反馈</li>
+      <li><strong>信号稀疏</strong>——实际训练中奖励信号往往稀疏</li>
+      <li><strong>探索噪声</strong>——在训练前期，探索噪声较大</li>
+    </ul>
+
+    <div class="callout" style="border-left-color: #f59e0b;">
+      <p><strong>🔑 核心洞察</strong></p>
+      <p>没有辅助预测任务时，编码器 $Z_t$ 可能被用于完成任务，但不一定真的编码了<strong>动态运动趋势</strong>等关键信息。</p>
+    </div>
+
+    <h3>辅助预测头的设计</h3>
+    <p>为了在训练中引入约束加权，设计了一个<strong>辅助预测头</strong>。数据流如下：</p>
+    <ul>
+      <li>输入为 $Z_t$（编码器输出的隐状态）</li>
+      <li>$Z_t$ 经过<strong>MP（多层感知机）</strong>进行处理</li>
+      <li>从 $Z_t$ 中预测 $K$ 个<strong>障碍物描述子</strong></li>
+    </ul>
+
+    <p>在训练地图中有 7 个障碍物，实际 $K$ 取 6（去掉了起点或终点）。预测出的障碍物描述子用于辅助编码器学习动态环境的表征。</p>
+
+    <h3>辅助预测的作用</h3>
+    <p>辅助预测任务引入了梯度差，通过误差计算影响编码器 $Z_t$ 的更新方向。在 PPO（Proximal Policy Optimization）最大化目标中，优势函数估计是一个重要因素，而辅助预测可以提升其估计的准确性。</p>
+
+    <p>此外，采用<strong>非对称的更新策略</strong>可以让编码器做出更加准确的估计。</p>
+  </div>
+
+  <!-- 4. 对抗模仿学习 -->
+  <div id="sec4" class="section-card">
+    <h2>4. 方法设计：对抗模仿学习</h2>
+    <p>本工作采用了一种<strong>经典的对抗模仿学习（Adversarial Imitation Learning）</strong>框架，结合 BCI（Behavioral Cloning with Imitation）和 Policy 的 Actor-Critic 结构。</p>
+
+    <h3>对抗目标</h3>
+    <p>对抗目标包含两项：</p>
+    <ul>
+      <li><strong>策略项</strong>：对于专家轨迹判别器，策略希望输出<strong>接近 1</strong>（被判定为专家）</li>
+      <li><strong>当前策略项</strong>：当前策略生成的轨迹，判别器希望输出<strong>接近 0</strong>（被判定为非专家）</li>
+    </ul>
+
+    <p>策略本身会后续通过奖励信号努力让自己的样本<strong>骗过判别器</strong>，因此这是一个对抗过程。</p>
+
+    <h3>判别器的优化</h3>
+    <p>判别器在训练过程中会最小化<strong>负对数似然损失</strong>（Negative Log-Likelihood Loss）：</p>
+    <ul>
+      <li><strong>专家样本</strong>应该被判为专家（输出接近 1）</li>
+      <li><strong>策略样本</strong>应该被判为非专家（输出接近 0）</li>
+    </ul>
+
+    <p>最终输出的 loss 会转换为一个<strong>奖励信号</strong>。这个奖励信号的形式为：</p>
+
+    <div class="callout">
+      <p><strong>💡 奖励信号的直观解读</strong></p>
+      <p>如果一个动作越像专家，判别器输出越接近 1；$1 - D(\tau)$ 越接近 0；loss 越大的负数；取负号后整体变成很大的正奖励。</p>
+    </div>
+
+    <p>因此，判别器的输出可以作为对策略的奖励信号，驱动策略向专家行为靠近。</p>
+  </div>
+
+  <!-- 5. 实验分析 -->
+  <div id="sec5" class="section-card">
+    <h2>5. 实验分析</h2>
+    <p>分享中展示了在<strong>仿真平台</strong>上的实验对比：</p>
+
+    <div class="callout">
+      <p><strong>🔬 仿真 vs 真实</strong></p>
+      <p>在仿真平台中，机器人有精确的位置信息，可以得到比较合理的测距输出和导航结果。</p>
+    </div>
+
+    <div class="callout" style="border-left-color: #ef4444;">
+      <p><strong>⚠️ 真实环境的挑战</strong></p>
+      <p>在真实环境中，很可能出现<strong>错误的状态输入</strong>（如定位漂移、航向误差），导致无效决策和导航失败。</p>
+    </div>
+
+    <p>这一仿真-真实差距（Sim-to-Real Gap）也是后续工作的重要切入点。</p>
+  </div>
+
+  <!-- 6. 局限与未来工作 -->
+  <div id="sec6" class="section-card">
+    <h2>6. 局限与未来工作</h2>
+    <p>陈义航同学列举了六个可能的未来研究方向：</p>
+
+    <h3>方向一：定位误差影响分析</h3>
+    <p>从实际部署出发，在真实环境中跑一遍，研究<strong>定位漂移、航向误差、速度偏差</strong>等状态误差对测距输出和导航成功率的影响。首先要建立：哪些因素对导航失败的影响最大。</p>
+
+    <h3>方向二：定位质量表征</h3>
+    <p>对于端到端导航策略，引入一个<strong>定位质量表征</strong>。将问题定义为一个<strong>离散动态规划（DP）问题</strong>，主要考察定位质量表征的数值。</p>
+
+    <h3>方向三：贝叶斯架构</h3>
+    <p>引入<strong>贝叶斯架构</strong>。陈义航分享了个人经验：贝叶斯架构非常好用，能极大提升<strong>状态估计</strong>的准确性。</p>
+
+    <h3>方向四：硬件安全机制</h3>
+    <p>在不可靠的系统中引入<strong>保守模式</strong>（hardware safety），作为安全保障。</p>
+
+    <h3>方向五：高层动作神经网络</h3>
+    <p>在硬件安全机制的基础上，将其做成一个<strong>神经网络驱动的高层动作</strong>，实现更灵活的安全控制。</p>
+
+    <h3>方向六：探索相机（Exploration Camera）</h3>
+    <p>考虑引入探索相机作为传感器信息的补充。探索相机在<strong>快速运动、光照变化和短时视觉退化</strong>场景中都能提供较好的辅助作用。</p>
+
+    <div class="callout" style="border-left-color: #22c55e;">
+      <p><strong>📝 总结</strong></p>
+      <p>以上都是目前的想法。这些方向主要是从当前工作中存在的问题出发，提出可能的研究点。</p>
+    </div>
+  </div>
+
+  <!-- 自测题 -->
+  <div id="quiz" class="section-card">
+    <h2>📝 自测题</h2>
+
+    <div class="interactive-card">
+      <h3>问题 1</h3>
+      <p>传统导航方法（AP/AF）在高度动态环境中主要面临哪两个问题？</p>
+      <div class="quiz-options">
+        <button onclick="lessonKit.answer(this, 'q1-feedback')" data-correct="no" data-explanation="计算效率不是主要问题。关键问题是动态障碍导致的局部最小值和运动趋势建模不足。">计算效率低和内存不足</button>
+        <button onclick="lessonKit.answer(this, 'q1-feedback')" data-correct="yes" data-explanation="正确！动态障碍不断改变局部空间导致局部最小值，同时传统方法对运动趋势建模能力弱。">动态障碍导致局部最小值，且对运动趋势建模能力弱</button>
+        <button onclick="lessonKit.answer(this, 'q1-feedback')" data-correct="no" data-explanation="传感器精度和通信延迟不是分享中提到的核心问题。">传感器精度不够和通信延迟</button>
+      </div>
+      <div id="q1-feedback" class="quiz-feedback"></div>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 2</h3>
+      <p>为什么要引入辅助预测任务？</p>
+      <div class="quiz-options">
+        <button onclick="lessonKit.answer(this, 'q2-feedback')" data-correct="no" data-explanation="辅助预测不是用来加速训练的。">加速训练收敛</button>
+        <button onclick="lessonKit.answer(this, 'q2-feedback')" data-correct="no" data-explanation="辅助预测的主要作用不是增加数据量。">增加训练数据量</button>
+        <button onclick="lessonKit.answer(this, 'q2-feedback')" data-correct="yes" data-explanation="正确！因为策略奖励信号存在延迟、稀疏和探索噪声问题，辅助预测可以引导编码器学习动态环境表征，提升优势函数估计准确性。">弥补策略奖励信号的延迟和稀疏问题，引导编码器学习动态运动趋势</button>
+      </div>
+      <div id="q2-feedback" class="quiz-feedback"></div>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 3</h3>
+      <p>在对抗模仿学习框架中，判别器的 loss 转换为奖励信号后，动作越像专家会导致什么结果？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>如果一个动作越像专家，判别器输出 $D(\tau)$ 越接近 1，$1 - D(\tau)$ 越接近 0，loss 变成很大的负数，取负号后整体变成很大的正奖励。这驱动策略向专家行为靠近。</p>
+        </div>
+      </details>
+    </div>
+
+    <div class="interactive-card">
+      <h3>问题 4</h3>
+      <p>以下哪项是陈义航提出的未来工作方向之一？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <div class="content">
+          <p>六个未来方向包括：定位误差影响分析、定位质量表征、贝叶斯架构、硬件安全机制、高层动作神经网络、探索相机。</p>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="nav-links">
+    <a href="0033-北理工分享-信念传播.html" class="prev">← 信念传播与概率图模型</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+  </div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 · 系列27 · 组内分享 · 陈义航（西安大学）</p>
+  </div>
+</div>
+<script src="assets/shiclass.js"></script>
+  <script src="../shared/lesson-tools.js"></script>
+</body>
+</html>
