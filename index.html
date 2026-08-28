@@ -13,6 +13,19 @@
 :root {
   --accent-subtle: #F5E6DE;
   --radius: var(--radius-lg);
+  /* ---- 流水线框架图变量（亮色） ---- */
+  --fig-bg: #FBF8F3;
+  --stage1: #5B7B9A; --stage1-bd: #B9C4CC; --stage1-bg: #F3EFE8; --stage1-sub: #8A93A2;
+  --stage2: #CC785C; --stage2-bd: #E3B89B; --stage2-bg: #FBF0E8; --stage2-sub: #C08A6F;
+  --stage3: #4E8A67; --stage3-bd: #8FBB9F; --stage3-bg: #F0F5F1; --stage3-sub: #7AA383;
+  --stage4: #4E5D8A; --stage4-bd: #9AA7CE; --stage4-bg: #EDF0F7; --stage4-sub: #8B97BC;
+  --stage5: #8B5A8B; --stage5-bd: #BE9FBE; --stage5-bg: #F5EFF5; --stage5-sub: #A88AA8;
+  --fig-arrow: #8A7360; --fig-fb: #9A6B8F;
+  --fig-pool-bd: #E6A76E; --fig-pool-ink: #8A5A2E; --fig-pool-sub: #A87A4E;
+  --fig-title: #B08968; --fig-h1: #3A322A; --fig-h2: #4A5664;
+  --fig-ink: #3A322A; --fig-ink60: #6B6257; --fig-ink40: #9A8F80;
+  --fig-core: #2F7A4F; --fig-core-txt: #2F5E41; --fig-danger: #B03A2E;
+  --fig-glow: #4E8A67;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
@@ -191,6 +204,59 @@ body {
 @media (max-width: 640px) {
   .lesson-grid { grid-template-columns: 1fr; }
 }
+
+/* ===================== 流水线框架图板块 ===================== */
+.pipeline-section {
+  margin-bottom: 56px;
+}
+.pipeline-fig-wrap {
+  background: var(--fig-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 10px 10px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.pipeline-fig-wrap svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-width: 860px; /* 手机端横向滚动，保证可读 */
+}
+.pipeline-fig-wrap text {
+  font-family: 'Inter', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+.pipeline-hint {
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--ink-40);
+  padding: 4px 0 0;
+}
+@media (min-width: 641px) {
+  .pipeline-hint { display: none; }
+}
+
+/* 流水线框架图暗色模式变量覆盖 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fig-bg: #17172A;
+    --stage1: #8FB4D8; --stage1-bd: #4E6278; --stage1-bg: rgba(91,123,154,0.13); --stage1-sub: #8FA6BE;
+    --stage2: #E8A88C; --stage2-bd: #8A6A55; --stage2-bg: rgba(204,120,92,0.13); --stage2-sub: #C79C85;
+    --stage3: #7AB893; --stage3-bd: #4E6B5A; --stage3-bg: rgba(78,138,103,0.13); --stage3-sub: #8FB8A0;
+    --stage4: #8B97BC; --stage4-bd: #4E5570; --stage4-bg: rgba(78,93,138,0.15); --stage4-sub: #9AA5C4;
+    --stage5: #C09AC0; --stage5-bd: #6A5580; --stage5-bg: rgba(139,90,139,0.15); --stage5-sub: #B59CB5;
+    --fig-arrow: #A89A85; --fig-fb: #C09AC0;
+    --fig-pool-bd: #C8924F; --fig-pool-ink: #D9B080; --fig-pool-sub: #C3A06F;
+    --fig-title: #D9A88A; --fig-h1: #F0EDEA; --fig-h2: #B9C4D0;
+    --fig-ink: #F0EDEA; --fig-ink60: #B5B0A8; --fig-ink40: #8A857E;
+    --fig-core: #7AB893; --fig-core-txt: #B0E0C4; --fig-danger: #FF9C8E;
+    --fig-glow: #7AB893;
+  }
+  .pipeline-fig-wrap {
+    background: var(--fig-bg);
+    border-color: var(--border);
+  }
+}
 </style>
 </head>
 <body>
@@ -211,6 +277,233 @@ body {
       <span>🤖 特邀分享</span>
     </div>
   </header>
+
+  <section class="pipeline-section" aria-label="课程生产流水线框架图">
+    <div class="collection-header">
+      <h2>🗺️ 课程生产流水线</h2>
+      <p class="col-desc">ShiClass 自动化课程生产与学习闭环 · 每周三定时更新</p>
+    </div>
+    <div class="pipeline-fig-wrap">
+      <svg viewBox="0 0 1540 1390" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr-data" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="9" markerHeight="9" orient="auto">
+            <path d="M2,2 L10,6 L2,10 Z" fill="var(--fig-arrow)"/>
+          </marker>
+          <marker id="arr-fb" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="9" markerHeight="9" orient="auto">
+            <path d="M2,2 L10,6 L2,10 Z" fill="var(--fig-fb)"/>
+          </marker>
+          <filter id="shadow-sm" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="1.5" stdDeviation="2.5" flood-opacity="0.10"/>
+          </filter>
+          <filter id="glow-core" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="var(--fig-glow)" flood-opacity="0.28"/>
+          </filter>
+          <linearGradient id="bg-title" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#CC785C"/>
+            <stop offset="100%" stop-color="#B08968"/>
+          </linearGradient>
+        </defs>
+        <rect width="1540" height="1390" fill="var(--fig-bg)"/>
+        <text x="60" y="40" font-size="13" font-weight="700" letter-spacing="3" fill="var(--fig-title)">SHICLASS · 施老师大课堂</text>
+        <text x="58" y="84" font-size="30" font-weight="900" font-family="'Noto Serif SC', 'Noto Sans SC', serif" fill="var(--fig-h1)">图 1｜ShiClass 自动化课程生产与学习闭环</text>
+        <text x="60" y="109" font-size="13.5" font-style="italic" fill="var(--fig-ink40)">Fig. 1 | Automated course production pipeline with scheduled acquisition, multimodal extraction, cross-validated generation, quality gating, and a human-in-the-loop feedback loop.</text>
+        <rect x="60" y="121" width="620" height="3" rx="1.5" fill="url(#bg-title)"/>
+
+        <g>
+          <rect x="40" y="140" width="1420" height="172" rx="18" fill="var(--stage1-bg)" stroke="var(--stage1-bd)" stroke-width="1.5"/>
+          <circle cx="66" cy="164" r="5" fill="var(--stage1)"/>
+          <text x="80" y="169" font-size="13.5" font-weight="700" fill="var(--stage1)">L1 · 数据采集 <tspan font-weight="500" font-style="italic" fill="var(--stage1-sub)">DATA ACQUISITION</tspan></text>
+          <g transform="translate(80,188)">
+            <rect width="330" height="104" rx="12" fill="var(--fig-bg)" stroke="var(--stage1-bd)" stroke-width="1.5" filter="url(#shadow-sm)"/>
+            <text x="16" y="26" font-size="15" font-weight="700" fill="var(--fig-ink)">🕒 定时触发</text>
+            <text x="16" y="44" font-size="10.5" font-style="italic" fill="var(--fig-ink40)">Weekly Cron Trigger</text>
+            <text x="16" y="64" font-size="10" fill="var(--fig-ink60)">每周三自动检查云盘</text>
+            <text x="16" y="81" font-size="10" fill="var(--fig-ink60)">有更新才下载 · 无更新只汇报</text>
+          </g>
+          <line x1="410" y1="240" x2="522" y2="240" stroke="var(--fig-arrow)" stroke-width="2.5" marker-end="url(#arr-data)"/>
+          <text x="466" y="228" font-size="10.5" fill="var(--fig-arrow)" text-anchor="middle">触发</text>
+          <g transform="translate(530,188)">
+            <rect width="330" height="104" rx="12" fill="var(--fig-bg)" stroke="var(--stage1-bd)" stroke-width="1.5" filter="url(#shadow-sm)"/>
+            <text x="16" y="26" font-size="15" font-weight="700" fill="var(--fig-ink)">☁ 云盘检查</text>
+            <text x="16" y="44" font-size="10.5" font-style="italic" fill="var(--fig-ink40)">AnyShare Cloud Drive</text>
+            <text x="16" y="64" font-size="10" fill="var(--fig-ink60)">江南大学云盘 · Ni Group</text>
+            <text x="16" y="81" font-size="10" fill="var(--fig-ink60)">组外研讨会视频存档 / 2026</text>
+          </g>
+          <line x1="860" y1="240" x2="972" y2="240" stroke="var(--fig-arrow)" stroke-width="2.5" marker-end="url(#arr-data)"/>
+          <g transform="translate(980,188)">
+            <rect width="330" height="104" rx="12" fill="var(--fig-bg)" stroke="var(--stage1-bd)" stroke-width="1.5" filter="url(#shadow-sm)"/>
+            <text x="16" y="26" font-size="15" font-weight="700" fill="var(--fig-ink)">📦 素材入库</text>
+            <text x="16" y="44" font-size="10.5" font-style="italic" fill="var(--fig-ink40)">Asset Ingestion</text>
+            <text x="16" y="64" font-size="10" fill="var(--fig-ink60)">视频 MP4 + 板书 PDF</text>
+            <text x="16" y="81" font-size="10" fill="var(--fig-ink60)">大文件软链 /mnt/d/system</text>
+          </g>
+        </g>
+        <line x1="750" y1="312" x2="750" y2="348" stroke="var(--fig-arrow)" stroke-width="3" marker-end="url(#arr-data)"/>
+        <text x="762" y="334" font-size="11" font-weight="600" fill="var(--fig-arrow)">素材 ↓</text>
+
+        <g>
+          <rect x="40" y="356" width="1420" height="232" rx="18" fill="var(--stage2-bg)" stroke="var(--stage2-bd)" stroke-width="1.5"/>
+          <circle cx="66" cy="380" r="5" fill="var(--stage2)"/>
+          <text x="80" y="385" font-size="13.5" font-weight="700" fill="var(--stage2)">L2 · 多模态素材提取 <tspan font-weight="500" font-style="italic" fill="var(--stage2-sub)">MULTIMODAL EXTRACTION</tspan></text>
+          <g transform="translate(80,400)">
+            <rect width="360" height="126" rx="12" fill="var(--fig-bg)" stroke="var(--stage2-bd)" stroke-width="1.5" filter="url(#shadow-sm)"/>
+            <text x="16" y="28" font-size="15" font-weight="700" fill="var(--fig-ink)">🎙 ASR 转写</text>
+            <text x="16" y="46" font-size="10.5" font-style="italic" fill="var(--fig-ink40)">Qwen3-ASR · local GPU</text>
+            <text x="16" y="67" font-size="10" fill="var(--fig-ink60)">语音 → SRT 字幕</text>
+            <text x="16" y="84" font-size="10" fill="var(--fig-ink60)">本地零费用 · 66min 约 3min</text>
+            <text x="16" y="101" font-size="10" fill="var(--fig-ink60)">中文方言 · 自动语言检测</text>
+          </g>
+          <g transform="translate(570,400)">
+            <rect width="360" height="126" rx="12" fill="var(--fig-bg)" stroke="var(--stage2-bd)" stroke-width="1.5" filter="url(#shadow-sm)"/>
+            <text x="16" y="28" font-size="15" font-weight="700" fill="var(--fig-ink)">📄 PDF 解析</text>
+            <text x="16" y="46" font-size="10.5" font-style="italic" fill="var(--fig-ink40)">MinerU · TextIn API</text>
+            <text x="16" y="67" font-size="10" fill="var(--fig-ink60)">板书 → Markdown + 图片</text>
+            <text x="16" y="84" font-size="10" fill="var(--fig-ink60)">公式 / 表格 / 版面保留</text>
+            <text x="16" y="101" font-size="10" fill="var(--fig-ink60)">正式课主要依据</text>
+          </g>
+          <g transform="translate(1060,400)">
+            <rect width="360" height="126" rx="12" fill="var(--fig-bg)" stroke="var(--stage2-bd)" stroke-width="1.5" filter="url(#shadow-sm)"/>
+            <text x="16" y="28" font-size="15" font-weight="700" fill="var(--fig-ink)">🎞 关键帧 OCR</text>
+            <text x="16" y="46" font-size="10.5" font-style="italic" fill="var(--fig-ink40)">Frame Extract + MinerU OCR</text>
+            <text x="16" y="67" font-size="10" fill="var(--fig-ink60)">视频抽帧 → PPT 版面文字</text>
+            <text x="16" y="84" font-size="10" fill="var(--fig-ink60)">分享课事实基准（优先于 SRT）</text>
+            <text x="16" y="101" font-size="10" fill="var(--stage2)" font-weight="600">每次生成分享课必做</text>
+          </g>
+          <line x1="260" y1="526" x2="430" y2="563" stroke="var(--stage2)" stroke-width="2" marker-end="url(#arr-data)"/>
+          <line x1="750" y1="526" x2="750" y2="562" stroke="var(--stage2)" stroke-width="2" marker-end="url(#arr-data)"/>
+          <line x1="1240" y1="526" x2="1070" y2="563" stroke="var(--stage2)" stroke-width="2" marker-end="url(#arr-data)"/>
+          <g transform="translate(390,566)">
+            <rect width="720" height="42" rx="21" fill="var(--fig-bg)" stroke="var(--fig-pool-bd)" stroke-width="1.5" filter="url(#shadow-sm)"/>
+            <text x="360" y="18" font-size="13" font-weight="700" fill="var(--fig-pool-ink)" text-anchor="middle">📚 素材池 <tspan font-weight="500" fill="var(--fig-pool-sub)">Multimodal Assets</tspan></text>
+            <text x="360" y="34" font-size="9.5" fill="var(--fig-pool-sub)" text-anchor="middle">SRT 字幕 · 板书 Markdown · PPT 版面文字 —— 三源聚合</text>
+          </g>
+        </g>
+        <line x1="750" y1="608" x2="750" y2="642" stroke="var(--fig-arrow)" stroke-width="3" marker-end="url(#arr-data)"/>
+        <text x="762" y="629" font-size="11" font-weight="600" fill="var(--fig-arrow)">基准 ↓</text>
+
+        <g>
+          <rect x="40" y="648" width="1420" height="238" rx="18" fill="var(--stage3-bg)" stroke="var(--stage3-bd)" stroke-width="1.5"/>
+          <circle cx="66" cy="672" r="5" fill="var(--stage3)"/>
+          <text x="80" y="677" font-size="13.5" font-weight="700" fill="var(--stage3)">L3 · 课程生成 <tspan font-weight="500" font-style="italic" fill="var(--stage3-sub)">CORE GENERATION · Teach-Skill Driven</tspan></text>
+          <g transform="translate(80,700)">
+            <rect width="300" height="160" rx="12" fill="var(--fig-bg)" stroke="var(--stage3-bd)" stroke-width="1.5" filter="url(#shadow-sm)"/>
+            <text x="16" y="30" font-size="15" font-weight="700" fill="var(--fig-ink)">⚖ 交叉验证</text>
+            <text x="16" y="48" font-size="10.5" font-style="italic" fill="var(--fig-ink40)">Cross-Validation</text>
+            <text x="16" y="70" font-size="10" fill="var(--fig-ink60)">SRT × OCR × 用户纠偏</text>
+            <text x="16" y="88" font-size="10" fill="var(--fig-ink60)">→ "事实基准"</text>
+            <text x="16" y="106" font-size="10" fill="var(--stage3)" font-weight="600">PPT 版面文字优先</text>
+            <text x="16" y="124" font-size="10" fill="var(--fig-ink60)">人名 / 学校 / 术语核实</text>
+          </g>
+          <line x1="380" y1="780" x2="422" y2="780" stroke="var(--stage3)" stroke-width="2.5" marker-end="url(#arr-data)"/>
+          <g transform="translate(430,700)">
+            <rect width="300" height="160" rx="12" fill="var(--fig-bg)" stroke="var(--stage3-bd)" stroke-width="1.5" filter="url(#shadow-sm)"/>
+            <text x="16" y="30" font-size="15" font-weight="700" fill="var(--fig-ink)">📐 教学设计</text>
+            <text x="16" y="48" font-size="10.5" font-style="italic" fill="var(--fig-ink40)">Pedagogy · Teach Skill</text>
+            <text x="16" y="70" font-size="10" fill="var(--fig-ink60)">Mission（为什么学）</text>
+            <text x="16" y="88" font-size="10" fill="var(--fig-ink60)">ZPD 前置知识声明</text>
+            <text x="16" y="106" font-size="10" fill="var(--fig-ink60)">知识 → 技能 → 智慧</text>
+            <text x="16" y="124" font-size="10" fill="var(--fig-ink60)">≥3 练习 · 1 数值题</text>
+          </g>
+          <line x1="730" y1="780" x2="772" y2="780" stroke="var(--stage3)" stroke-width="2.5" marker-end="url(#arr-data)"/>
+          <text x="751" y="768" font-size="11" font-weight="600" fill="var(--stage3)" text-anchor="middle">生成</text>
+          <g transform="translate(780,700)">
+            <rect width="300" height="160" rx="12" fill="var(--fig-bg)" stroke="var(--fig-core)" stroke-width="2" filter="url(#glow-core)"/>
+            <text x="16" y="30" font-size="15" font-weight="700" fill="var(--fig-core-txt)">🤖 子智能体生成</text>
+            <text x="16" y="48" font-size="10.5" font-style="italic" fill="var(--fig-ink40)">Agentic HTML Generation</text>
+            <text x="16" y="70" font-size="10" fill="var(--fig-ink60)">逐课生成 HTML</text>
+            <text x="16" y="88" font-size="10" fill="var(--fig-ink60)">分享课：严格按基准，宁短勿假</text>
+            <text x="16" y="106" font-size="10" fill="var(--fig-ink60)">正式课：板书为准 + 标注拓展</text>
+            <text x="16" y="124" font-size="10" fill="var(--fig-core-txt)" font-weight="600">不编造公式 / 数据 / 案例</text>
+          </g>
+          <line x1="1080" y1="780" x2="1122" y2="780" stroke="var(--stage3)" stroke-width="2.5" marker-end="url(#arr-data)"/>
+          <g transform="translate(1130,700)">
+            <rect width="300" height="160" rx="12" fill="var(--fig-bg)" stroke="var(--stage3-bd)" stroke-width="1.5" filter="url(#shadow-sm)"/>
+            <text x="16" y="30" font-size="15" font-weight="700" fill="var(--fig-ink)">🕵 对抗式审查</text>
+            <text x="16" y="48" font-size="10.5" font-style="italic" fill="var(--fig-ink40)">Adversarial Review · 3 views</text>
+            <text x="16" y="70" font-size="10" fill="var(--fig-ink60)">教学逻辑</text>
+            <text x="16" y="88" font-size="10" fill="var(--fig-ink60)">知识前置（研一视角）</text>
+            <text x="16" y="106" font-size="10" fill="var(--fig-ink60)">内容准确性（逐段对比）</text>
+            <text x="16" y="124" font-size="10" fill="var(--fig-danger)" font-weight="600">问题修复后才推送</text>
+          </g>
+        </g>
+        <line x1="750" y1="886" x2="750" y2="920" stroke="var(--fig-arrow)" stroke-width="3" marker-end="url(#arr-data)"/>
+        <text x="762" y="908" font-size="11" font-weight="600" fill="var(--fig-arrow)">课程 ↓</text>
+
+        <g>
+          <rect x="40" y="928" width="1420" height="172" rx="18" fill="var(--stage4-bg)" stroke="var(--stage4-bd)" stroke-width="1.5"/>
+          <circle cx="66" cy="952" r="5" fill="var(--stage4)"/>
+          <text x="80" y="957" font-size="13.5" font-weight="700" fill="var(--stage4)">L4 · 质量门与发布 <tspan font-weight="500" font-style="italic" fill="var(--stage4-sub)">QUALITY GATES &amp; RELEASE</tspan></text>
+          <g transform="translate(80,976)">
+            <rect width="330" height="104" rx="12" fill="var(--fig-bg)" stroke="var(--stage4-bd)" stroke-width="1.5" filter="url(#shadow-sm)"/>
+            <text x="16" y="26" font-size="15" font-weight="700" fill="var(--fig-ink)">✅ 质量门</text>
+            <text x="16" y="44" font-size="10.5" font-style="italic" fill="var(--fig-ink40)">Quality Gates</text>
+            <text x="16" y="64" font-size="10" fill="var(--fig-ink60)">KaTeX 公式修复 ×2</text>
+            <text x="16" y="81" font-size="10" fill="var(--fig-ink60)">导航链 · catalog · 本地存储兼容</text>
+          </g>
+          <line x1="410" y1="1028" x2="522" y2="1028" stroke="var(--stage4)" stroke-width="2.5" marker-end="url(#arr-data)"/>
+          <g transform="translate(530,976)">
+            <rect width="330" height="104" rx="12" fill="var(--fig-bg)" stroke="var(--stage4-bd)" stroke-width="1.5" filter="url(#shadow-sm)"/>
+            <text x="16" y="26" font-size="15" font-weight="700" fill="var(--fig-ink)">🚀 自动部署</text>
+            <text x="16" y="44" font-size="10.5" font-style="italic" fill="var(--fig-ink40)">GitHub Actions · CI/CD</text>
+            <text x="16" y="64" font-size="10" fill="var(--fig-ink60)">git commit → 自动构建</text>
+            <text x="16" y="81" font-size="10" fill="var(--fig-ink60)">push 走 mihomo 代理</text>
+          </g>
+          <line x1="860" y1="1028" x2="972" y2="1028" stroke="var(--stage4)" stroke-width="2.5" marker-end="url(#arr-data)"/>
+          <g transform="translate(980,976)">
+            <rect width="330" height="104" rx="12" fill="var(--fig-bg)" stroke="var(--stage4-bd)" stroke-width="1.5" filter="url(#shadow-sm)"/>
+            <text x="16" y="26" font-size="15" font-weight="700" fill="var(--fig-ink)">🌐 对外呈现</text>
+            <text x="16" y="44" font-size="10.5" font-style="italic" fill="var(--fig-ink40)">GitHub Pages Site</text>
+            <text x="16" y="64" font-size="10" fill="var(--fig-ink60)">zhangs1r.github.io/shiclass</text>
+            <text x="16" y="81" font-size="10" fill="var(--fig-ink60)">37 节课程 · 暖色设计 · 暗色模式</text>
+          </g>
+        </g>
+        <line x1="750" y1="1100" x2="750" y2="1134" stroke="var(--fig-arrow)" stroke-width="3" marker-end="url(#arr-data)"/>
+        <text x="762" y="1122" font-size="11" font-weight="600" fill="var(--fig-arrow)">学习 ↓</text>
+
+        <g>
+          <rect x="40" y="1140" width="1420" height="112" rx="18" fill="var(--stage5-bg)" stroke="var(--stage5-bd)" stroke-width="1.5"/>
+          <circle cx="66" cy="1164" r="5" fill="var(--stage5)"/>
+          <text x="80" y="1169" font-size="13.5" font-weight="700" fill="var(--stage5)">L5 · 学习与反馈 <tspan font-weight="500" font-style="italic" fill="var(--stage5-sub)">LEARNING &amp; HUMAN FEEDBACK</tspan></text>
+          <g transform="translate(80,1188)">
+            <rect width="600" height="44" rx="22" fill="var(--fig-bg)" stroke="var(--stage5-bd)" stroke-width="1.5" filter="url(#shadow-sm)"/>
+            <text x="300" y="19" font-size="13" font-weight="700" fill="var(--fig-ink)" text-anchor="middle">📊 学习追踪 <tspan font-weight="500" fill="var(--fig-ink60)">Learning Tracker</tspan></text>
+            <text x="300" y="36" font-size="9.5" fill="var(--fig-ink60)" text-anchor="middle">localStorage · 标记已学 · 滚动保存 · 学习进度统计</text>
+          </g>
+          <line x1="680" y1="1210" x2="812" y2="1210" stroke="var(--fig-fb)" stroke-width="2.5" marker-end="url(#arr-data)"/>
+          <g transform="translate(820,1188)">
+            <rect width="600" height="44" rx="22" fill="var(--fig-bg)" stroke="var(--stage5-bd)" stroke-width="1.5" filter="url(#shadow-sm)"/>
+            <text x="300" y="19" font-size="13" font-weight="700" fill="var(--fig-ink)" text-anchor="middle">💬 用户反馈 <tspan font-weight="500" fill="var(--fig-ink60)">Human Feedback</tspan></text>
+            <text x="300" y="36" font-size="9.5" fill="var(--fig-ink60)" text-anchor="middle">发现问题（内容偏差 / 布局 / 术语）→ 迭代重构</text>
+          </g>
+        </g>
+        <path d="M 1430,1195 L 1505,1195 L 1505,740 L 1440,740" fill="none" stroke="var(--fig-fb)" stroke-width="2.5" stroke-dasharray="7,5" marker-end="url(#arr-fb)"/>
+        <text x="1513" y="905" font-size="12" font-weight="700" fill="var(--fig-fb)" writing-mode="tb" letter-spacing="2">反馈 · 迭代重构 FEEDBACK</text>
+
+        <g transform="translate(60,1284)">
+          <line x1="0" y1="12" x2="36" y2="12" stroke="var(--fig-arrow)" stroke-width="2.5" marker-end="url(#arr-data)"/>
+          <text x="46" y="17" font-size="12" fill="var(--fig-ink60)">数据流 Data Flow（素材 / 基准 / 课程 / 学习）</text>
+          <line x1="330" y1="12" x2="366" y2="12" stroke="var(--fig-fb)" stroke-width="2.5" stroke-dasharray="7,5" marker-end="url(#arr-fb)"/>
+          <text x="376" y="17" font-size="12" fill="var(--fig-ink60)">反馈 / 迭代 Feedback &amp; Revision</text>
+          <rect x="700" y="4" width="16" height="16" rx="4" fill="var(--fig-bg)" stroke="var(--fig-core)" stroke-width="1.6" filter="url(#shadow-sm)"/>
+          <text x="724" y="17" font-size="12" fill="var(--fig-ink60)">核心模块 Core（子智能体生成）</text>
+          <rect x="1010" y="4" width="16" height="16" rx="4" fill="var(--fig-bg)" stroke="var(--fig-pool-bd)" stroke-width="1.6"/>
+          <text x="1034" y="17" font-size="12" fill="var(--fig-ink60)">多模态素材池 Multimodal Assets</text>
+        </g>
+        <g transform="translate(60,1320)">
+          <rect width="1420" height="52" rx="14" fill="var(--fig-bg)" stroke="var(--fig-pool-bd)" stroke-width="1" filter="url(#shadow-sm)"/>
+          <text x="710" y="22" font-size="12.5" font-weight="700" fill="var(--stage2)" text-anchor="middle">关键统计 KEY STATISTICS</text>
+          <text x="130" y="42" font-size="10.5" fill="var(--fig-ink60)" text-anchor="middle">27 个视频</text>
+          <text x="330" y="42" font-size="10.5" fill="var(--fig-ink60)" text-anchor="middle">37 节课程</text>
+          <text x="530" y="42" font-size="10.5" fill="var(--fig-ink60)" text-anchor="middle">每周三自动更新</text>
+          <text x="730" y="42" font-size="10.5" fill="var(--fig-ink60)" text-anchor="middle">本地 ASR 零成本</text>
+          <text x="930" y="42" font-size="10.5" fill="var(--fig-ink60)" text-anchor="middle">OCR × SRT 交叉验证</text>
+          <text x="1130" y="42" font-size="10.5" fill="var(--fig-ink60)" text-anchor="middle">对抗式审查 3 视角</text>
+          <text x="1330" y="42" font-size="10.5" fill="var(--fig-ink60)" text-anchor="middle">KaTeX 公式渲染</text>
+        </g>
+      </svg>
+      <p class="pipeline-hint">← 左右滑动查看完整框架图 →</p>
+    </div>
+  </section>
 
   <main id="mainContent">
     <!-- rendered by JS -->
