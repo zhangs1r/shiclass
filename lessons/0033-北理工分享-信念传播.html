@@ -18,216 +18,296 @@
 <body>
 <div class="page">
 
-  <!-- Hero -->
   <div class="hero">
-    <div class="eyebrow">研讨会系列 · 系列26 · 北理工分享</div>
+    <div class="eyebrow">研讨会系列 · 系列26 · 组外同学分享</div>
     <h1>信念传播与概率图模型</h1>
-    <p class="subtitle">Belief Propagation on Probabilistic Graphical Models —— 从成对马尔可夫随机场到 Hammersley-Clifford 定理</p>
+    <p class="subtitle">推理问题 · 图模型的三种表示 · 成对马尔可夫随机场 · 因子图 · 消息传递与信念 · Loopy BP · Hammersley-Clifford 定理</p>
     <div class="hero-meta">
       <span>📅 2026-08-08</span>
-      <span>🎙️ 北京理工大学同学分享</span>
-      <span>📚 信念传播 · 概率图模型 · 变分推断</span>
+      <span>🎙️ 系列26 · 组外同学分享</span>
+      <span>📚 信念传播 · 概率图模型 · 推断</span>
     </div>
   </div>
 
-  <!-- Lead Grid -->
-  <section class="lead-grid">
-    <div class="callout callout-mission">
-      <h3>🎯 本讲目标</h3>
-      <p>理解信念传播（Belief Propagation）算法在概率图模型上的工作原理：从树形图上的精确推断，到有环图上的近似推断（Loopy BP），再到 Hammersley-Clifford 定理所揭示的马尔可夫随机场与吉布斯分布的等价关系。</p>
+  <div class="lead-grid">
+    <div class="callout">
+      <h4>🎯 学完本节，你应能</h4>
+      <ul>
+        <li>说出"推理问题"是什么，并解释为什么精确推理一般是 NP-难的</li>
+        <li>区分图模型的三种表示（有向 / 无向 / 因子图）</li>
+        <li>掌握成对马尔可夫随机场的联合分布分解，理解团 / 极大团 / 势函数</li>
+        <li>掌握 BP 的消息定义与更新规则，能推导链式结构的消息传递</li>
+        <li>理解树形图上的精确性与有环图（Loopy BP）的近似性，认识 Hammersley-Clifford 定理</li>
+      </ul>
     </div>
-    <div class="callout callout-key">
-      <h3>🔑 核心思想</h3>
-      <p>概率图模型用图结构编码变量间的依赖关系。信念传播通过"消息传递"的方式，在图上逐节点计算边际概率——在树形图上这是精确的，在有环图上则是近似的迭代过程。Hammersley-Clifford 定理保证了任何满足马尔可夫性的无向图模型都可以表示为团势函数乘积的形式（吉布斯分布），这为 BP 算法提供了理论基础。</p>
+    <div class="callout">
+      <h4>🔑 核心思想</h4>
+      <p>在推理问题里，直接对 $K^N$ 种变量配置求和计算边际概率是不可行的（NP-难）；但变量之间的依赖往往是<strong>稀疏</strong>的，可以用图来编码这种结构。信念传播（Belief Propagation, BP）正是利用图结构的局部性，把全局求和拆成节点之间传递的"消息"，从而高效地近似计算每个变量的边际分布——在树形图上精确，在有环图上则退化为近似迭代（Loopy BP）。</p>
     </div>
-  </section>
+  </div>
 
-  <!-- TOC -->
-  <nav class="toc">
-    <h3>📑 本讲导航</h3>
+  <div class="toc">
+    <h3>📖 目录</h3>
     <ul>
-      <li><a href="#sec-intro">1. 引言：为什么需要信念传播</a></li>
-      <li><a href="#sec-clique">2. 团与极大团</a></li>
-      <li><a href="#sec-mrf">3. 成对马尔可夫随机场</a></li>
-      <li><a href="#sec-factor">4. 因式分解与消息传递</a></li>
-      <li><a href="#sec-loopy">5. Loopy BP：有环图上的近似推断</a></li>
-      <li><a href="#sec-hc">6. Hammersley-Clifford 定理</a></li>
-      <li><a href="#sec-exercise">7. 课后练习</a></li>
+      <li><a href="#sec1">1. 推理问题（Inference Problem）</a></li>
+      <li><a href="#sec2">2. 图模型的三种表示</a></li>
+      <li><a href="#sec3">3. 成对马尔可夫随机场 MRF</a></li>
+      <li><a href="#sec4">4. 因子图：统一的表示</a></li>
+      <li><a href="#sec5">5. BP 的基本思想与消息传递</a></li>
+      <li><a href="#sec6">6. 链式结构的消息传递推导</a></li>
+      <li><a href="#sec7">7. 消息更新规则与信念</a></li>
+      <li><a href="#sec8">8. Loopy BP：有环图上的近似推断</a></li>
+      <li><a href="#sec9">9. Hammersley-Clifford 定理</a></li>
+      <li><a href="#quiz">📝 练习与自测</a></li>
     </ul>
-  </nav>
+  </div>
 
-  <!-- Section 1: Introduction -->
-  <section class="section-card" id="sec-intro">
-    <h2>1. 引言：为什么需要信念传播</h2>
+  <div id="sec1" class="section-card">
+    <h2>1. 推理问题（Inference Problem）</h2>
 
-    <p>在变分推断中，我们经常假设模型的表达能力有限。信念传播（Belief Propagation, BP）提供了一种在概率图模型上进行近似推断的方法，其表达能力比传统方法更好。</p>
-
-    <p>分享者提到，把图结构引入概率图是一个他之前没有接触过的方向。概率图模型中有一些更复杂的概率结构，而信念传播正是处理这些结构的核心工具。</p>
-
-    <div class="callout callout-note">
-      <h3>📝 分享背景</h3>
-      <p>本次分享来自北京理工大学同学对 Belief Propagation 相关文献的调研。内容涵盖概率图模型的基础概念、BP 算法的消息传递机制，以及 Hammersley-Clifford 定理的理论意义。以下内容严格基于 SRT 转录整理。</p>
-    </div>
-  </section>
-
-  <!-- Section 2: Cliques -->
-  <section class="section-card" id="sec-clique">
-    <h2>2. 团与极大团</h2>
-
-    <p>在无向图中，<strong>团（clique）</strong>是一个完全子图——子图中任意两个节点之间都有边相连。</p>
-
+    <h3>1.1 什么是推理问题？</h3>
+    <p>在很多科学和工程问题中，我们有两类变量：</p>
     <ul>
-      <li><strong>二元团</strong>：两个节点之间有一条边相连，就是一个最简单的团</li>
-      <li><strong>三元团</strong>：三个节点两两相连，构成一个更大的团</li>
-      <li><strong>极大团（maximal clique）</strong>：在当前团中，去掉任何一个节点就不再是团；多加一个节点也不再是团</li>
+      <li><strong>观测变量</strong>（observed variables）：我们能直接测量的数据，记作 $y$</li>
+      <li><strong>隐变量</strong>（hidden/latent variables）：我们不能直接观测、但需要推断的量，记作 $x$</li>
+    </ul>
+    <p>推理问题的核心任务：给定观测数据 $y$，推断隐变量 $x$ 的后验分布 $p(x \mid y)$。更具体地说，通常需要计算：</p>
+    <ul>
+      <li><strong>边缘概率</strong>：$p(x_i \mid y)$ ——某个特定隐变量的后验分布</li>
+      <li><strong>最大后验估计（MAP）</strong>：$\arg\max_x p(x \mid y)$ ——最可能的隐变量配置</li>
     </ul>
 
-    <p>从概率意义上理解，团代表了变量之间的<strong>相互关联</strong>：二元团表示两个变量之间的两两关联，三元团表示三个变量之间更复杂的相互影响，四元团则更复杂。</p>
+    <h3>1.2 为什么推理问题很难？</h3>
+    <p>如果有 $N$ 个隐变量、每个变量有 $K$ 种可能的状态，那么所有可能的配置数是 $K^N$。直接计算边缘概率需要对 $K^N$ 种配置求和：</p>
+    <div class="formula-box">
+      $$ p(x_i \mid y) = \sum_{x_1} \cdots \sum_{x_{i-1}} \sum_{x_{i+1}} \cdots \sum_{x_N} p(x_1, \dots, x_N \mid y) $$
+    </div>
+    <p>即使 $N = 100,\ K = 2$，$2^{100} \approx 10^{30}$ 也是天文数字。<strong>结论：精确推理在一般情况下是 NP-难的。</strong></p>
 
+    <h3>1.3 解决方案：利用图结构</h3>
+    <p>尽管一般情况很困难，很多实际问题中变量之间的依赖关系是<strong>稀疏</strong>的：每个变量只和少数几个其他变量有直接依赖。这种稀疏结构可以表示为一个图（Graph）。</p>
+    <p><strong>图模型（Graphical Model）</strong>就是用图来表示概率分布的结构化方法。不同类型的图模型对应不同的分解方式。分享中给出了一个典型的链式分解例子：</p>
+    <div class="formula-box">
+      $$ p(I, X, L, F, O) = p(I|X)\, p(X|L, F)\, p(L)\, p(F|O)\, p(O) $$
+    </div>
+  </div>
+
+  <div id="sec2" class="section-card">
+    <h2>2. 图模型的三种表示</h2>
+    <p>分享的重点是无向图模型（MRF）及统一表示（因子图），先建立整体坐标系：</p>
+    <table class="data-table">
+      <thead><tr><th>类型</th><th>结构</th><th>分解方式</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><strong>贝叶斯网络</strong></td><td>有向无环图</td><td>$p(x) = \prod_i p(x_i \mid \mathrm{pa}(x_i))$</td><td>边表示条件依赖方向</td></tr>
+        <tr><td><strong>马尔可夫随机场 MRF</strong></td><td>无向图</td><td>$p(\{x\}) = \frac{1}{Z} \prod \psi_{ij}(x_i,x_j) \prod \phi_i(x_i)$</td><td>边表示相互作用（本讲重点）</td></tr>
+        <tr><td><strong>因子图</strong></td><td>二分图</td><td>$p(\{x\}) = \frac{1}{Z} \prod_{a} f_a(\{x\}_a)$</td><td>显式表示因子，最通用</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div id="sec3" class="section-card">
+    <h2>3. 成对马尔可夫随机场 MRF</h2>
+    <p>MRF 使用<strong>无向图</strong>来表示变量之间的交互关系，不指定方向。核心思想：<strong>相邻的变量之间有直接的"相互作用"；不相邻的变量在给定邻居后条件独立</strong>。</p>
+
+    <div class="formula-box">
+      $$ p(\{x\}) = \frac{1}{Z} \Big[ \prod_{(ij) \in E} \psi_{ij}(x_i, x_j) \Big] \cdot \Big[ \prod_{i \in V} \phi_i(x_i) \Big] $$
+    </div>
+    <ul>
+      <li>$\{x\}$：所有隐变量的集合 $(x_1, \dots, x_N)$</li>
+      <li>$V$：节点集合（每个节点对应一个变量）；$E$：边集合（连接相互作用的变量对）</li>
+      <li>$\psi_{ij}(x_i, x_j)$：<strong>边势函数</strong>，衡量相邻变量状态组合的"兼容性"</li>
+      <li>$\phi_i(x_i)$：<strong>节点势函数</strong>，衡量单个变量状态的"倾向性"（通常来自观测数据）</li>
+      <li>$Z$：配分函数（归一化常数），保证所有配置的概率和为 1</li>
+    </ul>
+
+    <h3>团与极大团</h3>
+    <p><strong>团（clique）</strong>是指无向图中的完全子图——子图中任意两个节点之间都有边相连的节点子集。两个节点一条边构成<strong>二元团</strong>，三个节点两两相连构成<strong>三元团</strong>；在概率意义上，团代表变量之间的相互关联。</p>
+    <p><strong>极大团（maximal clique）</strong>：往团里去掉任何一个节点就不再是团，多增加一个节点也不再是团。</p>
     <div class="callout callout-intuition">
-      <h3>💡 直觉理解</h3>
-      <p>团就像一个"关系紧密的小圈子"——圈子里每个人都互相认识。极大团则是这个小圈子已经大到不能再加人了（加进来就有人不认识了），也不能减人（减了就不够"紧密"了）。</p>
+      <h4>💡 为什么叫"成对"（Pairwise）？</h4>
+      <p>Pairwise 的意思是：该图中<strong>极大团恰好为二元</strong>。更高阶的团可以把团内节点状态"统计"出来，收缩成一个新的单独节点，再与全图其他节点连接——于是所有非二元的极大团都可以化简成二元。所以分享先从最一般的成对马尔可夫随机场展开讨论：所有关系最基本的都是二元关系，更高阶的关系都可以从二元关系推出来。</p>
     </div>
-  </section>
+  </div>
 
-  <!-- Section 3: Pairwise MRF -->
-  <section class="section-card" id="sec-mrf">
-    <h2>3. 成对马尔可夫随机场</h2>
-
-    <p><strong>成对马尔可夫随机场（Pairwise Markov Random Field）</strong>是一种特殊的无向图概率模型，其特点是：无向图中的极大团恰好都是二元的（即只含两个节点）。</p>
-
-    <p>为什么只关注二元团？因为所有关系中最基本的就是二元关系，所有更高阶的关系都可以从二元关系推导出来。具体来说：</p>
-
+  <div id="sec4" class="section-card">
+    <h2>4. 因子图：统一的表示</h2>
+    <p>因子图是最通用的图模型表示，可以统一有向图与无向图。核心思想：用两种节点显式表示联合分布的分解结构。</p>
     <ul>
-      <li>更高阶的团（如三元团、四元团）可以将其节点状态"收缩"为一个新节点</li>
-      <li>这个新节点作为团的整体代表，重新放回全图中与其他节点连接</li>
-      <li>这样就把高阶团化简为二元团来处理</li>
+      <li><strong>变量节点（○）</strong>：代表一个随机变量</li>
+      <li><strong>因子节点（■）</strong>：代表一个因子函数（联合分布乘积中的一项）</li>
     </ul>
+    <p>因子图是一个<strong>二分图</strong>：所有边都连接一个变量节点和一个因子节点；变量节点之间没有边，因子节点之间也没有边。</p>
+    <div class="formula-box">
+      $$ p(x_1, \dots, x_N) = \frac{1}{Z} \prod_{a=1}^{M} \psi_a(\{x\}_a) $$
+    </div>
+    <p>其中 $\{x\}_a$ 是因子 $a$ 所连接的所有变量的集合。</p>
+  </div>
 
-    <p>因此，先讨论只含二元关系的马尔可夫随机场就足够了——这是概率图的一种基本表达形式。</p>
-  </section>
+  <div id="sec5" class="section-card">
+    <h2>5. BP 的基本思想与消息传递</h2>
 
-  <!-- Section 4: Factorization and Message Passing -->
-  <section class="section-card" id="sec-factor">
-    <h2>4. 因式分解与消息传递</h2>
+    <h3>5.1 精确计算边际概率为什么难？</h3>
+    <div class="formula-box">
+      $$ p(x_i) = \sum_{x_1} \cdots \sum_{x_{i-1}} \sum_{x_{i+1}} \cdots \sum_{x_N} p(x_1, \dots, x_N) $$
+    </div>
+    <p>这里有 $N-1$ 重求和。如果每个变量有 $K$ 种状态，复杂度是 $O(K^{N-1})$——即使 $N=100,\ K=2$ 也不可能。</p>
 
-    <p>在成对 MRF 上，联合概率分布可以分解为节点势函数和边势函数的乘积。求和顺序可以交换，这使得我们可以逐步消去变量。</p>
-
-    <p>以一个简单图为例（节点1-2-3-4），求边际概率的过程：</p>
-
+    <h3>5.2 BP 的关键洞察</h3>
+    <p>利用图结构的稀疏性（局部性），把全局求和拆成<strong>局部消息传递</strong>。在 MRF（或因子图）中，每个变量只和它的邻居有直接联系。因此，计算节点 $i$ 的边际时：</p>
     <ol>
-      <li><strong>消去节点1</strong>：只涉及节点1的势函数 $\psi_1(x_1)$ 和边势函数 $\psi_{12}(x_1, x_2)$，求和后得到一个关于 $x_2$ 的因子</li>
-      <li><strong>消去节点4</strong>：涉及 $\psi_{34}(x_3, x_4)$ 和 $\psi_4(x_4)$，求和后得到关于 $x_3$ 的因子</li>
-      <li><strong>消去节点3</strong>：将前一步的因子乘入，再对 $x_3$ 求和</li>
+      <li>把图从节点 $i$ 处"切开"</li>
+      <li>每个邻居负责把"它那一侧"的所有信息压缩成一个消息 $m$ 传过来</li>
+      <li>节点 $i$ 综合所有消息，得到自己的边际</li>
     </ol>
-
-    <p>这个过程中产生的每个因子就是一条<strong>消息</strong>。例如：</p>
-
-    <ul>
-      <li><strong>从节点1到节点2的消息</strong>：节点1结合自身势函数和边势函数，对 $x_1$ 求和后传递给节点2的"看法"</li>
-      <li><strong>从节点4到节点3的消息</strong>：节点4对 $x_4$ 求和后传递给节点3的信息</li>
-    </ul>
-
-    <p>本质上，每个消息代表了一个节点"从自己的角度看来，邻居节点取哪个值更合理"的度量。所有消息累积相乘，就得到了目标节点的边际概率分布。</p>
-
     <div class="callout callout-key">
-      <h3>🔑 消息的物理意义</h3>
-      <p>消息传递可以理解为：每个节点把自己的"意见"（结合自身势函数和与邻居的兼容性）汇总后告诉邻居。邻居收到所有方向的消息后，综合判断自己取各个值的概率。</p>
+      <h4>🔑 关键优势</h4>
+      <p>每个消息的计算只需要<strong>局部求和</strong>（只涉及相邻节点），复杂度大大降低。</p>
     </div>
-  </section>
+  </div>
 
-  <!-- Section 5: Loopy BP -->
-  <section class="section-card" id="sec-loopy">
-    <h2>5. Loopy BP：有环图上的近似推断</h2>
+  <div id="sec6" class="section-card">
+    <h2>6. 链式结构的消息传递推导</h2>
+    <p>从链式结构来推导。考虑一个成对 MRF（节点 1-2-3-4），联合分布为：</p>
+    <div class="formula-box">
+      $$ p(x_1, x_2, x_3, x_4) = \frac{1}{Z} \cdot \phi_1(x_1) \psi_{12}(x_1, x_2) \cdot \phi_2(x_2) \psi_{23}(x_2, x_3) \cdot \phi_3(x_3) \psi_{34}(x_3, x_4) \cdot \phi_4(x_4) $$
+    </div>
+    <p>我们想计算节点 2 的边缘概率 $p(x_2)$：</p>
+    <div class="formula-box">
+      $$ p(x_2) \propto \sum_{x_1} \sum_{x_3} \sum_{x_4} \big[ \phi_1 \psi_{12} \phi_2 \psi_{23} \phi_3 \psi_{34} \phi_4 \big] $$
+    </div>
+    <p>利用<strong>乘法对加法的分配律</strong>，把求和"塞进去"：</p>
+    <div class="formula-box">
+      $$ p(x_2) \propto \phi_2(x_2) \cdot \Big[ \sum_{x_1} \phi_1(x_1) \psi_{12}(x_1, x_2) \Big] \cdot \Big[ \sum_{x_3} \phi_3(x_3) \psi_{23}(x_2, x_3) \big[ \sum_{x_4} \phi_4(x_4) \psi_{34}(x_3, x_4) \big] \Big] $$
+    </div>
+    <p>这里括号里的东西就是<strong>消息</strong>：</p>
+    <div class="formula-box">
+      $$ m_{1 \to 2}(x_2) = \sum_{x_1} \phi_1(x_1) \psi_{12}(x_1, x_2) $$
+      $$ m_{3 \to 2}(x_2) = \sum_{x_3} \phi_3(x_3) \psi_{23}(x_2, x_3) \big[ \sum_{x_4} \phi_4(x_4) \psi_{34}(x_3, x_4) \big] $$
+      $$ m_{4 \to 3}(x_3) = \sum_{x_4} \phi_4(x_4) \psi_{34}(x_3, x_4) $$
+    </div>
+    <p>所以：</p>
+    <div class="formula-box">
+      $$ p(x_2) \propto \phi_2(x_2) \cdot m_{1 \to 2}(x_2) \cdot m_{3 \to 2}(x_2) $$
+    </div>
+    <p>求和顺序可以交换，因为每个求和只涉及与目标节点相关的局部因子——这正是指数级复杂度被"局部化"的核心。</p>
+  </div>
 
-    <p>上面的因式分解在<strong>树形图</strong>（无环图）上是精确的——对某个节点来说，消息传播就是一次"前向-后向"遍历，追溯到底就结束了，不会循环。</p>
+  <div id="sec7" class="section-card">
+    <h2>7. 消息更新规则与信念</h2>
 
-    <p>但当概率图模型<strong>有环</strong>时，情况就不同了：</p>
-
+    <h3>7.1 消息（Message）</h3>
+    <p>定义：$m_{i \to j}(x_j)$ 是从节点 $i$ 发送给相邻节点 $j$ 的消息。含义：节点 $i$ 对节点 $j$ 说——"根据我这一侧的所有信息，我认为你取状态 $x_j$ 的可信度是 $m_{i \to j}(x_j)$。"</p>
     <ul>
-      <li>追溯消息来源时会遇到循环——"要知道A的消息需要B，要知道B的消息需要C，要知道C的消息又需要A"</li>
-      <li>这时需要给一个<strong>初始值</strong>，然后不断迭代更新消息</li>
-      <li>每次迭代用最新的消息值重新计算，直到消息不再变化（收敛）</li>
+      <li>消息是一个<strong>非负函数</strong>，定义在 $x_j$ 的所有可能状态上</li>
+      <li>如果 $x_j$ 离散且有 $\kappa$ 种状态，消息就是长度为 $\kappa$ 的向量；如果连续，消息是一个函数（如高斯分布的均值/方差）</li>
+      <li>消息值<strong>不要求归一化</strong>——它们只是"相对可信度"</li>
     </ul>
 
-    <p>这就是<strong>Loopy BP</strong>（循环信念传播）。</p>
-
-    <div class="callout callout-warning">
-      <h3>⚠️ 收敛性问题</h3>
-      <p>在树形图上，BP 有精确值保证。但在有环图上，Loopy BP <strong>不保证收敛</strong>——消息可能振荡、可能发散、也可能碰巧收敛到一个近似解。这是 Loopy BP 的理论局限。</p>
+    <h3>7.2 消息更新规则</h3>
+    <div class="formula-box">
+      $$ m_{i \to j}(x_j) = \sum_{x_i} \Big[ \phi_i(x_i) \cdot \psi_{ij}(x_i, x_j) \cdot \prod_{k \in \mathcal{N}(i) \setminus \{j\}} m_{k \to i}(x_i) \Big] $$
     </div>
-  </section>
+    <p>节点 $j$ 从节点 $i$ 收到的新消息：节点 $i$ 在收集了<b>除 $j$ 外所有邻居</b>的意见后，结合自己的证据，对每个可能的 $x_i$ 产生一个可信度，再乘以 $x_i$ 与 $x_j$ 的兼容性，最后把所有 $x_i$ 的可能性汇总成一个关于 $x_j$ 的信念。</p>
 
-  <!-- Section 6: Hammersley-Clifford -->
-  <section class="section-card" id="sec-hc">
-    <h2>6. Hammersley-Clifford 定理</h2>
+    <h3>7.3 信念（Belief）</h3>
+    <p>定义：$b_i(x_i)$ 是节点 $i$ 的信念，即 BP 给出的节点 $i$ 的<strong>近似边际分布</strong>：</p>
+    <div class="formula-box">
+      $$ b_i(x_i) = k \cdot \phi_i(x_i) \cdot \prod_{j \in \mathcal{N}(i)} m_{j \to i}(x_i) $$
+    </div>
+    <ul>
+      <li>$k$：归一化常数（保证 $\sum_{x_i} b_i(x_i) = 1$）</li>
+      <li>$\phi_i(x_i)$：节点 $i$ 自身的观测证据</li>
+      <li>$\prod_{j \in \mathcal{N}(i)} m_{j \to i}(x_i)$：所有邻居传来的消息的乘积</li>
+    </ul>
+    <div class="callout callout-intuition">
+      <h4>💡 物理含义</h4>
+      <p>节点 $i$ 的信念 = <strong>（自己的证据）×（所有邻居的意见）</strong>。为什么是乘积？因为在给定 $x_i$ 的条件下，来自不同邻居的消息是条件独立的（图模型马尔可夫性的推论），所以它们的证据可以相乘。归一化后，$b_i(x_i)$ 就是对真实边缘概率 $p(x_i \mid y)$ 的近似。</p>
+    </div>
+  </div>
 
-    <p>分享者指出，整个 BP 理论中<strong>最重要的理论贡献</strong>是 Hammersley-Clifford 定理：</p>
+  <div id="sec8" class="section-card">
+    <h2>8. Loopy BP：有环图上的近似推断</h2>
+    <p>前面的推导在<strong>树形图</strong>（无环）上是精确的——对某个节点来说，消息传播就是一次"前向-后向"遍历，追溯到底一定有尽头，不会循环，收敛性有保证。</p>
+    <p>但当图<strong>有环</strong>时，情况不同了：要知道这个节点传来的消息，就得知道那个节点的消息；要知道那个节点的消息，又得知道这个节点传回去的消息……形成循环依赖。这时只能：</p>
+    <ol>
+      <li>给定一个<strong>初始消息</strong>（初始化）</li>
+      <li>按消息更新公式不断迭代更新所有消息</li>
+      <li>直到消息（或信念）收敛</li>
+    </ol>
+    <div class="callout callout-warning">
+      <h4>⚠️ 收敛性不可保证</h4>
+      <p>在树形图上 BP 有精确值保证；在<strong>有环图</strong>上，Loopy BP 的收敛性没有理论保证——可能振荡、可能发散，也可能碰巧收敛到一个近似解。这是 Loopy BP 的理论局限。</p>
+    </div>
+  </div>
 
+  <div id="sec9" class="section-card">
+    <h2>9. Hammersley-Clifford 定理</h2>
+    <p>分享者指出，整个 BP 理论中最重要、也最基础的理论贡献是 Hammersley-Clifford 定理：</p>
     <div class="callout callout-mission">
-      <h3>📐 定理内容</h3>
-      <p>任何满足马尔可夫性的无向图概率模型，其联合概率密度<strong>总是可以</strong>分解为图上团的势函数的乘积——即总是能写成吉布斯分布的形式。</p>
+      <h4>📐 定理内容</h4>
+      <p>任何满足<strong>马尔可夫性</strong>的无向图概率模型（图中的边代表马尔可夫性：节点只依赖于与它相邻的节点），其联合概率密度<strong>总是可以</strong>分解为图上团的势函数的乘积——即总是能写成<strong>吉布斯分布</strong>的形式。</p>
       <p>反过来也成立：任何吉布斯分布都可以对应一个满足马尔可夫性的无向图概率模型。</p>
     </div>
-
-    <p>这个定理的意义在于：</p>
-
+    <p>这个定理揭示了：</p>
     <ul>
-      <li>它建立了<strong>马尔可夫性</strong>（局部条件独立）与<strong>吉布斯分布</strong>（全局因子分解）之间的等价关系</li>
-      <li>它保证了 BP 算法的消息传递形式是有理论基础的——因为联合分布确实可以写成势函数乘积</li>
-      <li>它也说明了为什么变分推断中的近似假设（用有限表达力的分布去近似）在图模型上是可行的</li>
+      <li><strong>局部马尔可夫性</strong>（条件独立）与<strong>全局因子分解</strong>（势函数乘积，即吉布斯形式）是等价的</li>
+      <li>它是 BP 消息传递得以成立的理论地基——联合分布确实能写成势函数乘积</li>
+      <li>它也是变分推断中"用有限表达力的分布去近似"这一思路的图模型依据</li>
     </ul>
+    <p>分享者提到，原本想把 Hammersley-Clifford 定理的证明讲一讲，但"要讲完 BP 以及后面的东西，一个小时不太够"，于是把一份 <em>Hammersley Construction</em> 的 PPT 文件发到了聊天框，供大家自行参考。</p>
+  </div>
 
-    <p>分享者提到原本想讲 Hammersley-Clifford 定理的证明，但"要讲完 BP 以及后面的东西，一个小时不太够"，所以把 PPT 中关于 Hammersley Construction 的文件分享到了聊天框供大家自行参考。</p>
-  </section>
-
-  <!-- Exercise -->
-  <section class="section-card exercise-box" id="sec-exercise">
-    <h2>7. 课后练习</h2>
+  <div id="quiz" class="section-card exercise-box">
+    <h2>📝 练习与自测</h2>
 
     <div class="exercise">
-      <h4>练习1：团的识别</h4>
-      <p>给定一个无向图，节点为 {A, B, C, D}，边为 {A-B, B-C, A-C, C-D}。请列出所有的团和极大团。</p>
+      <h4>练习1：推理问题的复杂度</h4>
+      <p>有 50 个二元隐变量，精确计算某个变量的边缘概率需要对多少种配置求和？为什么说精确推理一般不可行？</p>
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
-        <p>团有：{A,B}、{A,C}、{B,C}、{A,B,C}、{C,D}。极大团有：{A,B,C}（三元团，无法再扩展）和 {C,D}（二元团，无法再扩展）。</p>
+        <p>需要对 $2^{49}$ 种配置求和（约 $5.6 \times 10^{14}$，天文数字）。如果依赖关系是稠密的，精确推理（求边缘、求 MAP）一般是 NP-难的；只有利用图结构的稀疏性（如 BP 的消息局部化）才可能高效完成。</p>
       </details>
     </div>
 
     <div class="exercise">
-      <h4>练习2：消息传递直觉</h4>
-      <p>在一个链状图 A—B—C 上，如果要计算节点 B 的边际概率，节点 A 传给 B 的消息和节点 C 传给 B 的消息分别代表什么含义？为什么最终的边际概率是这两个消息的乘积（再归一化）？</p>
+      <h4>练习2：消息的直觉理解</h4>
+      <p>在一个链状图 A—B—C 上，节点 A 传给 B 的消息 $m_{A \to B}(x_B)$ 代表什么含义？节点 B 的信念为什么是两条消息的乘积？</p>
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
-        <p>节点A传给B的消息代表"A从自己的角度看来，B取各个值的合理程度"——它综合了A的自身势函数和A-B的边势函数。同理，C传给B的消息代表"C看来B取各个值的合理程度"。B的边际概率综合了来自两个方向的"意见"，所以是两个消息的乘积再归一化。</p>
+        <p>$m_{A \to B}(x_B)$ 表示"A 结合自身证据和 A-B 兼容性后，认为 B 取各个状态的可信度"；C 同理。B 的信念 = 自身证据 × A 侧消息 × C 侧消息。因为给定 $x_B$ 时，两侧信息条件独立（图模型马尔可夫性），证据可以相乘。</p>
       </details>
     </div>
 
     <div class="exercise">
-      <h4>练习3：Loopy BP 的困境</h4>
-      <p>考虑一个简单的环形图 A—B—C—A（三个节点构成一个环）。如果用 Loopy BP 来计算节点A的边际概率，消息传递的顺序会怎样？为什么说结果可能不精确？</p>
+      <h4>练习3：消息更新规则</h4>
+      <p>写出一般消息更新公式 $m_{i \to j}(x_j) = \sum_{x_i} [\phi_i(x_i) \psi_{ij}(x_i,x_j) \prod_{k \in \mathcal{N}(i) \setminus \{j\}} m_{k \to i}(x_i)]$，并解释为什么乘积中要排除 $m_{j \to i}$。</p>
       <details class="exercise-answer">
         <summary>点击查看答案</summary>
-        <p>在环形图上，A→B 的消息依赖 C→B 的消息，而 C→B 的消息又依赖 A→C 的消息，A→C 的消息又依赖 B→A 的消息……形成循环依赖。必须给一个初始值开始迭代。由于存在循环，消息可能不会收敛到精确值（不同于树形图上的有限步精确推断），最终结果只是一个近似。</p>
+        <p>排除 $j \to i$ 的消息是为了避免"回声"：节点 $i$ 向 $j$ 传消息时，不应该把 $j$ 自己传来的信息原样传回去（信息循环）。节点 $i$ 综合的是<strong>除 $j$ 外</strong>所有邻居的意见，再结合自身证据与 $i$-$j$ 兼容性，汇总成对 $j$ 的意见。</p>
       </details>
     </div>
-  </section>
 
-  <!-- Nav Links -->
+    <div class="exercise">
+      <h4>练习4：树 vs 有环</h4>
+      <p>为什么 BP 在树形图上是精确的，在有环图上却只是近似？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>树形图上消息沿无环路径前向-后向各传一次就"到头"，每个消息只被计算一次且不会自我依赖，结果精确。有环图上消息会绕圈反复传递（消息依赖自己），必须初始化后迭代直至（可能不）收敛，收敛结果没有精确性保证。</p>
+      </details>
+    </div>
+  </div>
+
   <div class="nav-links">
     <a href="0032-KF-L20-LQR-2.html" class="prev">← KF L20(2/2)：稳态LQR与KF对偶性</a>
     <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
-    <a href="0034-组内分享-陈奕航-足式机器人导航.html" class="next">组内分享：足式机器人动态环境导航 →</a>
+    <a href="0034-组内分享-陈奕航-L-GAIL动态导航.html" class="next">L-GAIL：部分可观测动态环境下的移动机器人导航 →</a>
   </div>
 
-  <!-- Footnote -->
   <div class="foot-note">
-    <p>📖 来源：研讨会系列26 · 北京理工大学同学分享 · 2026-08-08 · 内容基于ASR转录整理</p>
-    <p>⚠️ 本节为分享类课程，内容严格基于SRT转录。因ASR转录存在识别误差，部分表述已做语义修正，但未添加转录中未提及的公式或数据。</p>
+    <p>📖 来源：研讨会系列26 · 组外同学分享 · 2026-08-08 · 内容基于 SRT 转录 + PPT 版面文字整理</p>
+    <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px">⚠️ 本节为分享类课程，严格按分享内容整理；PPT 中水印显示"厦门大学航空航天"，具体主讲人单位以现场确认为准。</p>
   </div>
-
 </div>
-
 <script src="assets/shiclass.js"></script>
 <script src="../shared/lesson-tools.js"></script>
 </body>

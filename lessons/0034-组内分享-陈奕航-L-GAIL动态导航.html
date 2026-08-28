@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L-GAIL：部分可观测动态环境下的移动机器人导航 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="assets/shiclass.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+</head>
+<body>
+<div class="page">
+
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · 系列27 · 组内分享</div>
+    <h1>L-GAIL：部分可观测动态环境下的移动机器人导航</h1>
+    <p class="subtitle">LiDAR 端到端反应式导航：非对称 Actor-Critic · GRU 时序编码 · 辅助预测（Masked Chamfer Loss）· PPO-GAIL 两阶段训练 · TurtleBot3 零微调迁移</p>
+    <div class="hero-meta">
+      <span>📅 2026-08-15</span>
+      <span>🎙️ 陈奕航（江南大学）</span>
+      <span>🤝 合作：张健强 · 指导：倪雨青老师</span>
+    </div>
+  </div>
+
+  <div class="lead-grid">
+    <div class="callout">
+      <h4>🎯 学完本节，你应能</h4>
+      <ul>
+        <li>说清端到端导航在"部分可观测 + 高度动态"环境下的两大难点</li>
+        <li>理解非对称 Actor-Critic：为什么训练时给 Critic 特权信息、部署时却能丢弃</li>
+        <li>理解 GRU 时序编码 + 辅助预测（Masked Chamfer Loss）如何让隐特征理解障碍物运动</li>
+        <li>理解 GAIL 对抗模仿学习如何把专家示范变成奖励信号</li>
+        <li>了解从仿真到 TurtleBot3 实机"零微调迁移"需要对齐哪些接口</li>
+      </ul>
+    </div>
+    <div class="callout">
+      <h4>🔑 核心思想</h4>
+      <p>与其让导航策略"看一眼就决策"，不如让网络学会"看一段历史、推断障碍物要去哪"。L-GAIL 用 GRU 编码短时 LiDAR 历史得到潜在特征 $z_t$，再用 Masked Chamfer 辅助任务强迫 $z_t$ 编码障碍物的运动趋势；训练时用非对称 Actor-Critic（Critic 享受特权信息）和 GAIL（模仿专家示范）帮 Actor 学得又稳又像人，部署时只剩 Actor 和 GRU，零额外开销，直接迁移到 TurtleBot3。</p>
+    </div>
+  </div>
+
+  <div class="toc">
+    <h3>📖 目录</h3>
+    <ul>
+      <li><a href="#sec1">1. 分享背景</a></li>
+      <li><a href="#sec2">2. 问题背景：传统导航方法在动态环境下的困境</a></li>
+      <li><a href="#sec3">3. 问题定义：部分可观测动态导航</a></li>
+      <li><a href="#sec4">4. 方法总览：L-GAIL 的核心创新</a></li>
+      <li><a href="#sec5">5. 辅助预测：Masked Chamfer Loss</a></li>
+      <li><a href="#sec6">6. 非对称 Actor-Critic 与 PPO</a></li>
+      <li><a href="#sec7">7. GAIL 对抗模仿学习</a></li>
+      <li><a href="#sec8">8. 奖励函数与两阶段训练</a></li>
+      <li><a href="#sec9">9. 实验与消融分析</a></li>
+      <li><a href="#sec10">10. 实机部署：TurtleBot3 零微调迁移</a></li>
+      <li><a href="#sec11">11. 总结与未来工作</a></li>
+      <li><a href="#quiz">📝 练习与自测</a></li>
+    </ul>
+  </div>
+
+  <div id="sec1" class="section-card">
+    <h2>1. 分享背景</h2>
+    <p>本次组内分享由<span class="hl">陈奕航</span>同学（大三升大四）汇报他与张健强同学合作的课题工作，指导老师为倪雨青老师。工作题目为 <em>L-GAIL：面向部分可观测动态导航的非对称学习框架</em>——目标是在高度动态、仅靠局部感知（LiDAR）的环境下，训练一个稳定、安全、可迁移的端到端反应式导航策略，并最终部署到 TurtleBot3 移动机器人上。</p>
+    <div class="callout callout-note">
+      <h4>📝 关于"足式机器人"的说明</h4>
+      <p>汇报开头自我介绍时提到过足式机器人比赛经历，但本次分享的项目本体是<span class="hl">轮式移动机器人（TurtleBot3）</span>的 LiDAR 端到端导航。旧版课程页面误将主题写成"足式机器人导航"，本页已按分享实际内容修正。</p>
+    </div>
+  </div>
+
+  <div id="sec2" class="section-card">
+    <h2>2. 问题背景：传统导航方法在动态环境下的困境</h2>
+    <p>传统方法（如 A* 全局规划、APF 人工势场局部规划）在<span class="hl">静态场景</span>中通常是有效的。但在<strong>高度动态环境</strong>中，它们暴露出两个关键问题：</p>
+    <ul>
+      <li><strong>动态障碍不断改变局部空间</strong>：局部方法（如势场法）容易陷入<strong>停滞</strong>甚至<strong>局部最小值</strong>，机器人"卡在"动态障碍附近出不来的现象时有发生。</li>
+      <li><strong>对运动趋势建模弱</strong>：传统规则只能看到当前的障碍位置，不能有效利用<strong>短时历史</strong>去推断"障碍物正在往哪移动"。</li>
+    </ul>
+    <p>这是"反应式"问题：机器人看不到全局地图，只能靠当前局部观测做决策；而动态障碍的运动信息藏在<b>历史</b>里——单帧 LiDAR 无法区分"正在靠近的障碍物"和"静止的障碍物"。</p>
+  </div>
+
+  <div id="sec3" class="section-card">
+    <h2>3. 问题定义：部分可观测动态导航</h2>
+
+    <h3>3.1 动作空间：离散运动原语</h3>
+    <p>为了避免连续动作空间探索难、行为不易约束的问题，工作采用 <strong>6 个离散运动原语</strong>作为动作空间：</p>
+    <table class="data-table">
+      <thead><tr><th>Index</th><th>动作</th><th>线速度 $v$</th><th>角速度 $\omega$</th></tr></thead>
+      <tbody>
+        <tr><td>0</td><td>Rotate Left（原地左转）</td><td>0</td><td>$+\omega_{\text{rot}}$</td></tr>
+        <tr><td>1</td><td>Move Forward（直行）</td><td>$+v_{\text{rad}}$</td><td>0</td></tr>
+        <tr><td>2</td><td>Rotate Right（原地右转）</td><td>0</td><td>$-\omega_{\text{rot}}$</td></tr>
+        <tr><td>3</td><td>Curve Left（左转弯行）</td><td>$+v_{\text{curve}}$</td><td>$+\omega_{\text{curve}}$</td></tr>
+        <tr><td>4</td><td>Curve Right（右转弯行）</td><td>$+v_{\text{curve}}$</td><td>$-\omega_{\text{curve}}$</td></tr>
+        <tr><td>5</td><td>Move Backward（倒车）</td><td>$-v_{\text{back}}$</td><td>0</td></tr>
+      </tbody>
+    </table>
+    <p>原地旋转让机器人能在极窄环境下快速调头，弯行则兼顾前进速度与转向，适合做平滑绕障。</p>
+
+    <h3>3.2 状态转移：非完整差速约束</h3>
+    <div class="formula-box">
+      $$ \begin{bmatrix} x_{t+1} \\ y_{t+1} \\ \theta_{t+1} \end{bmatrix} = \begin{bmatrix} x_t \\ y_t \\ \theta_t \end{bmatrix} + \begin{bmatrix} \cos\theta_t & 0 \\ \sin\theta_t & 0 \\ 0 & 1 \end{bmatrix} \begin{bmatrix} v_t \\ \omega_t \end{bmatrix} \Delta t \tag{1} $$
+      <p style="margin-top:8px;font-size:0.9rem">其中 $[x_t, y_t, \theta_t]^T$ 为全局系下的 2D 位姿，$\Delta t$ 为控制间隔</p>
+    </div>
+
+    <h3>3.3 局部观测与时空状态</h3>
+    <p>时刻 $t$ 的瞬时局部观测为 $o_t \in \mathbb{R}^{D_{\text{obs}}}$，由两部分拼接：</p>
+    <div class="formula-box">
+      $$ o_t = \begin{bmatrix} o_{\text{lidar},t} \\ o_{\text{nav},t} \end{bmatrix} \in \mathbb{R}^{D_{\text{obs}}} $$
+    </div>
+    <ul>
+      <li>$o_{\text{lidar},t}$：扇形分区 minimum-pooling + 范围归一化的 LiDAR 扫描</li>
+      <li>$o_{\text{nav},t}$：自身导航特征（归一化目标距离、航向误差、当前速度）</li>
+    </ul>
+    <p>高度动态环境下，单帧观测不足以推断运动障碍的趋势（它们<strong>正在靠近还是静止</strong>？）。因此把瞬时观测扩展成<strong>时空状态历史</strong> $s_t$，交给 GRU 编码——这是第 4、5 节的核心伏笔。</p>
+  </div>
+
+  <div id="sec4" class="section-card">
+    <h2>4. 方法总览：L-GAIL 的核心创新</h2>
+    <p>L-GAIL 在端到端强化学习（PPO）+ 模仿学习（GAIL）的骨架上，叠加了四个关键设计：</p>
+    <div class="callout callout-key">
+      <h4>🔑 四个核心创新点</h4>
+      <ul>
+        <li><strong>非对称 Actor-Critic</strong>：actor 仅基于局部 LiDAR 历史决策；critic 在训练阶段额外利用特权信息（障碍物真实速度、位置），提升价值估计质量与训练稳定性。</li>
+        <li><strong>GRU 时序潜在特征提取</strong>：对短时 LiDAR 历史序列编码，提取潜在时空特征 $z_t$，缓解单帧观测对动态障碍运动趋势感知不足的问题。</li>
+        <li><strong>两阶段课程学习</strong>：先做感知相关的预训练（辅助预测），再开展 PPO-GAIL 联合优化，提高端到端训练的稳定性和收敛效果。</li>
+        <li><strong>GAIL 驱动模仿 + APF 安全惩罚</strong>：用对抗模仿学习让状态-动作分布逼近专家示范；在奖励中加入基于最近障碍距离的惩罚项，增强近距离动态交互时的安全性。</li>
+      </ul>
+    </div>
+  </div>
+
+  <div id="sec5" class="section-card">
+    <h2>5. 辅助预测：Masked Chamfer Loss</h2>
+
+    <h3>5.1 动机：为什么不纯靠策略奖励？</h3>
+    <p>单纯依赖最终策略奖励信号训练，会面临几个问题：<strong>奖励延迟</strong>、<strong>训练前期探索噪声大</strong>，而且网络学到什么"黑盒表示"不可控——$z_t$ 可能足够完成任务，但<strong>不一定真的编码了动态障碍的运动趋势</strong>。为此，工作设计了辅助预测任务，强迫 GRU 隐特征"理解"障碍物的运动。</p>
+
+    <h3>5.2 编码与预测头</h3>
+    <p>GRU 把时空状态历史编码为潜在特征 $z_t$，再由 MLP 辅助预测头从中预测 $K$ 个障碍物运动描述子 $\{\hat{\mathbf{p}}_{j,t}\}_{j=1}^{K}$（位置 + 速度）：</p>
+    <div class="formula-box">
+      $$ \mathbf{s}_t \xrightarrow{\mathrm{GRU}} \mathbf{z}_t \in \mathbb{R}^{D} \quad;\quad \{\hat{\mathbf{p}}_{j,t}\}_{j=1}^K = \mathrm{MLP}(\mathbf{z}_t) \quad;\quad \hat{\mathbf{p}}_{j,t} = [\hat{\mathbf{p}}_{j,t}^{\mathrm{pos}},\ \hat{\mathbf{p}}_{j,t}^{\mathrm{vel}}] $$
+    </div>
+    <p>分享中提到训练地图里有 7 个障碍物，当时训练里 $K$ 直接取 6（作者自己也觉得这样写不够严谨，是一个可改进点）。</p>
+
+    <h3>5.3 加权成对距离</h3>
+    <p>由于位置误差与速度误差量纲不同，设计加权成对距离：</p>
+    <div class="formula-box">
+      $$ d(\mathbf{p}_{i,t}, \hat{\mathbf{p}}_{j,t}) = \alpha_{\mathrm{pos}} \Big\| \frac{\mathbf{p}_{i,t}^{\mathrm{pos}} - \hat{\mathbf{p}}_{j,t}^{\mathrm{pos}}}{s_{\mathrm{pos}}} \Big\|_2^2 + \alpha_{\mathrm{vel}} \Big\| \frac{\mathbf{p}_{i,t}^{\mathrm{vel}} - \hat{\mathbf{p}}_{j,t}^{\mathrm{vel}}}{s_{\mathrm{vel}}} \Big\|_2^2 $$
+    </div>
+    <p>分别用 $s_{\mathrm{pos}}$、$s_{\mathrm{vel}}$ 归一化，再用 $\alpha_{\mathrm{pos}}$、$\alpha_{\mathrm{vel}}$ 加权求和，以平衡几何误差与运动误差的贡献。</p>
+
+    <h3>5.4 双向 Chamfer 损失</h3>
+    <div class="formula-box">
+      $$ \mathcal{L}_{\mathrm{r2p}} = \frac{1}{|\mathcal{V}_t|} \sum_{i \in \mathcal{V}_t} \min_j d(\mathbf{p}_{i,t}, \hat{\mathbf{p}}_{j,t}), \qquad \mathcal{L}_{\mathrm{p2r}} = \frac{1}{K} \sum_{j=1}^{K} \min_{i \in \mathcal{V}_t} d(\hat{\mathbf{p}}_{j,t}, \mathbf{p}_{i,t}) $$
+    </div>
+    <div class="formula-box">
+      $$ \mathcal{L}_{\mathrm{aux}} = \begin{cases} \mathcal{L}_{\mathrm{r2p}} + \mathcal{L}_{\mathrm{p2r}}, & |\mathcal{V}_t| > 0 \\ 0, & |\mathcal{V}_t| = 0 \end{cases} $$
+    </div>
+    <ul>
+      <li>$\mathcal{L}_{\mathrm{r2p}}$（真实→预测）：每个<strong>可见障碍物必须被至少一个预测匹配</strong> → 防止遗漏</li>
+      <li>$\mathcal{L}_{\mathrm{p2r}}$（预测→真实）：每个<strong>预测必须贴近某个真实障碍物</strong> → 抑制幻觉</li>
+    </ul>
+    <div class="callout callout-intuition">
+      <h4>💡 为什么要"用完即弃"？</h4>
+      <p>这个辅助预测头只出现在<strong>预训练阶段</strong>：预训练完就扔掉，部署时 GRU + Actor 的正常推理路径<strong>零额外开销</strong>。它存在的意义是"逼" $z_t$ 去编码动态信息，而不是给部署增加负担。</p>
+    </div>
+  </div>
+
+  <div id="sec6" class="section-card">
+    <h2>6. 非对称 Actor-Critic 与 PPO</h2>
+
+    <h3>6.1 架构定义</h3>
+    <p>标准的对称架构中 Actor 和 Critic 看到的信息一样。非对称架构<strong>在训练时给 Critic 特权信息</strong>（障碍物真实速度、位置等），让 Critic 做出更准确的价值估计，从而引导 Actor 更好学习；部署时 Critic 被移除，Actor 仅靠常规观测独立决策：</p>
+    <div class="formula-box">
+      $$ \text{Actor: } \mathbf{a}_t \sim \pi_\theta(\mathbf{a}_t|\mathbf{z}_t) \qquad \text{Critic: } V_t = V_\phi(\mathbf{z}_t, \mathbf{s}_t^{\mathrm{priv}}) $$
+    </div>
+    <p>其中特权信息 $\mathbf{s}_t^{\mathrm{priv}}$ 由每个动态障碍的"特权运动学描述子"组成：相对坐标 $\Delta x_{i,t}, \Delta y_{i,t}$ 和速度分量 $v_{x,i,t}, v_{y,i,t}$（$i = 1,\dots,K$）。训练时 Critic 输入为 $s_t$ 与 $s_t^{\mathrm{priv}}$ 的拼接；Actor 保持只依赖 $s_t$，从而保留部署所需的部分可观测约束。</p>
+
+    <h3>6.2 PPO 裁剪目标（Actor 更新）</h3>
+    <div class="formula-box">
+      $$ \mathcal{L}_{\mathrm{PPO}} = \mathbb{E}_t \big[ \min\big( r_t(\theta) \hat{A}_t,\ \mathrm{clip}(r_t(\theta), 1-\varepsilon, 1+\varepsilon) \hat{A}_t \big) \big] $$
+    </div>
+    <p>其中 $r_t(\theta) = \dfrac{\bar{\pi}_\theta(\mathbf{a}_t|\mathbf{z}_t)}{\pi_{\theta_{\mathrm{old}}}(\mathbf{a}_t|\mathbf{z}_t)}$ 为重要性采样比率，$\hat{A}_t$ 为优势函数估计。</p>
+
+    <h3>6.3 Critic 损失</h3>
+    <div class="formula-box">
+      $$ \mathcal{L}_{\mathrm{critic}} = \mathbb{E}_t \big[ \big( V_\phi(\mathbf{z}_t, \mathbf{s}_t^{\mathrm{priv}}) - \hat{R}_t \big)^2 \big] $$
+    </div>
+    <p>Critic 通过最小化价值估计与目标回报 $\hat{R}_t$ 之间的均方误差进行训练。</p>
+
+    <div class="callout callout-key">
+      <h4>🔑 本质</h4>
+      <p>用仿真的信息优势提升策略质量，但部署时不依赖任何额外输入——这是"训练免费、部署不贵"的关键设计。</p>
+    </div>
+  </div>
+
+  <div id="sec7" class="section-card">
+    <h2>7. GAIL 对抗模仿学习</h2>
+
+    <h3>7.1 动机</h3>
+    <p>不是让策略简单地复制专家动作（行为克隆 BC），而是通过<strong>对抗训练</strong>让策略的状态-动作分布整体上与专家分布不可区分。分享中提到的经典方法包括 GAIL，以及带 policy 的变体。</p>
+
+    <h3>7.2 对抗目标</h3>
+    <div class="formula-box">
+      $$ \min_{\pi} \max_{D_\phi} \mathbb{E}_{\tau_E}[\log D_\phi(\mathbf{z}_t, \mathbf{a}_t)] + \mathbb{E}_{\tau_\pi}[\log(1 - D_\phi(\mathbf{z}_t, \mathbf{a}_t))] $$
+    </div>
+    <p>$D$ 为判别器（Discriminator），$\pi$ 为智能体策略，$\pi_E$ 为专家策略。判别器试图区分哪些状态-动作对来自专家、哪些来自智能体。</p>
+
+    <h3>7.3 判别器优化</h3>
+    <div class="formula-box">
+      $$ \mathcal{L}_D = - \mathbb{E}_{\tau_E}[\log D_\phi(\mathbf{z}_E, \mathbf{a}_E)] - \mathbb{E}_{\tau_\pi}[\log(1 - D_\phi(\mathbf{z}_t, \mathbf{a}_t))] $$
+    </div>
+    <p>最小化负对数似然损失：专家样本应被判为专家，策略样本应被判为非专家。</p>
+
+    <h3>7.4 策略的 GAIL 奖励</h3>
+    <div class="formula-box">
+      $$ r_{\mathrm{gail}} = - \log\big(1 - D_\phi(\mathbf{z}_t, \mathbf{a}_t)\big) $$
+    </div>
+    <p>智能体被奖励去"欺骗"判别器——让判别器认为它的行为来自专家。直观理解：一个动作越像专家，$D$ 越接近 1，$1-D$ 越接近 0，$\log(1-D)$ 是很大的负数，取负号后变成很大的正奖励。</p>
+    <p>策略的总奖励为 PPO 奖励与 GAIL 奖励的加权和：</p>
+    <div class="formula-box">
+      $$ r_{\mathrm{total}} = (1 - \lambda_{\mathrm{gail}})\, r_{\mathrm{env}} + \lambda_{\mathrm{gail}}\, r_{\mathrm{gail}} $$
+    </div>
+    <p>效果上，GAIL 引导策略匹配专家行为分布而非简单复制动作，学会更流畅的避障行为，泛化性优于行为克隆（BC）。</p>
+  </div>
+
+  <div id="sec8" class="section-card">
+    <h2>8. 奖励函数与两阶段训练</h2>
+
+    <h3>8.1 奖励函数设计</h3>
+    <div class="formula-box">
+      $$ r_{\mathrm{task}} = r_{\mathrm{progress}} + r_{\mathrm{pref}} + r_{\mathrm{terminal}} $$
+    </div>
+    <ul>
+      <li><strong>$r_{\mathrm{progress}}$</strong>（目标距离进展）：$r_{\mathrm{progress}} = c_{\mathrm{prog}}(d_{t-1}^{\mathrm{goal}} - d_t^{\mathrm{goal}})$，每步靠近目标就给正奖励，缓解稀疏奖励、加速收敛。</li>
+      <li><strong>$r_{\mathrm{pref}}$</strong>（动作偏好）：对倾向性动作的偏好奖励。</li>
+      <li><strong>$r_{\mathrm{terminal}}$</strong>：到达目标 / 碰撞的终止奖励。</li>
+      <li><strong>APF 安全惩罚</strong>：在奖励中加入基于最近障碍距离的惩罚项，增强近距离动态交互时的安全性，减少激进碰撞和危险贴边行为。</li>
+    </ul>
+
+    <h3>8.2 两阶段课程学习</h3>
+    <p><strong>阶段一：表征学习</strong>——只用辅助预测损失（Masked Chamfer）让 GRU 学会编码障碍物运动；</p>
+    <div class="formula-box">
+      $$ \mathcal{L}_{\mathrm{actor}}(\theta) = - \mathcal{L}^{\mathrm{CLIP}}(\theta) - c_{\mathrm{ent}} \mathcal{H}(\pi_\theta) + \lambda_{\mathrm{aux}} \mathcal{L}_{\mathrm{aux}} $$
+    </div>
+    <p><strong>阶段二：PPO-GAIL 联合优化</strong>——在预训练好的表征上同时做策略学习（PPO）和模仿学习（GAIL），提高端到端训练的稳定性和收敛效果。</p>
+  </div>
+
+  <div id="sec9" class="section-card">
+    <h2>9. 实验与消融分析</h2>
+
+    <h3>9.1 对比实验（仿真）</h3>
+    <table class="data-table">
+      <thead><tr><th>Model (Baselines)</th><th>SR (%) ↑</th><th>CR (%) ↓</th><th>TR (%) ↓</th><th>SPL ↑</th><th>ACR (%) ↓</th><th>Min. Clearance (m) ↑</th><th>JS Div. ↓</th></tr></thead>
+      <tbody>
+        <tr><td>A* (Global Path)</td><td>70.0 ± 14.2</td><td>24.6 ± 7.8</td><td>5.4 ± 9.4</td><td><b>0.726 ± 0.093</b></td><td>15.5 ± 1.5</td><td>0.317 ± 0.028</td><td>0.270 ± 0.011</td></tr>
+        <tr><td>APF (Local Reactive)</td><td>41.4 ± 21.0</td><td><b>7.6 ± 8.3</b></td><td>51.0 ± 20.9</td><td>0.315 ± 0.185</td><td>40.3 ± 4.3</td><td><b>0.480 ± 0.083</b></td><td>0.352 ± 0.040</td></tr>
+        <tr><td>BC (Supervised IL)</td><td>33.4 ± 12.1</td><td>66.6 ± 12.1</td><td><b>0.0 ± 0.0</b></td><td>0.286 ± 0.103</td><td><b>13.4 ± 0.7</b></td><td>0.214 ± 0.040</td><td>0.147 ± 0.016</td></tr>
+        <tr><td>Pure PPO (DRL)</td><td>61.8 ± 6.7</td><td>38.0 ± 6.5</td><td>0.2 ± 0.4</td><td>0.460 ± 0.053</td><td>58.5 ± 1.9</td><td>0.278 ± 0.047</td><td>0.198 ± 0.034</td></tr>
+        <tr><td>Standard GAIL (IL+DRL)</td><td>69.2 ± 8.8</td><td>30.8 ± 8.8</td><td><b>0.0 ± 0.0</b></td><td>0.548 ± 0.080</td><td>59.4 ± 1.1</td><td>0.299 ± 0.046</td><td>0.216 ± 0.009</td></tr>
+        <tr><td><b>L-GAIL (Ours)</b></td><td><b>79.0 ± 4.4</b></td><td>20.6 ± 4.8</td><td>0.4 ± 0.9</td><td>0.679 ± 0.053</td><td>39.6 ± 4.0</td><td>0.327 ± 0.044</td><td><b>0.142 ± 0.042</b></td></tr>
+      </tbody>
+    </table>
+    <p>指标：SR = Success Rate 成功率；CR = Collision Rate 碰撞率；TR = Timeout Rate 超时率；SPL = Success weighted by Path Length；ACR = Average Clearance Rate（平均贴近率）；Min. Clearance = 最小间隙；JS Div. = JS 散度（行为分布与专家的一致性）。</p>
+    <p>L-GAIL 在成功率上领先（79.0%），且 JS Div. 最低（0.142），甚至略优于纯 BC（0.147）——说明隐式模仿机制不仅稳定了策略学习，还让最终动作分布与专家示范高度一致。</p>
+
+    <h3>9.2 消融实验</h3>
+    <table class="data-table">
+      <thead><tr><th>Variant</th><th>SR (%) ↑</th><th>CR (%) ↓</th><th>TR (%) ↓</th><th>SPL ↑</th><th>ACR (%) ↓</th><th>Min. Clearance (m) ↑</th><th>JS Div. ↓</th></tr></thead>
+      <tbody>
+        <tr><td>w/o APF</td><td>61.0 ± 14.1</td><td>38.2 ± 13.7</td><td>0.8 ± 1.3</td><td>0.509 ± 0.111</td><td>60.4 ± 3.0</td><td>0.271 ± 0.046</td><td>0.186 ± 0.027</td></tr>
+        <tr><td>w/o Aux</td><td>61.2 ± 15.6</td><td>35.8 ± 16.6</td><td>3.0 ± 2.2</td><td>0.465 ± 0.125</td><td><b>25.5 ± 1.9</b></td><td>0.280 ± 0.063</td><td>0.143 ± 0.012</td></tr>
+        <tr><td>w/o Curriculum</td><td>42.4 ± 13.1</td><td>49.8 ± 14.7</td><td>7.8 ± 4.9</td><td>0.331 ± 0.100</td><td>63.1 ± 3.9</td><td>0.240 ± 0.035</td><td>0.340 ± 0.023</td></tr>
+        <tr><td>w/o GRU</td><td>49.2 ± 11.5</td><td>44.6 ± 9.7</td><td>6.2 ± 2.3</td><td>0.367 ± 0.093</td><td>41.0 ± 3.8</td><td>0.263 ± 0.032</td><td>0.251 ± 0.043</td></tr>
+        <tr><td>w/o Privilege</td><td>53.6 ± 15.8</td><td>45.8 ± 15.6</td><td>0.6 ± 0.5</td><td>0.440 ± 0.126</td><td>44.0 ± 2.3</td><td>0.242 ± 0.037</td><td>0.484 ± 0.023</td></tr>
+        <tr><td><b>L-GAIL (Ours)</b></td><td><b>79.0 ± 4.4</b></td><td><b>20.6 ± 4.8</b></td><td><b>0.4 ± 0.9</b></td><td><b>0.679 ± 0.053</b></td><td>39.6 ± 4.0</td><td><b>0.327 ± 0.044</b></td><td><b>0.142 ± 0.042</b></td></tr>
+      </tbody>
+    </table>
+    <ul>
+      <li>去掉任何一大组件都会相对完整版明显退化，说明<strong>安全正则（APF）、时序表示学习（GRU）、分阶段优化（Curriculum）、非对称价值估计（Privilege）互补</strong>。</li>
+      <li>w/o Curriculum 和 w/o GRU 的 SR/SPL 下降最严重——两阶段训练与 GRU 时序编码是部分可观测下稳健反应式导航的核心。</li>
+      <li>w/o APF 的 CR 和 ACR 显著上升、最小间隙变小——APF 惩罚显著抑制了激进碰撞与危险贴边。</li>
+      <li>w/o Privilege 的 JS Div. 高达 0.484——特权 Critic 不仅改善价值估计，还提高了策略行为的一致性。</li>
+    </ul>
+
+    <h3>9.3 辅助动力学预测误差</h3>
+    <table class="data-table">
+      <thead><tr><th>Profile</th><th>Pos. MAE (m) ↓</th><th>Vel. MAE (m/s) ↓</th><th>Chamfer Dist. ↓</th></tr></thead>
+      <tbody>
+        <tr><td>Idle</td><td>0.448</td><td>0.227</td><td>0.943</td></tr>
+        <tr><td>Forward</td><td>0.614</td><td>0.165</td><td>0.939</td></tr>
+        <tr><td>Rotate Left</td><td>0.644</td><td>0.225</td><td>0.940</td></tr>
+        <tr><td>Overall</td><td>0.572</td><td>0.197</td><td>0.940</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div id="sec10" class="section-card">
+    <h2>10. 实机部署：TurtleBot3 零微调迁移</h2>
+    <p>实验平台：<strong>TurtleBot3 Burger · LDS-01 LiDAR · OpenCR · ROS 2</strong>。核心卖点是<strong>零样本迁移</strong>——不修改任何网络权重，仅对齐部署端接口：</p>
+
+    <h3>10.1 激光雷达预处理对齐</h3>
+    <ul>
+      <li>原始 LiDAR 扫描清洗</li>
+      <li>重采样到训练等效角分辨率</li>
+      <li>min-pool 压缩到 30 维表示</li>
+      <li>短无效段：局部插值修复；长无效段：保守处理为"近障碍物"观测</li>
+    </ul>
+
+    <h3>10.2 坐标系统一</h3>
+    <ul>
+      <li>机器人位姿实时变换到 map frame</li>
+      <li>目标位置在接收时 latch 到 map frame，消除跨 frame 的坐标不一致性</li>
+    </ul>
+
+    <h3>10.3 动作校准</h3>
+    <ul>
+      <li>Curve 原语参数调整：转弯半径 $0.27\,\mathrm{m} \rightarrow 0.12\,\mathrm{m}$</li>
+      <li>缓解近目标 overshoot 和螺旋式运动</li>
+    </ul>
+    <div class="callout callout-mission">
+      <h4>🚀 一句话总结</h4>
+      <p>仿真里训练的策略，接口对齐后直接装到 TurtleBot3 上跑，无需真实环境再训练——验证了方法的实用性与一定的 sim-to-real 能力。</p>
+    </div>
+  </div>
+
+  <div id="sec11" class="section-card">
+    <h2>11. 总结与未来工作</h2>
+
+    <h3>11.1 遇到的困难与解决</h3>
+    <table class="data-table">
+      <thead><tr><th>困难</th><th>问题</th><th>解决</th></tr></thead>
+      <tbody>
+        <tr><td>动作空间设计</td><td>连续动作探索空间大、训练不稳定、行为不易约束</td><td>改为离散动作原语，固定前进/转向/弯行/倒车</td></tr>
+        <tr><td>黑盒训练稳定性</td><td>感知与决策端到端联合训练梯度波动大</td><td>课程学习：先感知表征，再决策学习</td></tr>
+        <tr><td>奖励函数设计</td><td>奖励稀疏，训练早期难获得有效反馈</td><td>稠密奖励：目标距离进展 + 动作偏好 + 安全惩罚</td></tr>
+        <tr><td>价值估计能力</td><td>对称架构下 Critic 只基于部分观测估值，收敛慢</td><td>非对称 Actor-Critic：Critic 用特权信息</td></tr>
+      </tbody>
+    </table>
+
+    <h3>11.2 未来工作</h3>
+    <ol>
+      <li><strong>状态误差影响分析</strong>：从实机部署出发，分析<strong>定位漂移、航向误差、速度偏差</strong>等状态误差对策略输出和导航成功率的影响，搞清楚哪些因素对导航失败影响最大。</li>
+      <li><strong>定位质量表征</strong>：将特征数量、重投影误差、位姿协方差等定位质量表征输入策略，使模型感知当前状态估计是否可信（分享者设想把问题定义成离散 DP 问题）。</li>
+      <li><strong>非对称架构引入噪声</strong>：训练阶段 Critic 使用仿真真实状态辅助学习，Actor 仅使用带噪观测和定位质量表征。</li>
+      <li><strong>保守模式</strong>：当定位完全不可靠（严重退化）时，系统主动进入减速、保守避障或重定位的保守模式；定位恢复后自动返回正常导航。</li>
+      <li><strong>扩展1：主动恢复策略</strong>：把恢复行为作为高层动作，让机器人在不确定状态下主动寻找更有利于定位的观测。</li>
+      <li><strong>扩展2：事件相机</strong>：探索事件相机在快速运动、光照变化和短时视觉退化场景中的低延迟辅助作用。</li>
+    </ol>
+    <div class="callout callout-note">
+      <h4>📝 说明</h4>
+      <p>以上均为分享者对未来方向的构想，代表当前工作的局限与后续研究点。分享中还提到个人经验：贝叶斯架构对状态估计提升明显，是他之前训练工作中觉得非常好用的工具。</p>
+    </div>
+  </div>
+
+  <div id="quiz" class="section-card exercise-box">
+    <h2>📝 练习与自测</h2>
+
+    <div class="exercise">
+      <h4>练习1：为什么要用 GRU 编码历史而不是只看单帧 LiDAR？</h4>
+      <p>请用 L-GAIL 中的例子说明：单帧观测为什么不足以支持动态环境下的导航决策？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>单帧 LiDAR 无法区分"正在靠近的障碍物"和"静止的障碍物"——距离相同但运动趋势完全不同的两种情形，在单帧上看是一样的。GRU 对短时 LiDAR 历史序列建模，提取潜在时空特征 $z_t$，才能推断动态障碍的运动趋势。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习2：非对称 Actor-Critic 的"便宜"在哪？</h4>
+      <p>为什么训练时可以给 Critic 特权信息，部署时却不会增加任何开销？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>特权信息（障碍物真实位置/速度）只在训练阶段的 Critic 中使用，用来做更准的价值估计、引导 Actor 学习。部署时 Critic 被完全丢弃，只有 Actor 依赖常规观测（GRU 编码的 $z_t$）离线推理，所以零额外开销。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习3：GAIL 奖励的直观理解</h4>
+      <p>已知 $r_{\mathrm{gail}} = -\log(1 - D_\phi(z_t, a_t))$。请解释：当一个动作非常像专家时，这笔奖励是大还是小？为什么？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>动作越像专家，判别器输出 $D$ 越接近 1，$1-D$ 越接近 0，$\log(1-D)$ 是一个非常小的负数，取负号后 $r_{\mathrm{gail}}$ 变成很大的正奖励——鼓励策略的行为被判别器误认为专家行为。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习4：从消融表读结论</h4>
+      <p>在消融实验中，去掉哪一个组件对成功率（SR）伤害最大？这个结果说明了什么？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>去掉 Curriculum（两阶段课程学习）后 SR 从 79.0% 掉到 42.4%，去掉 GRU 后掉到 49.2%，是伤害最大的两个。说明在部分可观测动态环境下，两阶段训练（先表征后决策）和 GRU 时序编码是稳健反应式导航的核心组件。</p>
+      </details>
+    </div>
+  </div>
+
+  <div class="nav-links">
+    <a href="0033-北理工分享-信念传播.html" class="prev">← 信念传播与概率图模型</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+  </div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 · 系列27 · 组内分享 · 陈奕航（江南大学）· 合作：张健强 · 指导：倪雨青老师</p>
+    <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px">内容来源：2026-08-15 组内分享录制（SRT 转录）+ PPT 版面文字（L-GAIL 工作分享）</p>
+  </div>
+</div>
+<script src="assets/shiclass.js"></script>
+<script src="../shared/lesson-tools.js"></script>
+</body>
+</html>

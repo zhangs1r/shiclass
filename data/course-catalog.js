@@ -187,9 +187,9 @@ window.SHICLASS_DATA = {
       kind: "分享",
       title: "组内/北理工分享",
       subtitle: "系列 26-27",
-      description: "第 0033-0034 课。北理工同学分享信念传播与概率图模型，陈亦航分享足式机器人端到端视觉导航。",
+      description: "第 0033-0034 课。组外同学分享信念传播与概率图模型，陈奕航分享 L-GAIL 移动机器人端到端导航。",
       quickOpen: "lessons/0033-北理工分享-信念传播.html",
-      meta: ["2 节课", "~120 分钟", "信念传播 / 端到端导航"]
+      meta: ["2 节课", "~120 分钟", "信念传播 / L-GAIL / 端到端导航"]
     }
   ],
     lessons: [
@@ -520,11 +520,11 @@ window.SHICLASS_DATA = {
     {
       id: "0034",
       collectionId: "shares",
-      path: "lessons/0034-组内分享-陈奕航-足式机器人导航.html",
-      title: "足式机器人动态环境导航",
-      subtitle: "端到端视觉导航 · 辅助预测任务 · 对抗模仿学习",
+      path: "lessons/0034-组内分享-陈奕航-L-GAIL动态导航.html",
+      title: "L-GAIL：移动机器人动态环境导航",
+      subtitle: "非对称Actor-Critic · GRU时序编码 · PPO-GAIL两阶段训练 · TurtleBot3零微调迁移",
       duration: "60 min",
-      tags: ["足式机器人", "端到端导航", "组内分享"]
+      tags: ["L-GAIL", "移动机器人", "端到端导航", "组内分享"]
     },
   ]
 };
