@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KF L22(2/2)：S4 夹逼定理与 S5 唯一性 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/shiclass.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+</head>
+<body>
+<div class="page">
+
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · KF L22 · Riccati 方程收敛性 · 第四部分（收尾）</div>
+    <h1>S4 夹逼定理与 S5 唯一性</h1>
+    <p class="subtitle">任意初值 $P_0 \geq 0$ 都收敛到同一个 $P$——收敛定理的完整收官</p>
+    <div class="hero-meta">
+      <span>📅 2026-09-05</span>
+      <span>🧩 收敛证明</span>
+      <span>🏆 夹逼定理</span>
+      <span>🏁 定理收官</span>
+    </div>
+  </div>
+
+  <div class="lead-grid">
+    <div class="callout">
+      <h4>🎯 学完本节，你应能</h4>
+      <ul>
+        <li>写出任意初值下的最优代价恒等式 $J = x_0^{\top} g^k(P_0) x_0$</li>
+        <li>用"最优不劣于可行"证明 $P_k(P_0) \geq P_k(0)$（板书 A1）</li>
+        <li>用"闭环轨迹 + 稳态等式①"构造上夹（板书 A2），得出 $P_k(P_0) \to P$</li>
+        <li>用不动点迭代一步证明 $P$ 是 ARE 的唯一解（S5）</li>
+      </ul>
+    </div>
+    <div class="callout">
+      <h4>🔑 核心思想</h4>
+      <p>S1 只处理了 $P_0 = 0$ 这个"最低起点"。要推广到任意 $P_0 \geq 0$，用<strong>夹逼</strong>：把从 $P_0$ 出发的迭代"夹"在两个都收敛到 $P$ 的参照序列之间。下界来自 $P_0 \geq 0$（更小的终端权重给出更小的最优代价，即 $P_k(0) \leq P_k(P_0)$，因为代价关于终端权重单调不减）；上界来自一个聪明的构造——直接采用稳态增益 $u_i = Lx_i$ 做一个<strong>次优可行控制</strong>，它的代价恰好可以算出闭式 $x_0^{\top}(D^{\top k} P_0 D^k + P - D^{\top k} P D^k)x_0 \to x_0^{\top} P x_0$。上下两界都挤到 $x_0^{\top} P x_0$，夹逼定理（sandwich theorem）给出 $P_k(P_0) \to P$。S5 唯一性反而是送分题：任何不动点 $\bar{P}$ 作为初值时迭代永远停在 $\bar{P}$，而迭代极限唯一，所以 $\bar{P} = P$。</p>
+    </div>
+  </div>
+
+  <div class="toc">
+    <h3>📖 目录</h3>
+    <ul>
+      <li><a href="#sec1">1. S4 的目标与策略</a></li>
+      <li><a href="#sec2">2. 下界 A1：$P_k(P_0) \geq P_k(0)$</a></li>
+      <li><a href="#sec3">3. 上界 A2：稳态增益的次优可行控制</a></li>
+      <li><a href="#sec4">4. 夹逼收口与 S5 唯一性</a></li>
+      <li><a href="#sec5">5. 定理收官回顾：方法清单与系列小结</a></li>
+      <li><a href="#quiz">📝 练习与自测</a></li>
+    </ul>
+  </div>
+
+  <div id="sec1" class="section-card">
+    <h2>1. S4 的目标与策略</h2>
+
+    <p>定理结论 (1) 的完整表述是：<em>"$\exists P \succ 0$ s.t. $\forall P_0 \geq 0$，$\lim_{k\to\infty} P_k = P$"</em>。上节完成了 $P \succ 0$（S3），本节补上"<strong>对任意 $P_0 \geq 0$</strong>"这个量词——S1 只覆盖了 $P_0 = 0$。</p>
+
+    <div class="callout" style="border-left-color: #3b82f6;">
+      <p><strong>🧠 策略：夹逼（Sandwich）</strong></p>
+      <p>对任意 $P_0 \geq 0$，找两个"参照物"：</p>
+      <ul>
+        <li><strong>下界</strong>：从 $0$ 出发的迭代 $P_k(0)$——S1 已证它 $\to P$；</li>
+        <li><strong>上界</strong>：某个显式可算、极限同为 $x_0^{\top} P x_0$ 的量（用次优可行控制的代价构造）。</li>
+      </ul>
+      <p>若 $x_0^{\top} P_k(0) x_0 \leq x_0^{\top} P_k(P_0) x_0 \leq (\text{上界}) \to x_0^{\top} P x_0$，且下界同样 $\to x_0^{\top} P x_0$，则由 $x_0$ 的任意性，$P_k(P_0) \to P$。</p>
+    </div>
+
+    <p>记号约定：$P_k(P_0)$ 表示从初值 $P_0$ 出发迭代 $k$ 步的 Riccati 迭代（$P_0(0) = 0$ 的记号沿用上节），$g$ 是 Riccati 算子，$P$ 是极限（满足 ARE），$D = A + BL$ 是稳态闭环矩阵，$L = -[B^{\top} P B + R]^{-1} B^{\top} P A$。</p>
+  </div>
+
+  <div id="sec2" class="section-card">
+    <h2>2. 下界 A1：$P_k(P_0) \geq P_k(0)$</h2>
+
+    <p>考虑带终端代价的系统 $x_{i+1} = Ax_i + Bu_i$，$x_0$ 给定，代价函数</p>
+
+    <div class="formula-box">
+      $$ J = x_k^{\top} P_0 x_k + \sum_{i=0}^{k-1} (x_i^{\top} Q x_i + u_i^{\top} R u_i) = x_0^{\top} P_k(P_0)\, x_0 = x_0^{\top} g^k(P_0)\, x_0 $$
+    </div>
+
+    <p>（左边是 LQR 最优代价的动态规划表达：终端权重 $P_0$ 被 $g$ 反向递推 $k$ 次回到起点——这是 KF L21 辅助系统结论对<strong>任意终端权重</strong>的版本。）</p>
+
+    <p>现在比较两个终端权重：$P_0$ 与 $0$。因为 $P_0 \geq 0$，"终端多背一个半正定代价"只会让最优代价更大：</p>
+
+    <div class="formula-box">
+      $$ J = x_0^{\top} g^k(P_0) x_0 \;\geq\; \sum_{i=0}^{k-1}(x_i^{\top} Q x_i + u_i^{\top} R u_i)\big|_{\text{终端权重 } 0} = x_0^{\top} P_k(0) x_0 = x_0^{\top} g^k(0) x_0 $$
+    </div>
+
+    <div class="callout" style="border-left-color: #22c55e;">
+      <p><strong>✅ 板书 A1</strong></p>
+      <div class="formula-box">
+      $$ x_0^{\top} P_k(P_0) x_0 \geq x_0^{\top} P_k(0) x_0 \quad \forall x_0 \tag{A1} $$
+      </div>
+      <p>由 $x_0$ 任意，即 <strong>$P_k(P_0) \geq P_k(0)$</strong>（Loewner 序）——从 $P_0$ 出发的迭代恒不低于从 $0$ 出发的迭代。</p>
+    </div>
+
+    <div class="callout" style="border-left-color: #f59e0b;">
+      <p><strong>🧠 直觉</strong></p>
+      <p>这是"代价关于终端权重的单调性"：最优代价是终端权重的不减函数。终端背的包袱越重，从头到尾的总代价只会更大。也可以从 $g$ 的单调性直接看：$g(S) = A^{\top} S A + Q - (\text{二次修正项})$ 关于 $S \succeq 0$ 单调不减，$P_0 \geq 0 = P_0(0)$ 逐次迭代保持序关系。</p>
+    </div>
+  </div>
+
+  <div id="sec3" class="section-card">
+    <h2>3. 上界 A2：稳态增益的次优可行控制</h2>
+
+    <p>上界需要一个"可算的可行代价"。施老师的构造：采用<strong>稳态反馈增益</strong> $u_i = L x_i\ \forall i$——不是最优控制（最优的时变增益序列会依赖 $P_0$），而是一个固定可行策略。</p>
+
+    <p>在这个策略下轨迹是齐次的：$x_{i+1} = (A + BL)x_i = D x_i$，所以 $x_i = D^i x_0$。代入代价：</p>
+
+    <div class="formula-box">
+      $$ \hat{J} = x_0^{\top} D^{\top k} P_0 D^k x_0 + \sum_{i=0}^{k-1} x_0^{\top} D^{\top i} \underbrace{(Q + L^{\top} R L)}_{\Delta} D^i x_0 $$
+    </div>
+
+    <p>关键化简：上节等式①给出 $Q + L^{\top} R L = P - D^{\top} P D$（闭环形式 ARE 移项）。代入求和项，级数同样叠缩：</p>
+
+    <div class="formula-box">
+      $$ \sum_{i=0}^{k-1} D^{\top i}(P - D^{\top} P D) D^i = \sum_{i=0}^{k-1}\left( D^{\top i} P D^i - D^{\top(i+1)} P D^{i+1} \right) = P - D^{\top k} P D^k $$
+    </div>
+
+    <p>（逐项相消：$D^{\top}PD - D^{\top 2}PD^2$、$D^{\top 2}PD^2 - D^{\top 3}PD^3$、……直到 $D^{\top(k-1)}PD^{k-1} - D^{\top k}PD^k$。）于是</p>
+
+    <div class="callout" style="border-left-color: #22c55e;">
+      <p><strong>✅ 板书 A2</strong></p>
+      <div class="formula-box">
+      $$ \hat{J} = x_0^{\top} \left( D^{\top k} P_0 D^k + P - D^{\top k} P D^k \right) x_0 $$
+      </div>
+      <p>最优代价不超过可行代价：$x_0^{\top} P_k(P_0) x_0 \leq \hat{J}$。</p>
+    </div>
+
+    <div class="callout" style="border-left-color: #3b82f6;">
+      <p><strong>🧠 让上界收缩的关键</strong></p>
+      <p>$D$ 是稳定矩阵（S2 已证 $D = A + BL$ 稳定！），所以 $D^{\top k} P_0 D^k \to 0$ 且 $D^{\top k} P D^k \to 0$（$k \to \infty$）。于是</p>
+      <div class="formula-box">
+      $$ \lim_{k \to \infty} \hat{J} = x_0^{\top} P x_0 $$
+      </div>
+      <p>这就是为什么上界构造要特意用<strong>稳态</strong>增益 $L$——它让闭环矩阵恰好是那个已被 S2 证明稳定的 $D$，从而两个 $D^{\top k}(\cdot)D^k$ 项都衰减消失。</p>
+    </div>
+
+    <figure style="text-align:center;margin:16px 0">
+      <img src="assets/board/KF_L22/8ed151e59d33184517b31b525135d6ff401ca8a48144b13ac617a6ecf76cc584.jpg" alt="收敛趋势板书" style="max-width:100%;border-radius:8px;" loading="lazy">
+      <figcaption style="font-size:0.85rem;color:var(--text-secondary);margin-top:8px">板书示意：迭代从 0 出发单调爬升（S1），被稳态值夹住——S4 说明换任何起点 $P_0 \geq 0$ 最终都到同一高度</figcaption>
+    </figure>
+  </div>
+
+  <div id="sec4" class="section-card">
+    <h2>4. 夹逼收口与 S5 唯一性（定理收官）</h2>
+
+    <p>合并 A1 + A2：</p>
+
+    <div class="formula-box">
+      $$ x_0^{\top} \underbrace{P_k(0)}_{\to\, P\ (\text{S1})} x_0 \;\leq\; x_0^{\top} P_k(P_0) x_0 \;\leq\; x_0^{\top} \underbrace{\left( D^{\top k} P_0 D^k + P - D^{\top k} P D^k \right)}_{\to\, P\ (\text{S2})} x_0 $$
+    </div>
+
+    <p>两端极限都是 $x_0^{\top} P x_0$，由<strong>夹逼定理（sandwich theorem）</strong>：</p>
+
+    <div class="callout" style="border-left-color: #22c55e;">
+      <p><strong>🎉 S4 完成</strong></p>
+      <div class="formula-box">
+      $$ \lim_{k \to \infty} P_k(P_0) = P \quad \forall P_0 \geq 0 $$
+      </div>
+      <p>板书："$\lim_{k\to\infty} x_0^{\top} P_k(P_0) x_0 = x_0^{\top} P x_0$，Sandwitch theorem $\Rightarrow \lim_{k\to\infty} P_k = P\ \forall P_0 \geq 0$"。</p>
+    </div>
+
+    <p><strong>S5：唯一性</strong>——非常好证。假设 $\bar{P}$ 是 ARE 的另一个解：$\bar{P} = g(\bar{P})$。取 $P_0 = \bar{P}$ 作为迭代初值，则迭代永远停在原地：</p>
+
+    <div class="formula-box">
+      $$ P_k = \bar{P} \quad \forall k \;\; (\text{从不动点出发，每步迭代仍是它自己}) $$
+    </div>
+
+    <p>但另一方面，S4 说从任意初值 $P_0 \geq 0$（$\bar{P} \succ 0$ 当然 $\geq 0$）出发都有 $P_k(P_0) \to P$。两个事实合起来：</p>
+
+    <div class="formula-box">
+      $$ \bar{P} = \lim_{k \to \infty} P_k(\bar{P}) = P \quad \Rightarrow \quad P \text{ 唯一！} $$
+    </div>
+
+    <div class="callout" style="border-left-color: #22c55e;">
+      <p><strong>🏁 收敛定理全部证毕</strong></p>
+      <p>五步全部完成：(1) $P \succ 0$ 存在且对所有 $P_0 \geq 0$ 收敛；(2) $P$ 是 ARE 唯一解；(3) 闭环 $D = A + BL$ 稳定。至此，KF 增益可以用稳态增益（ARE 解出 $P$ 后 $L = -[B^{\top}PB+R]^{-1}B^{\top}PA$，KF 侧由对偶得到 $K$）、LQR 可以离线一次求解——整个"为什么能用稳态增益"的理论地基铺完。</p>
+    </div>
+  </div>
+
+  <div id="sec5" class="section-card">
+    <h2>5. 定理收官回顾：方法清单与系列小结</h2>
+
+    <p>施老师在课上做了总结（SRT 原话要点）：<em>"我们用了接近两个小时的时间，上节课加上这节课，总算把这个定理全部给它证明完了……你看整个这个定理的证明过程当中我们用到了多少的方法——反证法、归纳法，然后……用到了 LQR，用到了数学里面的各种各样的证明，单调递增、sandwich theorem，还要去 construct 一个这种伴随的系统。这个定理还是非常非常的漂亮，所以强烈建议（大家）从头到尾去梳理一下。"</em></p>
+
+    <table class="styled-table" style="width:100%;border-collapse:collapse;font-size:0.92rem">
+      <thead>
+        <tr style="background:var(--paper-light)">
+          <th style="padding:8px;text-align:left">步骤</th>
+          <th style="padding:8px;text-align:left">证明工具</th>
+          <th style="padding:8px;text-align:left">关键构造</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="padding:8px">S1 单调+有界</td><td style="padding:8px">辅助系统（最优控制）+ 能控性</td><td style="padding:8px">$J^{*} = x_0^{\top}g^k(0)x_0$；$n$ 步归零控制给上界</td></tr>
+        <tr><td style="padding:8px">S2 闭环稳定</td><td style="padding:8px">等式① + 李雅普诺夫衰减</td><td style="padding:8px">$P = D^{\top}PD + Q + L^{\top}RL$</td></tr>
+        <tr><td style="padding:8px">S3 正定性</td><td style="padding:8px">等式②取极限 + 能观性 + 反证法</td><td style="padding:8px">$M_0 x_0 = 0 \Rightarrow x_0 = 0$ 矛盾</td></tr>
+        <tr><td style="padding:8px">S4 任意初值</td><td style="padding:8px">夹逼定理</td><td style="padding:8px">A1（终端权重单调）+ A2（稳态增益次优控制）</td></tr>
+        <tr><td style="padding:8px">S5 唯一性</td><td style="padding:8px">不动点 + S4</td><td style="padding:8px">$\bar{P}$ 出发迭代不动，极限唯一</td></tr>
+      </tbody>
+    </table>
+
+    <p>从系列 28（KF L21，定理陈述 + 证明框架 + S1）到本讲（系列 29，S3 + S4 + S5），Riccati 收敛理论完整收官。施老师预告接下来进入<strong>学生分享</strong>环节，KF 系列的"逻辑相关知识"基本讲完。</p>
+
+    <div class="callout" style="border-left-color: #f59e0b;">
+      <p><strong>📌 与 KF 主线的连接</strong></p>
+      <p>Riccati 方程在两条线里反复出现：KF 的协方差更新（误差协方差 $P_{k|k}$ 的传播）与 LQR 的动态规划（最优代价的反向递推）。收敛定理同时回答两边的问题：KF 里"稳态 Kalman 增益"存在且迭代收敛到它（对偶性把估计问题翻译成 LQR 形式），LQR 里"稳态反馈增益"存在唯一且闭环稳定。这是系列 25（KF L20）对偶性铺垫之后的理论高点。</p>
+    </div>
+  </div>
+
+  <div id="quiz" class="section-card">
+    <h2>📝 练习与自测</h2>
+
+    <div class="mini-card" style="border-left: 4px solid #22c55e;margin-bottom:16px">
+      <h4>1️⃣ 复述 A1 + A2 夹逼结构</h4>
+      <p>不看讲义，说明 A1（下界）和 A2（上界）各自用了什么策略，为什么上界构造必须用稳态增益 $L$ 而不是 $P_0$ 对应的时变最优增益？</p>
+      <details><summary style="cursor:pointer;color:#CC785C">查看提示</summary><p style="margin-top:8px">A1：终端权重单调性（$P_0 \geq 0$ 的最优代价不低于 $P_0 = 0$ 的）。A2：用稳态增益做可行控制，代价闭式可算。用稳态 $L$ 是为了让闭环矩阵是已证稳定的 $D$，$D^{\top k}P_0D^k$、$D^{\top k}PD^k \to 0$，上界极限恰好 $x_0^{\top}Px_0$；换成 $P_0$ 对应的时变最优增益，闭环矩阵不同，衰减性没有现成结论。</p></details>
+    </div>
+
+    <div class="mini-card" style="border-left: 4px solid #3b82f6;margin-bottom:16px">
+      <h4>2️⃣ S5 的唯一性论证为什么必须等 S4 之后？</h4>
+      <p>能否直接假设 $\bar{P} = g(\bar{P})$ 与 $P = g(P)$，两式相减推出 $\bar{P} = P$？难点在哪？</p>
+      <details><summary style="cursor:pointer;color:#CC785C">查看答案</summary><p style="margin-top:8px">直接相减会得到一个含 $\bar{P}, P$ 的非线性项（$B^{\top}PB + R$ 的逆与 $B^{\top}\bar{P}B + R$ 的逆之差），不是线性关系，无法直接得出相等。S5 的妙处是绕开代数：借用 S4 的收敛结论——不动点作为初值时迭代不动（$\bar{P}$），而 S4 说所有初值都收敛到同一个 $P$，所以 $\bar{P} = P$。这是"用动力系统的极限唯一性代替代数恒等式"的典型手法。</p></details>
+    </div>
+
+    <div class="mini-card" style="border-left: 4px solid #8b5cf6;margin-bottom:16px">
+      <h4>3️⃣ 数值检验：不同初值收敛到同一解</h4>
+      <p>标量系统 $a = 0.9, b = 1, q = 1, r = 0.1$。分别从 $P_0 = 0$、$P_0 = 0.5$、$P_0 = 5$ 迭代 $p_{k+1} = a^2 p_k + q - \frac{a^2 p_k^2}{p_k + r}$ 各 50 步，观察是否都收敛到同一值。哪个初值单调上升、哪个单调下降？</p>
+      <details><summary style="cursor:pointer;color:#CC785C">查看答案</summary><p style="margin-top:8px">三个初值 50 步后都收敛到 $p \approx 1.0741$（ARE 唯一正根，与练习 3 实算一致）。$P_0 = 0$ 单调上升（S1 情形，从下方逼近）；$P_0 = 5 > 1.0741$ 单调下降（从上方逼近，因为 $g(p) - p$ 在 $p > p^{*}$ 时为负）；$P_0 = 0.5$ 也单调上升但每步增量比 $P_0 = 0$ 更小。这正是 S4 夹逼论证的标量具象：无论从哪边出发、无论初值多大（$D$ 稳定保证上界项 $D^{\top k}P_0D^k = a^{2k}P_0 \to 0$），极限唯一。</p></details>
+    </div>
+  </div>
+
+  <div class="nav-links">
+    <a href="0037-KF-L22-Riccati收敛-1.html" class="prev">← KF L22(1/2)：等式②与 S3 证明——P 的正定性</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+  </div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 KF L22(2/2) · S4 夹逼定理与 S5 唯一性</p>
+    <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px">板书来源：KF L22 · 研讨会系列 29 · 施凌老师（2026-09-05）· 结合课堂录音转写整理</p>
+  </div>
+</div>
+<script src="assets/shiclass.js"></script>
+<script src="../shared/lesson-tools.js"></script>
+</body>
+</html>

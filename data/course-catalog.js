@@ -190,6 +190,26 @@ window.SHICLASS_DATA = {
       description: "第 0033-0034 课。组外同学分享信念传播与概率图模型，陈奕航分享 L-GAIL 移动机器人端到端导航。",
       quickOpen: "lessons/0033-北理工分享-信念传播.html",
       meta: ["2 节课", "~120 分钟", "信念传播 / L-GAIL / 端到端导航"]
+    },
+    {
+      id: "kf-series-21",
+      groupId: "seminars",
+      kind: "KF 系列",
+      title: "KF L21：Riccati 方程收敛性与稳态增益理论",
+      subtitle: "Kalman Filter 延伸系列 (2 节)",
+      description: "第 0035-0036 课。证明 Riccati 逆向递推的收敛定理——能控能观条件下 P_k 收敛到 ARE 唯一正定解、闭环 A+BL 稳定，以及 LQR 与 KF 的对偶性。",
+      quickOpen: "lessons/0035-KF-L21-Riccati收敛-1.html",
+      meta: ["2 节课", "~60 分钟", "Riccati / 收敛性 / 对偶性"]
+    },
+    {
+      id: "kf-series-22",
+      groupId: "seminars",
+      kind: "KF 系列",
+      title: "KF L22：Riccati 收敛定理收官——正定性与唯一性",
+      subtitle: "Kalman Filter 延伸系列 (2 节)",
+      description: "第 0037-0038 课。收敛定理五步证明的收官——等式②（闭环能量衰减）、S3 能观性+反证法证 P 严格正定、S4 夹逼定理推广到任意初值 P_0≥0、S5 唯一性，以及五步方法清单总复盘。",
+      quickOpen: "lessons/0037-KF-L22-Riccati收敛-1.html",
+      meta: ["2 节课", "~60 分钟", "正定性 / 夹逼定理 / 唯一性"]
     }
   ],
     lessons: [
@@ -525,6 +545,42 @@ window.SHICLASS_DATA = {
       subtitle: "非对称Actor-Critic · GRU时序编码 · PPO-GAIL两阶段训练 · TurtleBot3零微调迁移",
       duration: "60 min",
       tags: ["L-GAIL", "移动机器人", "端到端导航", "组内分享"]
+    },
+    {
+      id: "0035-KF-L21-Riccati收敛-1",
+      collectionId: "kf-series-21",
+      path: "lessons/0035-KF-L21-Riccati收敛-1.html",
+      title: "KF L21(1/2)：Riccati 收敛定理与证明框架",
+      subtitle: "收敛定理陈述、g(P) 算子、与 KF 的对偶性、五步证明路线图",
+      duration: "30 min",
+      tags: ["Riccati", "收敛定理", "对偶性"]
+    },
+    {
+      id: "0036-KF-L21-Riccati收敛-2",
+      collectionId: "kf-series-21",
+      path: "lessons/0036-KF-L21-Riccati收敛-2.html",
+      title: "KF L21(2/2)：S1 证明——单调性与有界性",
+      subtitle: "辅助系统构造、最优代价 J*=x0'g^k(0)x0、单调性、能控性上界",
+      duration: "30 min",
+      tags: ["Riccati", "收敛证明", "单调有界"]
+    },
+    {
+      id: "0037-KF-L22-Riccati收敛-1",
+      collectionId: "kf-series-22",
+      path: "lessons/0037-KF-L22-Riccati收敛-1.html",
+      title: "KF L22(1/2)：等式②与 S3 证明——P 的正定性",
+      subtitle: "闭环能量衰减等式②、能观性矩阵 M0、反证法证明 P≻0",
+      duration: "30 min",
+      tags: ["Riccati", "正定性", "能观性", "反证法"]
+    },
+    {
+      id: "0038-KF-L22-Riccati收敛-2",
+      collectionId: "kf-series-22",
+      path: "lessons/0038-KF-L22-Riccati收敛-2.html",
+      title: "KF L22(2/2)：S4 夹逼定理与 S5 唯一性",
+      subtitle: "A1 终端权重单调、A2 稳态增益次优控制、Sandwich 定理、不动点唯一性、定理收官",
+      duration: "30 min",
+      tags: ["Riccati", "夹逼定理", "唯一性", "定理收官"]
     },
   ]
 };

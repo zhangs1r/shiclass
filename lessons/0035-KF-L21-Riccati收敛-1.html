@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KF L21(1/2)：Riccati 收敛定理与证明框架 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/shiclass.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+</head>
+<body>
+<div class="page">
+
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · KF L21 · Riccati 方程收敛性 · 第一部分</div>
+    <h1>Riccati 收敛定理与证明框架</h1>
+    <p class="subtitle">从时变增益到稳态增益的理论保证：能控能观条件下 $P_k$ 的收敛、唯一解与闭环稳定性</p>
+    <div class="hero-meta">
+      <span>📅 2026-08-29</span>
+      <span>🧩 稳态 LQR</span>
+      <span>🏆 收敛定理</span>
+      <span>🔄 能控性 / 能观性 / 对偶性</span>
+    </div>
+  </div>
+
+  <div class="lead-grid">
+    <div class="callout">
+      <h4>🎯 学完本节，你应能</h4>
+      <ul>
+        <li>陈述 Riccati 方程收敛定理（三条结论）</li>
+        <li>解释 $g(P)$ 算子与 KF 对偶性 $A \to A^{\top}, B \to C^{\top}$</li>
+        <li>说出五步证明路线图（S1–S5）各自解决什么</li>
+        <li>理解为什么"能控 + 能观"是收敛的充分条件</li>
+      </ul>
+    </div>
+    <div class="callout">
+      <h4>🔑 核心思想</h4>
+      <p>上节 LQR 给出的时变增益 $L_k$ 需要存储每个时刻的增益。若 $P_k$ 在逆向递推中快速收敛到稳态 $P$，就只需记住一个常数增益。但"$P_k$ 真的会收敛吗？"需要严格定理保证：<strong>当 $(A,B)$ 能控、$(A,\sqrt{Q})$ 能观时，从任意 $P_0 \geq 0$ 出发，$P_{k+1} = g(P_k)$ 都收敛到同一个正定解 $P$，且闭环 $A + BL$ 稳定</strong>——这正是本课要证明的定理。</p>
+    </div>
+  </div>
+
+  <div class="toc">
+    <h3>📖 目录</h3>
+    <ul>
+      <li><a href="#sec1">1. 回顾：从 LQR 到时变增益的烦恼</a></li>
+      <li><a href="#sec2">2. 收敛定理的陈述</a></li>
+      <li><a href="#sec3">3. $g(P)$ 算子：时间轴的翻转</a></li>
+      <li><a href="#sec4">4. 与 Kalman Filter 的对偶性</a></li>
+      <li><a href="#sec5">5. 五步证明路线图</a></li>
+      <li><a href="#quiz">📝 练习与自测</a></li>
+    </ul>
+  </div>
+
+  <div id="sec1" class="section-card">
+    <h2>1. 回顾：从 LQR 到时变增益的烦恼</h2>
+
+    <p>上一课（KF L20）我们用动态规划求解了线性二次型调节器（LQR），最优控制律是状态的线性函数：</p>
+
+    <div class="formula-box">
+      $$ u_k^* = -L_k x_k, \qquad L_k = (B^{\top} P_{k+1} B + R)^{-1} B^{\top} P_{k+1} A $$
+    </div>
+
+    <p>其中 $P_k$ 通过 Riccati 方程逆向递推：</p>
+
+    <div class="formula-box">
+      $$ P_k = A^{\top} P_{k+1} A + Q - A^{\top} P_{k+1} B (B^{\top} P_{k+1} B + R)^{-1} B^{\top} P_{k+1} A, \qquad P_N = Q $$
+    </div>
+
+    <div class="callout" style="border-left-color: #ef4444;">
+      <p><strong>⚠️ 实际问题</strong>：如果时间步 $N$ 很大，把每个时刻的增益 $L_0, L_1, \dots, L_{N-1}$ 都算出来并存储，计算量和存储量都难以接受。施老师在课上说：<em>"过了这个一个半月了……上一次我们讲的是 LQR。我们用了动态规划去求解这个问题，发现它是一个完整的、线性的表达式……如果这个 Transient Period 足够小，我们就可以不用理它了，只需要记录它在稳态的这个 gain 就可以了。"</em></p>
+    </div>
+
+    <p>于是关键问题来了：<strong>怎么知道 $P_k$ 的递推一定收敛？</strong>如果不收敛，或者收敛到奇怪的东西，"只存一个稳态增益"就完全不成立。回答这个问题，正是 KF L21 的核心任务。</p>
+
+    <figure style="text-align:center;margin:16px 0">
+      <img src="assets/board/KF_L21/940f2cad19c7db5617d6988e2132442f592295b44c2f64eb27f79e6e938fa588.jpg" alt="Riccati收敛定理板书" style="max-width:100%;border-radius:8px;" loading="lazy">
+      <figcaption style="font-size:0.85rem;color:var(--text-secondary);margin-top:8px">板书：收敛定理的陈述（$(A,B)$ 能控、$(A,\sqrt{Q})$ 能观 ⟹ 三条结论）</figcaption>
+    </figure>
+  </div>
+
+  <div id="sec2" class="section-card">
+    <h2>2. 收敛定理的陈述</h2>
+
+    <div class="callout" style="border-left-color: #22c55e;">
+      <p><strong>📐 定理（Riccati 方程收敛定理）</strong></p>
+      <p>假设 $(A, B)$ 能控（controllable），$(A, \sqrt{Q})$ 能观（observable）。定义迭代</p>
+      $$ P_{k+1} = A^{\top} P_k A + Q - A^{\top} P_k B [ B^{\top} P_k B + R ]^{-1} B^{\top} P_k A \triangleq g(P_k) $$
+      <p style="margin-top:8px">则以下三条结论成立：</p>
+      <ol>
+        <li><strong>收敛</strong>：存在 $p > 0$，使得对所有 $P_0 \geq 0$，都有 $\displaystyle \lim_{k \to \infty} P_k = p$。</li>
+        <li><strong>唯一解</strong>：$p$ 是代数 Riccati 方程（ARE）的唯一解：$$P = A^{\top} P A + Q - A^{\top} P B [ B^{\top} P B + R ]^{-1} B^{\top} P A$$</li>
+        <li><strong>闭环稳定</strong>：$D = A + B L$ 稳定（所有特征值在单位圆内），其中 $L = -[ B^{\top} P B + R ]^{-1} B^{\top} P A$。</li>
+      </ol>
+    </div>
+
+    <p>逐条解读：</p>
+    <div class="grid-2">
+      <div class="mini-card" style="border-left: 4px solid #3b82f6;">
+        <h4>(1) 收敛性</h4>
+        <p>从<strong>任意</strong>初始 $P_0 \geq 0$ 出发，迭代都收敛到同一个 $p$。这直接回答了我们最关心的问题——无论怎么初始化，稳态增益都存在且唯一。</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #8b5cf6;">
+        <h4>(2) 唯一解</h4>
+        <p>稳态 $p$ 恰是代数 Riccati 方程的（正定）解，而且只有这一个。工程上求解 ARE 的数值方法（如迭代法）就有了理论保证：不会收敛到"别的"解。</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #f59e0b;">
+        <h4>(3) 闭环稳定</h4>
+        <p>用稳态增益 $L$ 形成的闭环 $A + BL$ 是 Schur 稳定的。这保证：即使只用常数增益，闭环系统也稳定——这正是"记录一个数字就能控制"的安全前提。</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="sec3" class="section-card">
+    <h2>3. $g(P)$ 算子：时间轴的翻转</h2>
+
+    <p>定义 $g(P)$ 为一步 Riccati 映射：</p>
+
+    <div class="formula-box">
+      $$ g(P) = A^{\top} P A + Q - A^{\top} P B [ B^{\top} P B + R ]^{-1} B^{\top} P A $$
+    </div>
+
+    <p>注意这是个<strong>从矩阵到矩阵</strong>的映射。上节 LQR 中我们写的是 $P_k = g(P_{k+1})$（用"未来"的 $P_{k+1}$ 算"现在"的 $P_k$）；本节为了证明收敛，把时间轴翻转成 $P_{k+1} = g(P_k)$——从"过去"推到"未来"。施老师在课上强调：<em>"我们只是把这个时间轴给它去稍微去变化了一下……只不过我们现在为了证明定理，把它用一个反向的这个迭代，更加符合我们平时使用的要求。"</em></p>
+
+    <div class="flow-formula">
+      🔄 $P_0 \xrightarrow{g} P_1 \xrightarrow{g} P_2 \xrightarrow{g} \cdots \xrightarrow{g} P_k \xrightarrow{g} \cdots$
+    </div>
+
+    <p>研究 $g$ 迭代的收敛性，就是研究这个无穷序列 $P_0, P_1, P_2, \dots$ 的行为。定理说的"从任意 $P_0 \geq 0$ 出发收敛到同一个 $p$"，本质上是在说 $g$ 是一个强大的"压缩式"映射——只不过 $g$ 定义在矩阵半正定锥上，不能直接套用 Banach 不动点定理，需要专属的构造性证明。</p>
+  </div>
+
+  <div id="sec4" class="section-card">
+    <h2>4. 与 Kalman Filter 的对偶性</h2>
+
+    <p>板书上特别标注了一个漂亮的观察：</p>
+
+    <div class="callout" style="border-left-color: #22c55e;">
+      <p><strong>💡 对偶性</strong>：在 Kalman Filter 中，预测协方差递推满足</p>
+      $$ P_{k+1|k} = g(P_{k|k-1}) $$
+      <p style="margin-top:8px"><strong>只需做替换</strong> $A \to A^{\top}$、$B \to C^{\top}$，KF 的协方差递推就变成 LQR 的 Riccati 迭代——两者是同一个数学结构。</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="mini-card" style="border-left: 4px solid #3b82f6;">
+        <h4>控制视角（LQR）</h4>
+        <p>要求 $(A, B)$ <strong>能控</strong>、$(A, \sqrt{Q})$ <strong>能观</strong>。能控保证可以把状态驱动到任意位置；能观保证代价函数能"看到"所有模态。</p>
+      </div>
+      <div class="mini-card" style="border-left: 4px solid #8b5cf6;">
+        <h4>估计视角（KF）</h4>
+        <p>要求 $(A, C)$ <strong>能观</strong>、$(A, \sqrt{Q_w})$ <strong>能控</strong>。能观保证测量能看到所有模态；能控保证过程噪声能激发所有模态（协方差不至于坍缩）。</p>
+      </div>
+    </div>
+
+    <p>施老师还提醒了一个历史视角：<em>"卡尔曼发明 KF 的时候是比他证明的晚吗？……我的个人感觉是，先有算法，然后先有卡尔曼滤波器的这套算法，然后发现好用，最后再去证明它的一些性质，证明它的收敛性等等。你不可能说我先证明它的收敛性再去用嘛。"</em>——先有工程直觉，再有严格理论，这是控制与估计理论发展的常态。</p>
+
+    <figure style="text-align:center;margin:16px 0">
+      <img src="assets/board/KF_L21/1c41bc66cda51efc508068685090b5ea993e07f38a4962cb63ebc7e4cde5a647.jpg" alt="KF对偶性板书" style="max-width:100%;border-radius:8px;" loading="lazy">
+      <figcaption style="font-size:0.85rem;color:var(--text-secondary);margin-top:8px">板书：LQR Riccati 迭代与 KF 协方差递推的对偶（$A \to A^{\top}, B \to C^{\top}$）</figcaption>
+    </figure>
+  </div>
+
+  <div id="sec5" class="section-card">
+    <h2>5. 五步证明路线图</h2>
+
+    <p>完整证明分五步进行。施老师说：<em>"我们要去证明一个很大的定理，这个定理很有名，也非常有用。"</em></p>
+
+    <table class="styled-table" style="width:100%;border-collapse:collapse;font-size:0.92rem">
+      <thead>
+        <tr style="background:var(--paper-light)">
+          <th style="padding:8px;text-align:left">步骤</th>
+          <th style="padding:8px;text-align:left">内容</th>
+          <th style="padding:8px;text-align:left">目的</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="padding:8px">S1</td><td style="padding:8px">$P_k$ 在 $P_0 = 0$ 时收敛</td><td style="padding:8px">先攻最简单起点，构造单调+有界</td></tr>
+        <tr><td style="padding:8px">S2</td><td style="padding:8px">$D = A + BL$ 稳定</td><td style="padding:8px">闭环稳定性（结论 3）</td></tr>
+        <tr><td style="padding:8px">S3</td><td style="padding:8px">$P > 0$（正定性）</td><td style="padding:8px">收敛极限是正定矩阵</td></tr>
+        <tr><td style="padding:8px">S4</td><td style="padding:8px">$P_k$ 对任意 $P_0 \geq 0$ 收敛</td><td style="padding:8px">从特殊起点推广到一般起点（结论 1）</td></tr>
+        <tr><td style="padding:8px">S5</td><td style="padding:8px">$P$ 唯一</td><td style="padding:8px">消除多解可能（结论 2）</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout" style="border-left-color: #f59e0b;margin-top:16px">
+      <p><strong>🗺️ 本节进度</strong>：本次课（2026-08-29）重点做了 S1 的完整证明——用"辅助系统"技巧证明 $P_k$ 单调不减且有上界，从而收敛。S2–S5 留在下一次课（2026-09-05）继续。本节的下一课将完整展示 S1 证明的每一步。</p>
+    </div>
+
+    <figure style="text-align:center;margin:16px 0">
+      <img src="assets/board/KF_L21/80a168b60e75331b072f39852d84bbb45e5126e442437f14b15945d92d64b68c.jpg" alt="S1证明辅助系统板书" style="max-width:100%;border-radius:8px;" loading="lazy">
+      <figcaption style="font-size:0.85rem;color:var(--text-secondary);margin-top:8px">板书：S1 证明的辅助系统构造（$X_{i+1} = A X_i + B U_i$ 与对应代价函数）</figcaption>
+    </figure>
+  </div>
+
+  <div id="quiz" class="section-card">
+    <h2>📝 练习与自测</h2>
+
+    <div class="mini-card" style="border-left: 4px solid #22c55e;margin-bottom:16px">
+      <h4>1️⃣ 定理复述</h4>
+      <p>用自己的话写出 Riccati 收敛定理的三条结论，并说明每条结论分别解决了上节 LQR 留下的哪个实际问题。</p>
+      <details><summary style="cursor:pointer;color:#CC785C">查看提示</summary><p style="margin-top:8px">(1) 收敛 ⟹ 稳态增益存在；(2) 唯一 ⟹ 数值求解 ARE 不怕多解；(3) 闭环稳定 ⟹ 直接用常数增益安全。</p></details>
+    </div>
+
+    <div class="mini-card" style="border-left: 4px solid #3b82f6;margin-bottom:16px">
+      <h4>2️⃣ 对偶性验证</h4>
+      <p>写出 Kalman Filter 预测协方差递推 $P_{k+1|k}$ 的公式，然后做替换 $A \to A^{\top}, B \to C^{\top}$，验证它能变成 LQR 的 Riccati 迭代。从中你能看出 LQR 的"能观性条件 $(A,\sqrt{Q})$"对应 KF 的什么条件吗？</p>
+      <details><summary style="cursor:pointer;color:#CC785C">查看提示</summary><p style="margin-top:8px">KF 要求 $(A,C)$ 能观、$(A,\sqrt{Q_w})$ 能控；对偶后恰好是 LQR 的 $(A,B)$ 能控、$(A,\sqrt{Q})$ 能观。</p></details>
+    </div>
+
+    <div class="mini-card" style="border-left: 4px solid #8b5cf6;margin-bottom:16px">
+      <h4>3️⃣ 数值试验：$g$ 迭代是否收敛</h4>
+      <p>对标量系统 $a = 0.9, b = 1, q = 1, r = 0.1$，从 $P_0 = 0$ 出发迭代 $P_{k+1} = g(P_k)$ 若干步（写几行 Python 或手算 4–5 步），观察 $P_k$ 是否单调不减并趋于一个常数 $p$。再尝试用 $P_0 = 100$ 出发，看是否收敛到同一个 $p$。</p>
+      <details><summary style="cursor:pointer;color:#CC785C">查看答案</summary><p style="margin-top:8px">标量情形 $g(p) = a^2 p + q - \frac{a^2 b^2 p^2}{b^2 p + r}$。代入 $a=0.9,b=1,q=1,r=0.1$：$P_1 = 1$，$P_2 \approx 1.0736$，$P_3 \approx 1.0742$——快速单调上升并收敛到 $p \approx 1.074$（由 $p = g(p)$ 决定的正根）。从 $P_0=0$ 与 $P_0=100$ 出发收敛到同一个值——正是定理结论 (1) 的体现。</p></details>
+    </div>
+  </div>
+
+  <div class="nav-links">
+    <a href="0034-组内分享-陈奕航-L-GAIL动态导航.html" class="prev">← L-GAIL：移动机器人动态环境导航</a>
+    <a href="0036-KF-L21-Riccati收敛-2.html" class="next">KF L21(2/2)：S1 证明——单调性与有界性 →</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+  </div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 KF L21(1/2) · Riccati 收敛定理与证明框架</p>
+    <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px">板书来源：KF L21 · 研讨会系列 28 · 施凌老师（2026-08-29）· 结合课堂录音转写整理</p>
+  </div>
+</div>
+<script src="assets/shiclass.js"></script>
+<script src="../shared/lesson-tools.js"></script>
+</body>
+</html>

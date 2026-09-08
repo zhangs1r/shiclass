@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KF L21(2/2)：S1 证明——单调性与有界性 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/shiclass.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+</head>
+<body>
+<div class="page">
+
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · KF L21 · Riccati 方程收敛性 · 第二部分</div>
+    <h1>S1 证明：单调性与有界性</h1>
+    <p class="subtitle">用"辅助系统"技巧证明 $P_k = g^k(0)$ 单调不减、有上界，从而收敛</p>
+    <div class="hero-meta">
+      <span>📅 2026-08-29</span>
+      <span>🧩 收敛证明</span>
+      <span>🏆 单调 + 有界</span>
+      <span>🔄 辅助系统 / 最优代价</span>
+    </div>
+  </div>
+
+  <div class="lead-grid">
+    <div class="callout">
+      <h4>🎯 学完本节，你应能</h4>
+      <ul>
+        <li>构造 S1 证明的辅助系统并写出其最优代价</li>
+        <li>证明 $J^{*} = x_0^{\top} g^{k}(0) x_0$</li>
+        <li>用"多一项非负代价"证明 $P_k$ 单调不减</li>
+        <li>用能控性构造上界，证明 $P_k$ 有上界</li>
+        <li>综合单调 + 有界，得出 $P_k$ 收敛的结论</li>
+      </ul>
+    </div>
+    <div class="callout">
+      <h4>🔑 核心思想</h4>
+      <p>证明一个矩阵序列收敛，最经典的套路是证明它<strong>单调且有界</strong>。单调性来自一个小技巧：把 $g^k(0)$ 看成某个有限时域 LQR 问题的最优代价，而"多算一步"只会让代价不减。有界性来自能控性：能控意味着存在控制把状态 $n$ 步内归零，之后的代价为上界 $\hat{J}$。两条合起来，$P_k$ 就收敛——施老师称之为给平面几何里的"辅助线"加了一个高级版本。</p>
+    </div>
+  </div>
+
+  <div class="toc">
+    <h3>📖 目录</h3>
+    <ul>
+      <li><a href="#sec1">1. 证明目标与"辅助线"思想</a></li>
+      <li><a href="#sec2">2. 辅助系统：把迭代翻译成最优控制</a></li>
+      <li><a href="#sec3">3. 关键等式：$J^{*} = x_0^{\top} g^{k}(0) x_0$</a></li>
+      <li><a href="#sec4">4. 单调性：多算一步代价不减</a></li>
+      <li><a href="#sec5">5. 有界性：能控性给出上界</a></li>
+      <li><a href="#sec6">6. 收敛结论与后续展望</a></li>
+      <li><a href="#quiz">📝 练习与自测</a></li>
+    </ul>
+  </div>
+
+  <div id="sec1" class="section-card">
+    <h2>1. 证明目标与"辅助线"思想</h2>
+
+    <p>上节我们把收敛定理拆成五步。本节完成 <strong>S1</strong>：</p>
+
+    <div class="callout" style="border-left-color: #22c55e;">
+      <p><strong>📐 S1：$P_k$ 在 $P_0 = 0$ 时收敛</strong></p>
+      <p>设 $P_0 = 0$，$P_{k+1} = g(P_k)$。则序列 $\{P_k\}$ 收敛到某个 $P \geq 0$。</p>
+    </div>
+
+    <p>为什么先取 $P_0 = 0$？因为它是"最小"的合法起点（半正定锥的底），也最容易构造不依赖于初始条件的证明骨架。之后的 S4 会把结论推广到任意 $P_0 \geq 0$。</p>
+
+    <div class="callout" style="border-left-color: #f59e0b;">
+      <p><strong>🧠 方法：单调 + 有界 = 收敛</strong></p>
+      <p>对矩阵序列（对称半正定意义下），只要证明：</p>
+      <ul>
+        <li>$P_k \leq P_{k+1}$（<strong>单调不减</strong>，Loewner 序）</li>
+        <li>存在 $\hat{P}$ 使 $P_k \leq \hat{P}\ \forall k$（<strong>有上界</strong>）</li>
+      </ul>
+      <p>则由矩阵版本的单调收敛定理，$P_k$ 收敛。施老师说：<em>"我们来看一个非常漂亮的题，如何证明它单调且有界？这个就需要用到上节课讲到的 LQR 的知识。我们初中学平面几何的时候添加一条辅助线，我们在这里也添加一个辅助线，不过这个辅助线是更加高级一点的。"</em></p>
+    </div>
+  </div>
+
+  <div id="sec2" class="section-card">
+    <h2>2. 辅助系统：把迭代翻译成最优控制</h2>
+
+    <p>辅助线是什么？——构造一个与 $g$ 迭代天然对应的 <strong>有限时域 LQR 问题</strong>：</p>
+
+    <div class="formula-box">
+      $$ X_{i+1} = A X_i + B U_i, \qquad i = 0, 1, \dots, k-1 $$
+      $$ J = \sum_{i=0}^{k-1} (x_i^{\top} Q x_i + u_i^{\top} R u_i) + x_k^{\top} P_k x_k $$
+    </div>
+
+    <p>这里 $P_k$ 是终端权重。如果取 $P_k = 0$（终端项消失），$J$ 就是标准的 $k$ 步 LQR 代价。注意：<strong>这个系统里 $A, B, Q, R$ 与我们的 Riccati 迭代完全一致</strong>——这就是把 $g^k$ 翻译成最优控制语言的桥梁。</p>
+
+    <figure style="text-align:center;margin:16px 0">
+      <img src="assets/board/KF_L21/80a168b60e75331b072f39852d84bbb45e5126e442437f14b15945d92d64b68c.jpg" alt="S1辅助系统板书" style="max-width:100%;border-radius:8px;" loading="lazy">
+      <figcaption style="font-size:0.85rem;color:var(--text-secondary);margin-top:8px">板书：辅助系统 $X_{i+1} = A X_i + B U_i$ 与代价 $J$ 的构造</figcaption>
+    </figure>
+
+    <p>直觉：LQR 的动态规划告诉我们，<strong>最优代价是一个二次型</strong>——终端权重 $P_k$ 经过 $k$ 步反向递推后出现在起点：$J^{*} = x_0^{\top} P_0 x_0$。而这里"反向递推"的每一步恰好就是 $g$。</p>
+  </div>
+
+  <div id="sec3" class="section-card">
+    <h2>3. 关键等式：$J^{*} = x_0^{\top} g^{k}(0) x_0$</h2>
+
+    <p>对辅助系统取 $P_k = 0$，由 LQR 的动态规划解：</p>
+
+    <div class="formula-box">
+      $$ J^{*} = x_0^{\top} \underbrace{g(g(\cdots g(0)))}_{k \text{ 次}} x_0 = x_0^{\top} g^{k}(0) x_0 $$
+    </div>
+
+    <p>其中 $g^{k}$ 表示 $g$ 的 $k$ 次复合。逐项核对：终端权重 $0$ 是"第 $k$ 步的 $P$"；反向递推一步得到第 $k-1$ 步的 $P = g(0)$；再递推一步得到 $g(g(0))$；…… 回到起点就是 $g^k(0)$。而 $P_0 = 0$ 时 Riccati 迭代 $P_{k'} = g^{k'}(0)$，所以</p>
+
+    <div class="flow-formula">
+      🔄 $J^{*}(k \text{ 步问题}) = x_0^{\top} g^k(0) x_0 = x_0^{\top} P_k x_0$
+    </div>
+
+    <p>于是，"分析 $P_k$ 的性质"等价于"分析 $k$ 步 LQR 最优代价的性质"。这是本证明最巧妙的一步。</p>
+  </div>
+
+  <div id="sec4" class="section-card">
+    <h2>4. 单调性：多算一步代价不减</h2>
+
+    <p>考虑两个问题：$k$ 步问题（代价 $\sum_{i=0}^{k-1}(\cdots)$）与 $k+1$ 步问题（代价 $\sum_{i=0}^{k}(\cdots)$）。对任意控制序列，前者是后者的"截断"，因为多出来的第 $k$ 项满足</p>
+
+    <div class="formula-box">
+      $$ x_k^{\top} Q x_k + u_k^{\top} R u_k \geq 0 $$
+    </div>
+
+    <p>（$Q, R$ 半正定/正定）。因此对任意控制序列：$k$ 步代价 $\leq$ $k+1$ 步代价。取最小值后：</p>
+
+    <div class="formula-box">
+      $$ \min_{u_0,\dots,u_{k-1}} \sum_{i=0}^{k-1} \left( x_i^{\top} Q x_i + u_i^{\top} R u_i \right) \leq \min_{u_0,\dots,u_{k}} \sum_{i=0}^{k} \left( x_i^{\top} Q x_i + u_i^{\top} R u_i \right) $$
+    </div>
+
+    <p>左边恰好是 $x_0^{\top} g^{k}(0) x_0$（$P_k=0$ 的 $k$ 步问题最优代价），右边是 $x_0^{\top} g^{k+1}(0) x_0$（同样取 $P_{k+1}=0$）。故</p>
+
+    <div class="formula-box">
+      $$ x_0^{\top} g^{k}(0) x_0 \leq x_0^{\top} g^{k+1}(0) x_0, \qquad \forall x_0 $$
+    </div>
+
+    <p>由于 $x_0$ 任意，二次型逐点比较给出 Loewner 序：记 $P_k = g^k(0)$，则</p>
+
+    <div class="callout" style="border-left-color: #22c55e;">
+      <p><strong>✅ 单调性</strong>：$P_k \leq P_{k+1}$，序列 $\{P_k\}$ 单调不减。</p>
+    </div>
+
+    <p>注：这里施老师特别强调的辅助系统的写法是 $x_i^{\prime} Q x_i + u_i^{\prime} R u_i$（板书里 $Q$ 被 OCR 成 $\propto$ / $a$，实为 $Q$），正好也是上节课 LQR 内容的一次活学活用。</p>
+  </div>
+
+  <div id="sec5" class="section-card">
+    <h2>5. 有界性：能控性给出上界</h2>
+
+    <p>单调不减还不够——可能发散去 $+\infty$。需要证明有界。这里用上<strong>能控性</strong>：</p>
+
+    <div class="callout" style="border-left-color: #3b82f6;">
+      <p><strong>📐 能控性定义（用到这里的形式）</strong>：$(A,B)$ 能控意味着存在 $u_0, \dots, u_{n-1}$（$n$ 为状态维数），使得从任意 $x_0$ 出发，$x_n = 0$。</p>
+    </div>
+
+    <p>取"归零控制" $u_0, \dots, u_{n-1}$ 使 $x_n = 0$，之后令 $u_i = 0$。那么对任意 $k \geq n$，代价为</p>
+
+    <div class="formula-box">
+      $$ J = \sum_{i=0}^{k-1} \left( x_i^{\top} Q x_i + u_i^{\top} R u_i \right) = \hat{J} \quad (\text{常数，有限}) $$
+    </div>
+
+    <p>因为 $i \geq n$ 后 $x_i = 0, u_i = 0$，项全为零。于是 $k$ 步问题的最优代价不超过这个可行代价：</p>
+
+    <div class="formula-box">
+      $$ x_0^{\top} g^{k}(0) x_0 \leq \hat{J}, \qquad \forall k \geq n $$
+    </div>
+
+    <p>由于 $x_0$ 任意（取遍所有方向），这给出矩阵意义下的上界 $P_k \leq \hat{P}$，其中 $\hat{P}$ 由 $\hat{J} = x_0^{\top} \hat{P} x_0$ 确定。因此</p>
+
+    <div class="callout" style="border-left-color: #22c55e;">
+      <p><strong>✅ 有界性</strong>：$\{P_k\}$ 有上界。</p>
+    </div>
+
+    <p>板书上的推理链是：$(A,B)$ 能控 ⟹ $\exists u_0,\dots,u_{n-1}$ 使 $x_n=0$ ⟹ 对 $k \geq n$ 代价为 $\hat{J}$ ⟹ 最优代价 $J^{*} \leq \hat{J}$ ⟹ $P_k \leq \hat{P}$。<em>"from $P_0 = 0$, $x_0^{\top} g^k(0) x_0 \leq \hat{J} \Rightarrow P_k \leq \hat{P}$"</em>。</p>
+  </div>
+
+  <div id="sec6" class="section-card">
+    <h2>6. 收敛结论与后续展望</h2>
+
+    <div class="callout" style="border-left-color: #22c55e;">
+      <p><strong>🎉 S1 完成：$P_k$ 收敛</strong></p>
+      <p>$\{P_k\}$ 单调不减且有上界 ⟹ 收敛（矩阵单调收敛定理）。记极限为 $P$，即 $\lim_{k\to\infty} P_k = P$。</p>
+    </div>
+
+    <p>但注意：S1 只保证了 $P_0 = 0$ 的收敛，且还没证明极限就是 ARE 的唯一正定解、也没证明闭环稳定。剩下的四步（S2–S5）将依次补上：</p>
+
+    <table class="styled-table" style="width:100%;border-collapse:collapse;font-size:0.92rem">
+      <thead>
+        <tr style="background:var(--paper-light)">
+          <th style="padding:8px;text-align:left">步骤</th>
+          <th style="padding:8px;text-align:left">完成内容</th>
+          <th style="padding:8px;text-align:left">对应结论</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="padding:8px">S1 ✅</td><td style="padding:8px">$P_0=0$ 时收敛（本节）</td><td style="padding:8px">极限 $\geq 0$ 存在</td></tr>
+        <tr><td style="padding:8px">S2</td><td style="padding:8px">$D = A + BL$ 稳定</td><td style="padding:8px">结论 (3)</td></tr>
+        <tr><td style="padding:8px">S3</td><td style="padding:8px">$P > 0$ 正定</td><td style="padding:8px">结论 (1) 的 $p>0$</td></tr>
+        <tr><td style="padding:8px">S4</td><td style="padding:8px">任意 $P_0 \geq 0$ 收敛</td><td style="padding:8px">结论 (1) 全部</td></tr>
+        <tr><td style="padding:8px">S5</td><td style="padding:8px">$\bar{P}$ 唯一</td><td style="padding:8px">结论 (2)</td></tr>
+      </tbody>
+    </table>
+
+    <p>施老师预告：<em>"下一次我争取不要拖那么久——下周六（九月五号）我们接着来证明我们的东西，然后九月十二号我就把整个这个系列去做一个收尾的活动。之后就是安排学生分享了。"</em></p>
+
+    <p>他还分享了对整个定理证明风格的感慨：<em>"这个是我见过的、创造力十足的证明方法。它用到了数学定理证明里面各种各样的方式，包括反证法、归纳法、sandwich theorem，还有像今天看到的——证明一个序列收敛，你要证明它单调递增且有一个上界等等，非常有意思，也能够把过去的很多东西做一个小总结。"</em></p>
+  </div>
+
+  <div id="quiz" class="section-card">
+    <h2>📝 练习与自测</h2>
+
+    <div class="mini-card" style="border-left: 4px solid #22c55e;margin-bottom:16px">
+      <h4>1️⃣ 复述证明骨架</h4>
+      <p>不看讲义，写出 S1 证明的两大步：单调性怎么证（辅助系统 + 代价比较），有界性怎么证（能控性 + 归零控制）。每一处用到什么条件？</p>
+      <details><summary style="cursor:pointer;color:#CC785C">查看提示</summary><p style="margin-top:8px">单调：$k+1$ 步代价比 $k$ 步多非负项 ⟹ 最优代价不减 ⟹ $P_k \leq P_{k+1}$。有界：能控 ⟹ $n$ 步归零 ⟹ 之后代价为常数 $\hat{J}$ ⟹ $J^{*} \leq \hat{J}$ ⟹ $P_k \leq \hat{P}$。</p></details>
+    </div>
+
+    <div class="mini-card" style="border-left: 4px solid #3b82f6;margin-bottom:16px">
+      <h4>2️⃣ 为什么辅助系统里终端权重取 $P_k = 0$？</h4>
+      <p>如果把辅助系统的终端权重换成某个 $S > 0$，$J^{*}$ 会变成什么？它跟 $g$ 的迭代还有一一对应关系吗？</p>
+      <details><summary style="cursor:pointer;color:#CC785C">查看答案</summary><p style="margin-top:8px">取终端 $S$ 时 $J^{*} = x_0^{\top} g^{k}(S) x_0$。仍有对应关系（从 $S$ 出发迭代 $k$ 次），所以这个"辅助线"其实可以处理任意起点——这正是 S4 推广 $P_0 \geq 0$ 的思路雏形。</p></details>
+    </div>
+
+    <div class="mini-card" style="border-left: 4px solid #8b5cf6;margin-bottom:16px">
+      <h4>3️⃣ 数值检验：单调且有界</h4>
+      <p>对 $a = 1.0, b = 1, q = 1, r = 0.1$（不稳定系统 $|a|=1$），从 $P_0 = 0$ 迭代 $P_{k+1} = a^2 P_k + 1 - \frac{a^2 P_k^2}{P_k + 0.1}$，观察 $P_k$ 是否单调不减、是否收敛。再试 $a = 1.2$（更强的不稳定），结论变化吗？</p>
+      <details><summary style="cursor:pointer;color:#CC785C">查看答案</summary><p style="margin-top:8px">标量情形 $g(p) = a^2 p + q - \dfrac{a^2 p^2}{p + r}$（$b=1$）。$a=1.0$ 时 ARE 化为 $p^2 - p - r = 0$，正根 $p = \dfrac{1+\sqrt{1+4r}}{2} \approx 1.092$，g 迭代单调上升收敛到该值；$a=1.2$ 时 ARE 化为 $p^2 - \bigl(r(a^2-1) + q\bigr)p - qr = 0$，正根 $p \approx 1.132$，依旧单调收敛到更大的正定解。这说明"能控"（标量 $b \neq 0$）已足够给出上界，即使开环不稳定（$|a| \geq 1$）。</p></details>
+    </div>
+  </div>
+
+  <div class="nav-links">
+    <a href="0035-KF-L21-Riccati收敛-1.html" class="prev">← KF L21(1/2)：Riccati 收敛定理与证明框架</a>
+    <a href="0037-KF-L22-Riccati收敛-1.html" class="next">KF L22(1/2)：等式②与 S3 证明——P 的正定性 →</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+  </div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 KF L21(2/2) · S1 证明——单调性与有界性</p>
+    <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px">板书来源：KF L21 · 研讨会系列 28 · 施凌老师（2026-08-29）· 结合课堂录音转写整理</p>
+  </div>
+</div>
+<script src="assets/shiclass.js"></script>
+<script src="../shared/lesson-tools.js"></script>
+</body>
+</html>
