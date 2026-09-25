@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>隐私保护分布式状态估计(1/2)：问题建模与 Paillier 密码基础 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="assets/shiclass.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+</head>
+<body>
+<div class="page">
+
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · 系列31 · 组内分享</div>
+    <h1>隐私保护分布式状态估计(1/2)：问题建模与 Paillier 密码基础</h1>
+    <p class="subtitle">分布式状态估计 · 信息滤波与信息融合 · 明文传输的两类隐私威胁（外部窃听者 + HBC 内部节点）· Paillier 加法同态 · 编码-加密-解密-解码回路 · Lemma 1 量化误差界</p>
+    <div class="hero-meta">
+      <span>📅 2026-09-19</span>
+      <span>🎙️ 徐臻（组内分享）</span>
+      <span>📚 论文：Fu et al., Privacy-preserving distributed state estimation</span>
+    </div>
+  </div>
+
+  <div class="lead-grid">
+    <div class="callout">
+      <h4>🎯 学完本节，你应能</h4>
+      <ul>
+        <li>说清分布式状态估计问题中，信息矩阵 $\Omega$ 与信息向量 $q$ 是怎么来的、为什么必须与邻居交换</li>
+        <li>指出邻居信息交换阶段的两类隐私威胁：外部窃听者与内部诚实但好奇（HBC）的节点</li>
+        <li>用一句话说出论文要解决的核心问题，以及论文的两条主线</li>
+        <li>写出 Paillier 密码体制的两条基础性质（加法同态、密文幂运算），并说清它们能支持哪些密文运算</li>
+        <li>说清编码-加密-解码回路的每一步（含 sign preserved 与编码参数 $Q$），读懂 Lemma 1 的量化误差界</li>
+      </ul>
+    </div>
+    <div class="callout">
+      <h4>🔑 核心思想</h4>
+      <p>分布式状态估计的隐私泄露点，恰恰是"融合必须靠通信"这一步：信息矩阵和信息向量一旦明文传输，等于把每个智能体的私有数据摊开给链路上的所有人。论文的思路是把"能不能算"和"能不能看见"解耦——用 Paillier 的<strong>加法同态</strong>性质，让智能体直接在<strong>密文上</strong>完成融合所需的加法和数乘；再配上一对<strong>编码/解码</strong>阶段（乘 $Q$ 取整、解密后除以 $Q$），把实数值搬进密码体制能处理的整数世界。Lemma 1 保证这趟"搬运"的误差随编码参数 $Q$ 增大而反比缩小——隐私不是拿估计精度硬换来的，这是下一节稳定性证明的地基。</p>
+    </div>
+  </div>
+
+  <div class="toc">
+    <h3>📖 目录</h3>
+    <ul>
+      <li><a href="#sec1">1. 分享背景：论文身份与研究问题</a></li>
+      <li><a href="#sec2">2. 问题建模（一）：分布式状态估计与信息滤波框架</a></li>
+      <li><a href="#sec3">3. 问题建模（二）：隐私威胁从哪里来</a></li>
+      <li><a href="#sec4">4. 论文的核心问题</a></li>
+      <li><a href="#sec5">5. 论文的两条主线</a></li>
+      <li><a href="#sec6">6. Paillier 密码体制的两个基础性质</a></li>
+      <li><a href="#sec7">7. 从实数到整数：编码-加密-解码回路</a></li>
+      <li><a href="#sec8">8. Lemma 1：编码-解码的量化误差界</a></li>
+      <li><a href="#sec9">9. 安全通信算法：智能体 i 发出去什么</a></li>
+      <li><a href="#sec10">10. 小结</a></li>
+      <li><a href="#quiz">📝 练习与自测</a></li>
+    </ul>
+  </div>
+
+  <div id="sec1" class="section-card">
+    <h2>1. 分享背景：论文身份与研究问题</h2>
+    <p>本次组内分享由<strong>徐臻</strong>同学（研二）主讲，讲的是王慧老师课题组方向下的一篇论文，主题是<strong>隐私保护的分布式状态估计</strong>——具体路线是一种<strong>基于改进 Paillier 密码体制（modified Paillier cryptosystem）的方法</strong>。他的讲述顺序很有代表性：先讲"这篇文章要保护的内容"，再讲用什么工具保护，最后才落到算法与证明；本节课程也照此安排。</p>
+
+    <h3>1.1 论文身份</h3>
+    <table class="data-table">
+      <thead><tr><th>项</th><th>内容</th></tr></thead>
+      <tbody>
+        <tr><td>论文标题</td><td><em>Privacy-preserving distributed state estimation: A modified Paillier cryptosystem-based approach</em></td></tr>
+        <tr><td>作者</td><td>Xingquan Fu, Guanghui Wen, Dan Zhao, Christoforos N. Hadjicostis</td></tr>
+        <tr><td>单位</td><td>Southeast University（东南大学）· University of Cyprus（塞浦路斯大学）</td></tr>
+        <tr><td>本次分享</td><td>系列 31 · 组内分享（2026-09-19）· 共 2 节：问题建模与密码基础（本节）+ 融合协议与理论保证</td></tr>
+      </tbody>
+    </table>
+
+    <h3>1.2 研究问题的一句话概括</h3>
+    <p>论文研究的是<strong>隐私保护的分布式状态估计</strong>：多个智能体各自只掌握局部测量、必须通过邻居通信才能共同估计动态系统的状态；论文要做的，是在这个过程中<strong>既完成正确的信息融合，又不暴露各智能体原始的<strong>信息矩阵</strong>和<strong>信息向量</strong></strong>。</p>
+
+    <div class="callout callout-note">
+      <h4>📝 术语对照（转写中的常见误写）</h4>
+      <p>视频转写里若干术语有误，本课程统一按下表表述：Paillier（转写误作"帕利尔"）；<strong>信息矩阵 / 信息向量</strong>（转写误作"经济矩阵"，符号 $\Omega$ 转写作"欧米茄"）；隐私保护（转写误作"以私保护"）；论文（转写误作"课文"）。人名一律记作<strong>徐臻</strong>。</p>
+    </div>
+  </div>
+
+  <div id="sec2" class="section-card">
+    <h2>2. 问题建模（一）：分布式状态估计与信息滤波框架</h2>
+
+    <h3>2.1 问题设定</h3>
+    <p>论文研究的是一个<strong>分布式状态估计（distributed state estimation）</strong>问题：<strong>多个智能体</strong>通过<strong>各自的局部测量</strong>和<strong>邻居通信</strong>，共同估计一个<strong>动态系统</strong>的状态。单个智能体的测量是有限的——只靠自己估计不出来；所以必须与邻居交换信息，把各家掌握的"信息"拼起来用。</p>
+
+    <h3>2.2 信息滤波（information filter）框架</h3>
+    <p>整篇论文采用<strong>信息滤波</strong>的方法，每个智能体的每个时刻都走同一条四步流程：</p>
+    <ol>
+      <li><strong>预测</strong>：先根据上一时刻的估计做状态预测；</li>
+      <li><strong>测量更新</strong>：利用当前时刻的局部测量完成测量更新，得到<strong>本地的信息矩阵 $\Omega$</strong> 和<strong>信息向量 $q$</strong>；</li>
+      <li><strong>信息交换与融合</strong>：与邻居交换信息，完成信息融合（论文采用的融合形式是 CI fusion，即交叉融合）；</li>
+      <li><strong>后验估计</strong>：根据融合后的信息矩阵和信息向量，给出后验状态估计。</li>
+    </ol>
+
+    <div class="formula-box">
+      <p style="margin:0">预测 ⟶ 测量更新（得到 $\Omega$、$q$）⟶ 邻居信息交换与融合（CI fusion）⟶ 后验状态估计</p>
+    </div>
+
+    <h3>2.3 隐私问题的入口在第三步</h3>
+    <p>请注意第 3 步：信息交换发生在<strong>邻居之间的通信链路</strong>上。也就是说，信息矩阵 $\Omega$ 与信息向量 $q$ 必须"出门"才能完成融合——这一步既是分布式估计成立的原因，也正是隐私问题的入口。</p>
+
+    <div class="callout callout-note">
+      <h4>📝 现场观察：这是一个时变系统</h4>
+      <p>分享过程中老师注意到，文中的 $A$ 与 $C$ 都带下标 $k$（$A_{k}$、$C_{k}$），也就是说文章讨论的是<strong>时变（time-varying）系统</strong>，不是定常系统。这一点会影响后面理论部分对系统参数的要求。</p>
+    </div>
+  </div>
+
+  <div id="sec3" class="section-card">
+    <h2>3. 问题建模（二）：隐私威胁从哪里来</h2>
+
+    <h3>3.1 威胁一：外部窃听者（external eavesdroppers）</h3>
+    <p>如果信息矩阵和信息向量以<strong>明文形式</strong>在链路上传输，就很容易被<strong>外部窃听者</strong>直接截获——$\Omega$ 和 $q$ 本身就是各个智能体的私有数据，拿到明文等于拿到原始数据。</p>
+
+    <h3>3.2 威胁二：内部诚实但好奇的节点（HBC）</h3>
+    <p>即使链路安全，通信对象也未必"无害"：<strong>诚实但好奇（honest-but-curious, HBC）</strong>的节点会<strong>正常执行算法</strong>（不会主动破坏结果），但有的节点可能<strong>利用合法收到的信息，去推断其他节点的私有数值</strong>。这类威胁从内部来，靠"加密通信链路"本身是挡不住的。</p>
+
+    <table class="data-table">
+      <thead><tr><th>威胁来源</th><th>能力 / 手段</th><th>直接后果</th></tr></thead>
+      <tbody>
+        <tr><td>外部窃听者</td><td>截获链路上明文传输的信息矩阵 / 信息向量</td><td>私有数据被直接读取</td></tr>
+        <tr><td>内部 HBC 节点</td><td>按算法正常收报与执行，额外利用收到信息做推断</td><td>邻居的私有数值可能被推断出来</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-key">
+      <h4>💡 直觉</h4>
+      <p>分布式估计必须通信，而通信就必须"把数据交出去"。所以隐私保护不能靠<strong>不传</strong>（不传就没法融合），只能靠<strong>传了也看不见</strong>——这正是后面密码工具要解决的问题。</p>
+    </div>
+  </div>
+
+  <div id="sec4" class="section-card">
+    <h2>4. 论文的核心问题</h2>
+    <p>把前两节合起来，论文要回答的问题可以写成一句话：</p>
+
+    <div class="callout callout-key">
+      <h4>🔑 核心问题</h4>
+      <p>如何<strong>在不暴露节点的原始信息矩阵和信息向量的情况下</strong>，完成<strong>正确的信息融合</strong>，同时保持分布式状态估计的<strong>有效性</strong>？</p>
+    </div>
+
+    <p>这句话里其实压着三个必须同时成立的要求：</p>
+    <ul>
+      <li><strong>正确性</strong>：融合要算对——结果与明文融合一致；</li>
+      <li><strong>有效性</strong>：加密不能让估计性能塌掉，否则"安全的估计"没有意义；</li>
+      <li><strong>隐私性</strong>：原始信息矩阵与信息向量自始至终不出门。</li>
+    </ul>
+    <p>三个要求的同时成立，才叫"隐私保护的分布式状态估计"。</p>
+  </div>
+
+  <div id="sec5" class="section-card">
+    <h2>5. 论文的两条主线</h2>
+    <p>针对上面的核心问题，论文给出两条主线：</p>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>主线一 · 安全通信算法</h4>
+        <p>利用 Paillier 密码体制的<strong>加法同态</strong>性质，设计一个<strong>安全通信算法</strong>；这个算法要能支撑隐私保护版的<strong>交叉融合</strong>——也就是让智能体在密文上完成融合所需的运算。</p>
+      </div>
+      <div class="mini-card">
+        <h4>主线二 · 完整算法</h4>
+        <p>把安全通信算法嵌进状态估计流程，形成一个<strong>完整的隐私保护分布式状态估计算法</strong>，同时应对<strong>外部窃听</strong>与<strong>内部好奇</strong>两类威胁。</p>
+      </div>
+    </div>
+
+    <div class="callout callout-note">
+      <h4>📝 本节（1/2）的位置</h4>
+      <p>这一节先打地基：密码工具（第 6 节）、编码-加密-解码回路（第 7 节）、量化误差界（第 8 节），以及三步安全通信算法（第 9 节）。<strong>融合协议的具体构造、隐私定义与理论保证</strong>留给下一节（2/2）。</p>
+    </div>
+  </div>
+
+  <div id="sec6" class="section-card">
+    <h2>6. Paillier 密码体制的两个基础性质</h2>
+
+    <h3>6.1 为什么需要它</h3>
+    <p>信息矩阵与信息向量要参与融合运算，又不能明文传——那么有没有一种加密方式，能让"看不见明文"和"还能算"同时成立？论文选用的 <strong>Paillier 密码体制</strong>就具备这种能力：它是<strong>加法同态（additively homomorphic）</strong>的。</p>
+
+    <h3>6.2 性质一：加法同态</h3>
+    <div class="formula-box">
+      $$\mathbf{E}(x) \cdot \mathbf{E}(y) = \mathbf{E}(x + y)$$
+      <p style="margin-top:8px;font-size:0.9rem">两个密文相乘，等于两个明文相加之后再加密</p>
+    </div>
+    <p>用分享里的话说：<strong>两个密文相乘，等于两个明文相加之后再加密</strong>。也就是说，"在密文上做乘法"对应"在明文上做加法"。</p>
+
+    <h3>6.3 性质二：密文的幂运算</h3>
+    <div class="formula-box">
+      $$\mathbf{E}(x)^{2} = \mathbf{E}(2x)$$
+      <p style="margin-top:8px;font-size:0.9rem">密文的二次幂，等于明文的二倍再加密</p>
+    </div>
+    <p>用分享里的话说：<strong>密文的二次幂，等于密文的二倍再加密</strong>——也就是"密文的幂运算"对应"明文的<strong>数乘</strong>"。写成一般形式：</p>
+    <div class="formula-box">
+      $$\mathbf{E}(x)^{k} = \mathbf{E}(kx)$$
+    </div>
+
+    <h3>6.4 两条性质合起来能做什么</h3>
+    <div class="formula-box">
+      $$\mathbf{E}(x)^{2} \cdot \mathbf{E}(y) = \mathbf{E}(2x) \cdot \mathbf{E}(y) = \mathbf{E}(2x + y)$$
+    </div>
+    <p>先用幂运算完成数乘，再用乘法完成相加：<strong>我们虽然看的是密文，但可以在密文上做加法和数乘。</strong>分享里特别强调——这两条性质是后面<strong>所有计算的基础</strong>。</p>
+
+    <div class="callout callout-intuition">
+      <h4>💡 直觉</h4>
+      <p>隐私保护的关键不是"不计算"，而是"换个域计算"：明文上的加法与数乘，被搬到了密文上做——数据从头到尾没有被任何人看见。</p>
+    </div>
+  </div>
+
+  <div id="sec7" class="section-card">
+    <h2>7. 从实数到整数：编码-加密-解码回路</h2>
+
+    <h3>7.1 动机：Paillier 处理的是整数</h3>
+    <p>密码体制的运算是建立在<strong>整数</strong>上的，而信息矩阵和信息向量都是<strong>实数</strong>。所以作者在加密之外，又加了<strong>编码（encoding）与解码（decoding）两个阶段</strong>，目的就是<strong>把实数变成整数再加密</strong>。</p>
+    <p>编码的核心是两件事：<strong>把数变成一个整数</strong>（取最接近的那个整数，即量化/取整），以及<strong>把符号信息保存好</strong>（sign preserved）。</p>
+
+    <h3>7.2 回路三步：加密 → 解密 → 解码</h3>
+    <p><strong>第一步不是加密，而是编码</strong>——加密这一步只负责把编码好的整数藏起来，且要保住符号：</p>
+    <div class="formula-box">
+      $$\Upsilon(s, r) = \operatorname{sgn}\big(\Gamma(s, r)\big)\, \mathbf{E}\big(|\Gamma(s, r)|\big)$$
+      <p style="margin-top:8px;font-size:0.9rem">式 (6) · 加密（sign preserved）：符号留在外面，只有绝对值进密码体制</p>
+    </div>
+    <p>加密时把符号单独提出来：$\operatorname{sgn}(\cdot)$ 留在外面，只把<strong>绝对值</strong>送进 $\mathbf{E}(\cdot)$ 加密——这样负号不会丢，这就是 <strong>sign preserved</strong> 的含义。</p>
+
+    <div class="formula-box">
+      $$\Gamma(s, r) = \operatorname{sgn}\big(\Upsilon(s, r)\big)\, \mathbf{D}\big(|\Upsilon(s, r)|\big)$$
+      <p style="margin-top:8px;font-size:0.9rem">式 (7) · 解密：先解出绝对值，再按原符号拼回去</p>
+    </div>
+
+    <div class="formula-box">
+      $$\widetilde{\Psi}(s, r) = \frac{\Gamma(s, r)}{Q}$$
+      <p style="margin-top:8px;font-size:0.9rem">式 (8) · 解码：divide by $Q$ to recover real values</p>
+    </div>
+    <p>解码动作很简单：<strong>除以编码参数 $Q$</strong>，把整数还原成实数。</p>
+
+    <h3>7.3 编码参数 Q 的作用</h3>
+    <p>$Q$ 是编码要用的参数：<strong>$Q$ 越大，量化越精细、误差越小</strong>。分享中预告了后面会给出一个精确的误差界——就是第 8 节的 Lemma 1。</p>
+
+    <h3>7.4 一条完整的回路</h3>
+    <div class="formula-box">
+      <p style="margin:0">编码（提符号、取整）⟶ 加密 ⟶ 密文上的加法与数乘（对几个加密量做统计与求和）⟶ 解密 ⟶ 解码（除以 $Q$）</p>
+    </div>
+    <p>分享里强调这条回路的意义：发送者把自己的数据加密后发出去，另一方在<strong>密文上做加运算</strong>后把结果发回去——<strong>中间任何一方都没有见过原始数据</strong>。</p>
+
+    <h3>7.5 统一记号</h3>
+    <div class="formula-box">
+      $$\left\{ \begin{array}{l} \Gamma = \mathbf{E}_{\mathbf{N}}(\Psi, Q), \\ \Upsilon = \mathbf{E}_{\mathbf{M}}(\Gamma, Q) = \mathbf{E}_{\mathbf{M}}(\Psi, Q), \\ \widetilde{\Psi} = \mathbf{P}_{\mathbf{M}}(\Psi, Q). \end{array} \right.$$
+    </div>
+    <p>记号含义（OCR 术语表）：<strong>$\mathbf{E}_{\mathbf{N}}$（EN）</strong> = encoding 编码；<strong>$\mathbf{E}_{\mathbf{M}}$（EM）</strong> = encryption 加密；<strong>$\mathbf{E}_{\mathbf{NM}}$（ENM）</strong> = encoding-encryption 编码-加密；<strong>$\mathbf{P}_{\mathbf{M}}$（PM）</strong> = full operation 完整操作（编码 → 加密 → 密文运算 → 解密 → 解码）。</p>
+    <p>读法：$\Gamma$ 是编码后的量；$\Upsilon$ 是加密后的量（也就是 $\mathbf{E}_{\mathbf{NM}}$ 作用的结果）；$\widetilde{\Psi}$ 是完整操作作用在原量 $\Psi$ 上的最终结果——可以理解为 $\Psi$ 走了一趟"加密通道"之后的近似版本。</p>
+
+    <div class="callout callout-note">
+      <h4>💬 现场讨论：编码式子里的 $s$ 和 $r$ 是什么？</h4>
+      <p>分享中有同学提问：式子 $\Upsilon(s, r)$、$\Gamma(s, r)$ 里的 $s$ 和 $r$ 分别指什么？讨论中确认：<strong>$s$ 就是被编码的那个数本身</strong>；随后有同学追问另一个符号是不是"精度 / 小数位数"之类的含义，现场没有展开。可以确定的是：<strong>$Q$（现场口语说的"欧"）是编码要用的参数</strong>，它的大小直接决定量化的精细度与误差界。至于 $r$，本次分享没有展开讨论——本节如实保留这个空白。</p>
+    </div>
+  </div>
+
+  <div id="sec8" class="section-card">
+    <h2>8. Lemma 1：编码-解码的量化误差界</h2>
+    <p>编码会把实数"压"成整数，这必然带来误差。论文用 Lemma 1（量化误差界）把误差框住：</p>
+
+    <div class="formula-box">
+      $$F - \frac{n}{2Q}I \;\leq\; \mathbf{P}_{\mathbf{M}}(F, Q) \;\leq\; F + \frac{n}{2Q}I$$
+      <p style="margin-top:8px;font-size:0.9rem">Lemma 1 · 编码-解码误差双侧有界，界宽 $n/(2Q)$</p>
+    </div>
+
+    <p>三个要点（OCR 原文）：</p>
+    <ul>
+      <li><strong>误差被 $n/(2Q)$ 界住</strong>：编码-解码的误差有明确的界；</li>
+      <li><strong>双侧（two-sided）</strong>：既有下界、也有上界，不是"只保证不超"；</li>
+      <li><strong>与 $Q$ 成反比（inversely proportional）</strong>：$Q$ 越大，误差界越窄——这是后续稳定性证明的基础（the basis of the stability proof）。</li>
+    </ul>
+
+    <table class="data-table">
+      <thead><tr><th>符号</th><th>含义</th></tr></thead>
+      <tbody>
+        <tr><td>$F$</td><td>待处理的量（信息向量或信息矩阵）</td></tr>
+        <tr><td>$\mathbf{P}_{\mathbf{M}}(F, Q)$</td><td>完整操作作用在 $F$ 上的结果（编码 → 加密 → 密文运算 → 解密 → 解码）</td></tr>
+        <tr><td>$n$</td><td>与量 $F$ 的维数有关的常数（原式中乘在单位矩阵 $I$ 上）</td></tr>
+        <tr><td>$Q$</td><td>编码参数（越大越精细，误差越小）</td></tr>
+        <tr><td>$I$</td><td>单位矩阵（说明误差界按分量给出）</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-intuition">
+      <h4>💡 直觉</h4>
+      <p>$Q$ 越大，$n/(2Q)$ 越小，$\mathbf{P}_{\mathbf{M}}(F, Q)$ 就越接近 $F$——"加密-解密"这层搬运对结果的影响可以被压得很小。所以隐私保护并不必然意味着估计精度"硬亏"：失真随 $Q$ 反比收缩，是可控的。</p>
+    </div>
+  </div>
+
+  <div id="sec9" class="section-card">
+    <h2>9. 安全通信算法：智能体 i 发出去什么</h2>
+    <p>把同态性质与编码回路打包，论文给出了智能体之间安全通信的三步算法（OCR 帧 "What agent i sends"）：</p>
+
+    <div class="grid-3">
+      <div class="mini-card">
+        <h4>Step 1</h4>
+        <p>智能体 $i$ 选择一对合适的<strong>公钥 $P$</strong>、<strong>私钥 $S$</strong>，以及<strong>编码参数 $Q$</strong>。</p>
+      </div>
+      <div class="mini-card">
+        <h4>Step 2</h4>
+        <p>借助 $P$、$Q$，计算得到 $\mathbf{E}_{\mathbf{NM}}(\widetilde{\varphi}, Q)$ 与 $\mathbf{E}_{\mathbf{NM}}(\widetilde{\chi}, Q)$。</p>
+      </div>
+      <div class="mini-card">
+        <h4>Step 3</h4>
+        <p>把 $\mathbf{E}_{\mathbf{NM}}(\widetilde{\varphi}, Q)$、$\mathbf{E}_{\mathbf{NM}}(\widetilde{\chi}, Q)$、$Q$ 和 $P$ 一起发送给邻居 $j$（$j \in \mathcal{N}_{i}$，$j \neq i$）。</p>
+      </div>
+    </div>
+
+    <div class="formula-box">
+      $$\mathbf{E}_{\mathbf{NM}}\big(\widetilde{\varphi}, Q\big), \qquad \mathbf{E}_{\mathbf{NM}}\big(\widetilde{\chi}, Q\big)$$
+    </div>
+
+    <h3>9.1 发出去的到底是什么</h3>
+    <table class="data-table">
+      <thead><tr><th>发出的内容</th><th>说明（OCR）</th></tr></thead>
+      <tbody>
+        <tr><td>信息向量的密文 $\mathbf{E}_{\mathbf{NM}}(\widetilde{\varphi}, Q)$</td><td>ciphertext of information vector</td></tr>
+        <tr><td>信息矩阵的密文 $\mathbf{E}_{\mathbf{NM}}(\widetilde{\chi}, Q)$</td><td>ciphertext of information matrix</td></tr>
+        <tr><td>编码参数 $Q$</td><td>邻居做运算与解码时需要</td></tr>
+        <tr><td>公钥 $P$</td><td>供邻居执行同态运算</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-key">
+      <h4>🔑 留在本地的东西</h4>
+      <p><strong>私钥 $S$ 留在本地</strong>（the private key $S$ stays local）——解密必须用私钥，它不出门，密文才安全。另一个值得注意的设定是：<strong>每个智能体在每个时刻都生成一个不同的密钥对</strong>（every agent generates a distinct key pair at each time step），密钥不跨时刻复用。</p>
+    </div>
+
+    <div class="callout callout-note">
+      <h4>📝 记法提醒</h4>
+      <p>这里的 $P$、$S$ 分别是<strong>公钥（public key）</strong>与<strong>私钥（private key）</strong>，不要与状态估计里的符号混淆；密文括号里的 $\widetilde{\varphi}$、$\widetilde{\chi}$ 分别对应<strong>信息向量</strong>与<strong>信息矩阵</strong>。</p>
+    </div>
+  </div>
+
+  <div id="sec10" class="section-card">
+    <h2>10. 小结</h2>
+    <table class="data-table">
+      <thead><tr><th>环节</th><th>结论</th></tr></thead>
+      <tbody>
+        <tr><td>问题</td><td>多智能体靠各自的局部测量 + 邻居通信共同估计动态系统状态；信息滤波流程为：预测 → 测量更新（得 $\Omega$、$q$）→ 信息交换与融合 → 后验估计</td></tr>
+        <tr><td>威胁</td><td>邻居交换阶段明文传输 → 外部窃听者直接截获；内部 HBC 节点可推断邻居的私有数值</td></tr>
+        <tr><td>核心问题</td><td>不暴露原始信息矩阵 / 信息向量的前提下完成正确融合，并保持估计的有效性</td></tr>
+        <tr><td>密码工具</td><td>Paillier 的加法同态 + 密文幂运算 → 密文上可做加法与数乘</td></tr>
+        <tr><td>编码回路</td><td>编码（提符号、取最近整数）→ 加密 → 密文上的加法统计 → 解密 → 解码（除以 $Q$）</td></tr>
+        <tr><td>误差保证</td><td>Lemma 1：误差界宽 $n/(2Q)$，与 $Q$ 成反比、双侧有界</td></tr>
+        <tr><td>安全通信</td><td>三步算法：选 $P$ / $S$ / $Q$ → 算出 $\mathbf{E}_{\mathbf{NM}}(\widetilde{\varphi}, Q)$ 与 $\mathbf{E}_{\mathbf{NM}}(\widetilde{\chi}, Q)$ → 发密文 + $Q$ + $P$ 给邻居；$S$ 本地保留，每时刻换新密钥对</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-mission">
+      <h4>🚀 与下一节的衔接</h4>
+      <p>本节解决了"在密文上算得动、算得准"的问题：同态性质保证算得动，Lemma 1 保证误差可控。下一节（2/2）进入密文上的<strong>隐私保护 CI 融合协议</strong>，以及隐私定义（Definition 4）、抵御外部窃听与强共谋 HBC 攻击的理论结果（Theorem 2）与稳定性分析（Theorem 3）。</p>
+    </div>
+  </div>
+
+  <div id="quiz" class="section-card exercise-box">
+    <h2>📝 练习与自测</h2>
+
+    <div class="exercise">
+      <h4>练习1：为什么"邻居之间的信息交换阶段"是隐私保护的必争之地？</h4>
+      <p>请说明：在这个阶段，论文要防的两类威胁分别是什么？它们各自凭什么叫"威胁"？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>因为分布式状态估计中单个智能体的测量是有限的，必须与邻居交换信息才能完成融合——这一步信息矩阵和信息向量要"出门"。若以明文形式传输：<strong>(1) 外部窃听者</strong>可以直接截获明文，读到原始的 $\Omega$ 与 $q$；<strong>(2) 内部 HBC（诚实但好奇）节点</strong>虽然会正常执行算法，但可能利用合法收到的信息推断其他节点的私有数值。前者从链路来、后者从内部来，所以两类都要防。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习2：只用密文算出 $\mathbf{E}(3x + 2y)$</h4>
+      <p>已知加密 $\mathbf{E}(\cdot)$ 满足 $\mathbf{E}(x) \cdot \mathbf{E}(y) = \mathbf{E}(x + y)$ 与 $\mathbf{E}(x)^{k} = \mathbf{E}(kx)$。若要在不接触明文 $x$、$y$ 的前提下得到 $\mathbf{E}(3x + 2y)$，应怎样组合密文？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>$$\mathbf{E}(x)^{3} \cdot \mathbf{E}(y)^{2} = \mathbf{E}(3x) \cdot \mathbf{E}(2y) = \mathbf{E}(3x + 2y)$$</p>
+        <p>先各自用幂运算完成数乘（把 $x$ 变 $3x$、$y$ 变 $2y$），再用乘法完成相加。整个过程只用到密文——这就是"在密文上做加法和数乘"的用法。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习3：编码参数 $Q$ 与误差界（数值）</h4>
+      <p>设某个量的维数 $n = 4$。按 Lemma 1，当 $Q = 100$ 时误差界的宽度 $n/(2Q)$ 是多少？若把 $Q$ 提高到 $1000$，误差界变成多少？这说明了 $Q$ 的什么作用？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>$Q = 100$ 时：$n/(2Q) = 4/(2 \times 100) = 0.02$；$Q = 1000$ 时：$4/(2 \times 1000) = 0.002$——缩小到原来的十分之一。说明：(1) $Q$ 越大，量化越精细、误差界越窄；(2) 误差界与 $Q$ 成<strong>反比</strong>，所以只要 $Q$ 取得足够大，加密-解密-解码这层搬运的失真就可以被压到很小——这是"隐私保护不必以估计精度为代价"的关键。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习4：三步算法里，什么出门、什么留下？</h4>
+      <p>按安全通信算法的三步描述回答：(1) 智能体 $i$ 每个时刻会把哪些东西发给邻居？(2) 哪一个量必须留在本地、为什么？(3) "每个时刻生成不同的密钥对"这一设定说的是什么？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>(1) 发出去四样：信息向量的密文 $\mathbf{E}_{\mathbf{NM}}(\widetilde{\varphi}, Q)$、信息矩阵的密文 $\mathbf{E}_{\mathbf{NM}}(\widetilde{\chi}, Q)$、编码参数 $Q$、公钥 $P$。</p>
+        <p>(2) <strong>私钥 $S$ 留在本地</strong>——解密要用私钥，它不出门，密文对邻居和窃听者才安全（论文原文：the private key S stays local）。</p>
+        <p>(3) 论文的设定是"每个智能体在每个时刻生成一个不同的密钥对"（distinct key pair at each time step），即密钥不跨时刻复用。</p>
+      </details>
+    </div>
+  </div>
+
+  <div class="nav-links">
+    <a href="0040-北理工分享-VIO初始化-2.html" class="prev">← VIO 初始化(2/2)：一维降维与正确性判别</a>
+    <a href="0042-组内分享-徐臻-隐私状态估计-2.html" class="next">隐私保护分布式状态估计(2/2)：融合协议与理论保证 →</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+  </div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 31 · 组内分享 · 徐臻（2026-09-19）</p>
+    <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px">内容来源：视频转写 + PPT 版面文字 OCR</p>
+  </div>
+</div>
+<script src="assets/shiclass.js"></script>
+<script src="../shared/lesson-tools.js"></script>
+</body>
+</html>

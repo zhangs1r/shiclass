@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VIO 初始化(2/2)：一维降维与正确性判别 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="assets/shiclass.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+</head>
+<body>
+<div class="page">
+
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · 系列30 · 北理工分享</div>
+    <h1>VIO 初始化(2/2)：一维降维与正确性判别</h1>
+    <p class="subtitle">Fast and Robust Online Initialization of Monocular VIO via One-Dimensional Cost Approximation：rotation correction 分离 · biaffine / biquadratic 结构 · s 的一维外层搜索 · QCQP-1C 内层全局求解 · 枚举式 mode 判别 · Monte-Carlo / 公共数据集 / 真机三层实验</p>
+    <div class="hero-meta">
+      <span>📅 2026-09-12</span>
+      <span>🎙️ 吴一昊（北理工）</span>
+      <span>📚 论文：Kang et al., IEEE T-RO 2026</span>
+    </div>
+  </div>
+
+  <div class="lead-grid">
+    <div class="callout">
+      <h4>🎯 学完本节，你应能</h4>
+      <ul>
+        <li>说清作者为什么先把 rotation correction 从主问题中分离，以及 Gyro-only 子问题在优化什么</li>
+        <li>写出旋转固定后 LC-MVIO 的 biaffine 形式与堆叠后的 biquadratic 目标，并指出其中唯一需要外层探索的一维变量</li>
+        <li>解释"一维外层搜索 + QCQP-1C 内层全局求解"的分工，以及"单约束"这一特殊结构为什么关键</li>
+        <li>区分 global optimality 与 estimation correctness，说明 $t = 0.3\mathrm{s}$ 与 $t = 0.6\mathrm{s}$ 两个时刻 $P(s)$ 的行为差异</li>
+        <li>复述枚举式正确性的两种输出（返回唯一解 / 返回失败并等待更多数据），以及"等待"的本质</li>
+        <li>说出完整 acceptance pipeline 的统计检查层次，与三层实验设计各自回答的问题</li>
+      </ul>
+    </div>
+    <div class="callout">
+      <h4>🔑 核心思想</h4>
+      <p>这篇工作把初始化的困难拆成两个问题：<strong>求解</strong>与<strong>可信</strong>。求解上，作者用近似解耦把高维非凸问题压成"一维尺度搜索 + 内层可全局求解的 QCQP-1C"——$s$ 放在外层做穷举，固定 $s$ 后剩下的高维变量统一求解。可信上，作者不去赌全局最优：枚举所有竞争 mode，只在筛选后剩唯一可行模式时输出该解，否则返回失败、等待更多数据。核心价值是让初始化器<strong>自己知道"现在还不能确定"</strong>。</p>
+    </div>
+  </div>
+
+  <div class="toc">
+    <h3>📖 目录</h3>
+    <ul>
+      <li><a href="#sec1">1. 承上启下：三个非凸来源与作者的策略</a></li>
+      <li><a href="#sec2">2. 子问题 1：Gyro-only rotation correction</a></li>
+      <li><a href="#sec3">3. Translation-only LC-MVIO：双仿射（biaffine）形式</a></li>
+      <li><a href="#sec4">4. 堆叠后的 biquadratic form：唯一的一维未知量</a></li>
+      <li><a href="#sec5">5. 一维外层搜索 + QCQP-1C 内层全局求解</a></li>
+      <li><a href="#sec6">6. Global optimality ≠ estimation correctness</a></li>
+      <li><a href="#sec7">7. 枚举式正确性：候选 mode 集合与两种输出</a></li>
+      <li><a href="#sec8">8. 完整 acceptance pipeline 与实践细节</a></li>
+      <li><a href="#sec9">9. 实验（一）：建模必要性与公共数据集尺度误差</a></li>
+      <li><a href="#sec10">10. 实验（二）：真实无人机 0.5 s 失效恢复</a></li>
+      <li><a href="#sec11">11. 局限与工程权衡</a></li>
+      <li><a href="#sec12">12. 小结</a></li>
+      <li><a href="#quiz">📝 练习与自测</a></li>
+    </ul>
+  </div>
+
+  <div id="sec1" class="section-card">
+    <h2>1. 承上启下：三个非凸来源与作者的策略</h2>
+    <p>上一节我们把单目 VIO 初始化写成"视觉 + 惯性"的联合最大似然问题：求解量 $X$ 同时包含关键帧 pose 与 velocity，目标是让 IMU 预积分残差与视觉重投影约束一起最小。随后在视觉最优解附近引入 Monocular SfM 的 gauge 重新参数化，得到松耦合近似 LC-MVIO，并把原始问题的困难归结为<strong>三个非凸来源</strong>：</p>
+    <div class="formula-box">
+      $$ \underbrace{\delta R_{n} \in SO(3)}_{\text{旋转扰动：非线性流形}}, \qquad \underbrace{\|g\|^{2} = \|g^{w}\|^{2}}_{\text{重力模长：二次等式约束}}, \qquad \underbrace{s\,\delta p_{n}}_{\text{尺度与视觉误差：双线性耦合}} $$
+    </div>
+    <p>这三者分别对应：旋转修正落在 $SO(3)$ 这样的非线性流形上；重力模长是一个二次等式约束；而尺度 $s$ 与视觉扰动 $\delta p_{n}$ 的乘积项让目标函数出现双线性耦合——三者叠加，直接联合求解非常困难。</p>
+    <div class="callout callout-key">
+      <h4>🔑 作者的策略：先把 rotation correction 从主问题中分离</h4>
+      <p>不做一次性的高维联合优化，而是做<strong>近似解耦</strong>：先把旋转修正（rotation correction）从主问题中拆出去单独求解，把旋转固定之后再处理"平移 + 尺度 + 重力 + 速度"的剩余问题。这一节的路线也照着这个顺序走：<strong>分离 → 降维 → 判别正确性 → 实验</strong>。</p>
+    </div>
+  </div>
+
+  <div id="sec2" class="section-card">
+    <h2>2. 子问题 1：Gyro-only rotation correction</h2>
+    <p>第一个子问题只负责旋转——PPT 上写为 <em>Subproblem 1 (Rotation-only local correction)</em>，也就是只依赖陀螺仪（gyroscope）的旋转修正。它的目标函数由两部分组成：旋转残差的加权平方和，加上一个关于修正量 $\xi_{R}$ 的二次正则项：</p>
+    <div class="formula-box">
+      $$ \boldsymbol{\xi}_{R}^{*} = \underset{\boldsymbol{\xi}_{R}}{\operatorname{argmin}} \sum_{n = 1}^{N - 1} \| \mathbf{e}_{R_{n}} \|_{\Sigma_{R_{n}}}^{2} + \boldsymbol{\xi}_{R}^{T} \mathbf{H}_{R} \boldsymbol{\xi}_{R} $$
+    </div>
+    <p>PPT 给出的符号说明为：$\xi_{R} = [\xi_{R_{1}}; \dots ; \xi_{R_{N}}] \in \mathbb{R}^{3N}$，$\Sigma_{R_{n}} \in \mathbb{R}^{3 \times 3}$，$\mathbf{H}_{R} \in \mathbb{R}^{3N \times 3N}$ 分别是 $\xi$、$\Sigma_{n}$ 与 $\mathbf{H}_{V}$ 的旋转分量。其中每个残差项就是上一节 IMU 预积分里的旋转残差：</p>
+    <div class="formula-box">
+      $$ \mathbf{e}_{n}^{R} = \operatorname{Log}\big[ (\mathbf{R}_{n} \mathbf{y}_{n}^{R})^{T} \mathbf{R}_{n + 1} \big]^{\vee} $$
+    </div>
+    <p>这里 $\mathbf{y}_{n}^{R}$ 是陀螺仪测量（gyroscope 提供的旋转增量），$\mathbf{R}_{n}$ 是待修正的旋转，$\delta R_{1:n}$ 是整段窗口内的旋转扰动。优化完这个子问题，就得到了修正后的旋转 $\widehat{R}_{n}$，可以固定进入后续求解。</p>
+    <div class="callout callout-intuition">
+      <h4>💡 独立性假设与短窗口近似</h4>
+      <p>为什么旋转可以单独拿出来做？因为<strong>短窗口内旋转信息主要由陀螺仪决定</strong>：在这个时间尺度上，陀螺仪提供的角速度积分对姿态的约束远强于其他渠道。于是可以近似认为旋转修正与后续的平移、尺度、重力变量相互独立——先解 $\xi_{R}$，再固定旋转去解剩余变量。这就是"近似解耦"能成立的原因。</p>
+    </div>
+    <div class="callout callout-note">
+      <h4>📝 $\mathbf{H}_{R}$ 的角色</h4>
+      <p>和上一节视觉信息矩阵 $\mathbf{H}_{V}$ 的读法一致：信息矩阵越大，说明该部分"更确定"，对应扰动受到的惩罚越强；信息矩阵越小，说明越不确定，留给 IMU 修正的空间越大。$\mathbf{H}_{R}$ 就是旋转分量上的这张"确定度账本"。</p>
+    </div>
+  </div>
+
+  <div id="sec3" class="section-card">
+    <h2>3. Translation-only LC-MVIO：双仿射（biaffine）形式</h2>
+    <p>旋转固定之后，剩下的问题就是 <em>Translation-only LC-MVIO</em>：未知量只剩四类——</p>
+    <div class="formula-box">
+      $$ \mathbf{s}, \quad \mathbf{g}, \quad \mathbf{v}, \quad \delta \mathbf{p} $$
+    </div>
+    <p>此时视觉轨迹仍按上一节的<strong>尺度耦合模型</strong>参与约束（轨迹形状本身带小误差，且误差与尺度相乘）：</p>
+    <div class="formula-box">
+      $$ \mathbf{p}_{n} = \widehat{\mathbf{p}}_{n}\, s + \widehat{R}_{n}\, \delta \mathbf{p}_{n}\, s $$
+    </div>
+    <p>把这条式子代进 IMU 的平移残差（位置、速度两条预积分残差）之后，每条残差被整理成下面这个形式，PPT 称之为 <strong>biaffine form</strong>：</p>
+    <div class="formula-box">
+      $$ \bar{\mathbf{e}}_{n} = \begin{bmatrix} \mathbf{A}_{I_{n}} & \mathbf{B}_{I_{n}} s \end{bmatrix} \begin{bmatrix} \mathbf{x}_{I} \\ \mathbf{x}_{V} \end{bmatrix} + \boldsymbol{\alpha}_{n} + \boldsymbol{\beta}_{n} s $$
+    </div>
+    <p>原文的说明是：<em>which is biaffine to a partition of the optimization variables $(s, x)$</em>，其中变量被划分为两组——</p>
+    <div class="formula-box">
+      $$ \mathbf{x} := \big[ \underbrace{\mathbf{g}; \ \mathbf{v}}_{\mathbf{x}_{I} \in \mathbb{R}^{3 + 3N}} ; \ \underbrace{\delta \mathbf{p}}_{\mathbf{x}_{V} \in \mathbb{R}^{3N}} \big] \in \mathbb{R}^{3 + 6N} $$
+    </div>
+    <ul>
+      <li>$\mathbf{x}_{I}$：惯性侧变量——重力 $\mathbf{g}$ 与关键帧速度 $\mathbf{v}$，共 $3 + 3N$ 维；</li>
+      <li>$\mathbf{x}_{V}$：视觉侧变量——轨迹扰动 $\delta \mathbf{p}$，共 $3N$ 维。</li>
+    </ul>
+    <div class="callout callout-note">
+      <h4>📝 什么叫 biaffine（双仿射）</h4>
+      <p>残差对尺度 $s$ 是线性的，对变量 $\mathbf{x}$ 也是线性的，但<strong>仍保留 $s \cdot \mathbf{x}$ 的交叉项</strong>（表现为矩阵块里带 $s$ 的 $\mathbf{B}_{I} s$）。这就是"双仿射"——两边各自线性、合起来不是线性，因此依旧非凸，不能当成普通最小二乘直接解掉。</p>
+    </div>
+  </div>
+
+  <div id="sec4" class="section-card">
+    <h2>4. 堆叠后的 biquadratic form：唯一的一维未知量</h2>
+    <p>把 IMU 侧的残差（带 $s$ 的块）与视觉侧的残差（纯 $\mathbf{x}_{V}$ 的块）按分块方式<strong>堆叠</strong>起来，就得到 PPT 上的 <strong>biquadratic form</strong>：</p>
+    <div class="formula-box">
+      $$ \min_{s,\ [\mathbf{x}_{I}; \mathbf{x}_{V}]} \left\| \begin{bmatrix} \mathbf{A}_{I} & \mathbf{B}_{I} s \\ \mathbf{0} & \mathbf{A}_{V} \end{bmatrix} \begin{bmatrix} \mathbf{x}_{I} \\ \mathbf{x}_{V} \end{bmatrix} + \begin{bmatrix} \boldsymbol{\alpha} + \boldsymbol{\beta} s \\ \mathbf{0} \end{bmatrix} \right\|^{2} \quad \text{s.t.} \quad \mathbf{x}_{I}^{T} \mathbf{C}_{I} \mathbf{x}_{I} = \| \mathbf{g}^{w} \|^{2} $$
+    </div>
+    <p>这个目标函数对 $(s, \mathbf{x})$ 是<strong>双二次</strong>的（biquadratic）—— $s$ 与 $\mathbf{x}$ 各自出现到二次，并且以乘积形式耦合。约束仍然只有一个：重力模长约束 $\mathbf{x}_{I}^{T} \mathbf{C}_{I} \mathbf{x}_{I} = \|\mathbf{g}^{w}\|^{2}$。</p>
+    <p>关键观察有两条：</p>
+    <ul>
+      <li><strong>变量维度很高</strong>：$\mathbf{x} = [\mathbf{x}_{I}; \mathbf{x}_{V}] \in \mathbb{R}^{3 + 6N}$，但固定 $s$ 之后可以<strong>统一求解</strong>这一整块高维变量——不需要再逐个拆开；</li>
+      <li><strong>$s \in \mathbb{R}$ 是唯一需要外层探索的一维变量</strong>：所有非凸的麻烦都被集中到这一个标量上。</li>
+    </ul>
+    <div class="callout callout-key">
+      <h4>🔑 从"高维非凸"到"一维 + 高维"</h4>
+      <p>式子里 $\mathbf{B}_{I} s$ 这个块是把 $s$ 从变量里"提出来"的代价：它让问题仍然是双二次的；但反过来，一旦 $s$ 被当成已知的数代入，整个目标就退化成对 $\mathbf{x}$ 的二次型问题（带单约束）。<strong>外层只对一维负责，内层是一次结构良好的统一求解</strong>——这就是"降维"的全部秘密，也是论文标题里 One-Dimensional 的由来。</p>
+    </div>
+  </div>
+
+  <div id="sec5" class="section-card">
+    <h2>5. 一维外层搜索 + QCQP-1C 内层全局求解</h2>
+    <p>把上面的观察写成算法结构：给定一个尺度 $s$，内层求得该尺度下的最小代价，记作 $P(s)$；外层再在尺度轴上找让 $P(s)$ 最小的那个 $s$：</p>
+    <div class="formula-box">
+      $$ P(s) = \min_{\mathbf{x}_{i}, \mathbf{x}_{v}} Q(s, \mathbf{x}_{i}, \mathbf{x}_{v}), \qquad s^{*} = \arg \min_{s} P(s) $$
+    </div>
+    <table class="data-table">
+      <thead><tr><th>层级</th><th>做什么</th><th>PPT 原文</th></tr></thead>
+      <tbody>
+        <tr><td><b>OUTER</b>（外层）</td><td>在尺度上做一维穷举搜索</td><td>1-D exhaustive search over scale</td></tr>
+        <tr><td><b>INNER</b>（内层）</td><td>固定 $s$ 后，对 $\mathbf{x}_{I}, \mathbf{x}_{V}$ 做可全局求解的 QCQP-1C</td><td>Globally solvable QCQP-1C</td></tr>
+      </tbody>
+    </table>
+    <div class="callout callout-key">
+      <h4>🔑 为什么"单约束"是关键</h4>
+      <p>内层问题的名字是 <strong>QCQP-1C</strong>——Quadratically Constrained Quadratic Program with 1 Constraint（带一个二次约束的二次规划）。内层变量维度很高，但约束<strong>只有一个</strong>：$\mathbf{x}_{I}^{T} \mathbf{C}_{I} \mathbf{x}_{I} = \|\mathbf{g}^{w}\|^{2}$。PPT 上给出的判断是：<em>一般 QCQP 可能困难，但单约束的特殊结构可以全局求解</em>。正因如此，外层的负担才只需要落在一维的 $s$ 上——"1-D exhaustive search 配 globally solvable inner solver" 这一对组合，就是整篇文章的降维方案。</p>
+    </div>
+    <div class="callout callout-note">
+      <h4>📝 搜索是在对数域做的</h4>
+      <p>论文 Algorithm 1 的输入里写明，尺度搜索是对数域上的等步长网格 $\log s_{L} : \Delta\sigma : \log s_{U}$，候选集合为 $\mathbf{S} = \{ e^{\sigma} \mid \sigma \in \log s_{L} : \Delta\sigma : \log s_{U} \}$。这样做的好处是同一个步长在不同量级下对应相同的"相对分辨率"，适合尺度这种跨数量级的量。</p>
+    </div>
+  </div>
+
+  <div id="sec6" class="section-card">
+    <h2>6. Global optimality ≠ estimation correctness</h2>
+    <p>到这里，第一个问题（怎么求解）看起来已经解决了：一维穷举 + 全局内层求解，$s^{*}$ 是货真价实的全局最优。但作者紧接着泼了一盆冷水——PPT 上的标题就是：<strong><em>Global optimality 不等于 estimation correctness</em></strong>。</p>
+    <p>PPT 展示了一条随初始化时间演化的曲线（数据不足 → 更多运动信息）：</p>
+    <table class="data-table">
+      <thead><tr><th>时间</th><th>$P(s)$ 的形态</th><th>含义</th></tr></thead>
+      <tbody>
+        <tr><td>$t = 0.3\mathrm{s}$</td><td>两个竞争模式</td><td>global optimum <b>反而远离真值</b>——目标函数最低的那个峰，是错误模式</td></tr>
+        <tr><td>$t = 0.4\mathrm{s}$、$t = 0.5\mathrm{s}$</td><td>更多运动信息进入</td><td>随窗口变长，数据逐渐能区分两个模式</td></tr>
+        <tr><td>$t = 0.6\mathrm{s}$</td><td>错误模式消失，$P(s)$ 变为<b>单峰</b></td><td>此时全局最优才与正确解一致</td></tr>
+      </tbody>
+    </table>
+    <div class="callout callout-intuition">
+      <h4>💡 为什么全局最优会"错"</h4>
+      <p>在 $t = 0.3\mathrm{s}$ 这种数据不足的时刻，运动激励不够，<strong>多个不同的物理假设都能同样好地解释这段短数据</strong>——目标函数因此出现两个局部极小（两个 mode）。"全局最优"只是<em>当前目标函数</em>的最低点，它并不承诺落在真值所在的那个 mode 里。所以：找到全局最优只回答了"数值上最便宜的解是谁"，没有回答"这个解是不是对的"。</p>
+    </div>
+    <p>这正是整场报告的第二个问题：<strong>得到最优尺度后，如何知道它真的可信？</strong>论文题目里的 correctness 一词对应的就是这后半段工作。</p>
+  </div>
+
+  <div id="sec7" class="section-card">
+    <h2>7. 枚举式正确性：候选 mode 集合与两种输出</h2>
+    <p>作者的做法是<strong>枚举（exhaustive）</strong>：既然 $P(s)$ 可能有多峰，那就把尺度域内所有竞争模式都找出来、形成候选集合，再据此决定输出。PPT 把这个策略写成映射：</p>
+    <div class="formula-box">
+      $$ A: \mathcal{P} \to \mathcal{X} \cup \{\bot\} $$
+    </div>
+    <p>流程是——<strong>探索全部 $P(s)$ → 检测 local modes → 判断 $|S^{*}| = 1$ ？</strong>然后<strong>只允许两种输出</strong>：</p>
+    <ul>
+      <li><strong>筛选之后只剩唯一可行模式</strong>（$|S^{*}| = 1$）→ 返回该解；</li>
+      <li><strong>检测到多个竞争模式</strong> → 返回失败（$\bot$），<em>等待更多数据，再重新尝试</em>。</li>
+    </ul>
+    <p>论文 Algorithm 1（<em>Exhaustively Correct VIO Initialization</em>）的骨架如下：</p>
+    <div class="formula-box">
+      <ol style="margin:0;padding-left:20px;font-size:0.92rem;line-height:1.9">
+        <li>输入：量测矩阵 $\mathbf{A}_{I}, \mathbf{B}_{I}, \mathbf{A}_{V}, \boldsymbol{\alpha}, \boldsymbol{\beta}$；对数域尺度搜索区间 $\log s_{L} : \Delta\sigma : \log s_{U}$</li>
+        <li>生成候选尺度集合 $\mathbf{S} \leftarrow \{ e^{\sigma} \mid \sigma \in \log s_{L} : \Delta\sigma : \log s_{U} \}$</li>
+        <li>对每个候选计算代价 $\mathbf{P} \leftarrow \{ P(s) \mid s \in \mathbf{S} \}$</li>
+        <li>检测解模式：$\mathbf{S}^{*} \leftarrow \mathrm{detect\_solution\_modes}(\mathbf{S}, \mathbf{P})$（候选模式的集合）</li>
+        <li><b>if</b> $\mathrm{count}(\mathbf{S}^{*}) \neq 1$ <b>then</b> <b>return</b> $\bot$ &nbsp;<em>// 等待更多数据（Wait for more data）</em></li>
+        <li>取出唯一元素 $\{ s^{*} \} \leftarrow \mathbf{S}^{*}$，<b>return</b> $s^{*}$</li>
+      </ol>
+    </div>
+    <div class="callout callout-key">
+      <h4>🔑 "等待"的本质：等更多运动</h4>
+      <p>返回失败之后，系统等待的<strong>数据</strong>是什么？是更长的运动时间带来的新观测——源源不断新增的<strong>图像关键帧</strong>以及<strong>关键帧之间的预积分量</strong>。本质上就是在等更多的运动，让 $P(s)$ 从双峰走向单峰（对照上一节 $t = 0.6\mathrm{s}$ 的曲线）。</p>
+      <p>更关键的是行为准则：系统<strong>不会在多个模式中赌一个"可能最低"的答案</strong>，而是等待更多观测再重新尝试——因为在双峰时选全局最优，很可能直接拿到那个错误的解。</p>
+    </div>
+    <div class="callout callout-intuition">
+      <h4>💡 auxiliary 能力：系统知道自己现在不能确定</h4>
+      <p>作者把"只有唯一解才输出、否则返回失败"这个性质称为一种 <strong>auxiliary</strong> 能力。它最重要的系统意义是：<strong>初始化器开始具备"知道自己现在不能确定"的能力</strong>——我明白了当前数据不足以确定正确解，那我就等待，而不是硬给一个答案。</p>
+    </div>
+  </div>
+
+  <div id="sec8" class="section-card">
+    <h2>8. 完整 acceptance pipeline 与实践细节</h2>
+    <p>实际系统中，找到一个 mode 并不会立刻被接受，而是要走完一整条 <strong>acceptance pipeline</strong>：</p>
+    <table class="data-table">
+      <thead><tr><th>环节</th><th>做什么</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><b>Find modes</b></td><td>搜索 $P(s)$ 的局部 mode</td><td>找齐所有候选</td></tr>
+        <tr><td><b>$\chi^{2}$ filtering</b></td><td>卡方检验，剔除明显不合理候选</td><td>Candidate filtering：防止过度保守</td></tr>
+        <tr><td><b>Unique?</b></td><td>只保留单一 mode</td><td>不唯一则回到"等待更多数据"</td></tr>
+        <tr><td><b>CRLB test</b></td><td>检查状态可观性</td><td>确认这段数据在信息上是否支撑得住</td></tr>
+        <tr><td><b>$\chi^{2}$ validation</b></td><td>检验最终统计质量</td><td>final validation：检查最终解与 outlier 影响</td></tr>
+        <tr><td><b>ACCEPT</b></td><td>接受该解</td><td>进入完整 VIO tracking</td></tr>
+      </tbody>
+    </table>
+    <p>其中卡方检验（chi-square test）的用法是：计算每个候选的 <strong>p-value</strong> 并设定阈值——低于阈值就筛除，高于阈值才进入下一步。分享中给了一个直观例子：一个候选 p-value 是 90%、另一个是 5%，那明显直接剔除 5% 那个。</p>
+    <div class="callout callout-note">
+      <h4>📝 当两个候选都"通过"卡方检验时</h4>
+      <p>考虑另一种情形：两个峰的 p-value 分别是 90% 和 89%，<strong>都高于阈值</strong>——单靠 $\chi^{2}$ filtering 无法把它们区分开。此时系统不能强行二选一，而要回到"模式不唯一"的判定上：继续等待更多数据，再重新尝试。</p>
+    </div>
+    <div class="callout callout-key">
+      <h4>🔑 安全性来自多层统计检查，不只来自 mode counting</h4>
+      <p>PPT 的总结很直接：<strong>Candidate filtering 防止过度保守，final validation 检查最终解与 outlier 的影响；安全性来自多层统计检查，而不只来自 mode counting。</strong>换句话说，"数峰"只是第一道闸门，可观性检查（CRLB）与最终统计校验（$\chi^{2}$ validation）共同构成了这条流水线的防线。</p>
+    </div>
+  </div>
+
+  <div id="sec9" class="section-card">
+    <h2>9. 实验（一）：建模必要性与公共数据集尺度误差</h2>
+    <p>实验设计覆盖三个层级，每一层回答一个不同的问题：</p>
+    <table class="data-table">
+      <thead><tr><th>层级</th><th>数据</th><th>回答的问题</th></tr></thead>
+      <tbody>
+        <tr><td><b>Monte-Carlo</b></td><td>约 1500 次随机启动</td><td>建模是否必要</td></tr>
+        <tr><td><b>EuRoC / TUM-VI</b></td><td>公共数据集（EuRoC-MH、EuRoC-VR、TUM-CR）</td><td>系统级性能</td></tr>
+        <tr><td><b>Real UAV</b></td><td>真实无人机飞行</td><td>工程恢复能力</td></tr>
+      </tbody>
+    </table>
+    <p>整体逻辑是：<strong>建模验证 → 数据集验证 → 飞行恢复演示</strong>。其中 Monte-Carlo 一层用约 1500 次随机启动对比 <em>Ours</em> 与 <em>IMU-only</em>，观察尺度偏差与接受率，以及精度、速度与发散情况——目的就是验证"显式保留 scale-coupled vision error（$s\,\mathbf{x}_{V}$）"这一建模选择的必要性。</p>
+
+    <h3>9.1 公共数据集中的尺度误差</h3>
+    <p>EuRoC-MH、EuRoC-VR 与 TUM-CR，汇总约 1500 次随机初始化，尺度误差 $|e_{s}|$ 统计如下：</p>
+    <table class="data-table">
+      <thead><tr><th>方法</th><th>RMS $|e_{s}|$</th><th>Median $|e_{s}|$</th><th>Max $|e_{s}|$</th><th>稳定性观察</th></tr></thead>
+      <tbody>
+        <tr><td><b>Ours</b></td><td><b>16.6%</b></td><td><b>7.3%</b></td><td><b>102%</b></td><td>0 divergence</td></tr>
+        <tr><td>Ours + IMU-only</td><td>123%</td><td>54.4%</td><td>592%</td><td>frequent failure</td></tr>
+        <tr><td>VINS-Mono</td><td>166%</td><td>63.6%</td><td>752%</td><td>occasional failure</td></tr>
+        <tr><td>ORB-SLAM3 @ 4 Hz</td><td>366%</td><td>46.2%</td><td>2020%</td><td>frequent failure</td></tr>
+      </tbody>
+    </table>
+    <p>PPT 给出的汇总口径是：本文方法 <strong>median 约 5%–10%，RMS 约 16%–17%</strong>。三个可直接读出的结论：</p>
+    <ul>
+      <li><strong>Ours 一骑绝尘</strong>：RMS 16.6%、Median 7.3%，且稳定性一栏是 <b>0 divergence</b>（约 1500 次随机启动中无发散）；</li>
+      <li><strong>消融验证建模必要性</strong>：把方法退化成只用 IMU 对齐（Ours + IMU-only），RMS 从 16.6% 暴涨到 123%，稳定性变成 frequent failure——说明保留视觉不确定性（$s\,\mathbf{x}_{V}$ 那一项）不是锦上添花，而是必需；</li>
+      <li><strong>对比传统松耦合初始化</strong>：VINS-Mono（RMS 166%、occasional failure）与 ORB-SLAM3 @ 4 Hz（RMS 366%、frequent failure、Max 2020%）在短初始化窗口下的尺度误差显著更大——正对应上一节讲的"传统模型遗漏了尺度耦合的视觉误差"。</li>
+    </ul>
+  </div>
+
+  <div id="sec10" class="section-card">
+    <h2>10. 实验（二）：真实无人机 0.5 s 失效恢复</h2>
+    <p>第三层实验回答的是工程问题：<strong>系统在飞行中 VIO 突然失效时，能不能自己回来？</strong>PPT 给出的场景是：强光（在 lights-out / searchlight 这样的极端光照条件下）与关灯导致 VIO 失效，随后<strong>从头重新初始化</strong>。</p>
+    <p>时间轴上标注了关键事件与时间节点，包括 <em>lights-out</em>、<em>searchlight</em>，以及：</p>
+    <div class="formula-box">
+      $$ t_{2} = 1.0\,\mathrm{s}, \qquad t_{5} - t_{4} = 0.5\,\mathrm{s} $$
+    </div>
+    <p>其中 $t_{5} - t_{4} = 0.5\,\mathrm{s}$ 就是失效到恢复的时间间隔——<strong>真实无人机在 0.5 s 内完成失效恢复</strong>。这一层的意义不在于把某个状态估得更准，而在于演示<strong>工程恢复能力</strong>：VIO 挂掉之后，初始化器能在很短的窗口内重新给出一组可信的尺度、重力方向与运动状态，把系统安全地送回完整的 VIO tracking。</p>
+    <div class="callout callout-intuition">
+      <h4>💡 为什么"0.5 s"值得单独讲</h4>
+      <p>初始化窗口越短，可用数据越少，第 6 节讲的"数据不足 → 竞争模式"就越容易出现。0.5 s 恢复既是性能指标，也是对"枚举式正确性 + 多层统计检查"这套安全机制的一次实战检验：<strong>既要快，又不能赌错</strong>。</p>
+    </div>
+  </div>
+
+  <div id="sec11" class="section-card">
+    <h2>11. 局限与工程权衡</h2>
+    <p>分享最后一部分没有回避问题，而是把代价摆了出来：</p>
+    <table class="data-table">
+      <thead><tr><th>局限</th><th>具体表现</th></tr></thead>
+      <tbody>
+        <tr><td><b>实现复杂度</b></td><td>initializer 约 <b>10,066 行</b>，约占完整 VIO 的 <b>48%</b>——接近半个系统的体量</td></tr>
+        <tr><td><b>依赖 MSfM</b></td><td>1-D 方法需要视觉几何作为输入；视觉初始化（MSfM）本身失败时，$s$ 的一维搜索没有可靠输入</td></tr>
+        <tr><td><b>概率性正确</b></td><td>正确性来自统计检验，是<strong>概率性</strong>的：若统计检验漏过了坏输入，仍可能返回错误解</td></tr>
+        <tr><td><b>Accelerometer bias</b></td><td>约 0.5 s 的窗口内难以充分观测加速度计 bias——作者的选择是<strong>优先保证尺度与重力</strong></td></tr>
+      </tbody>
+    </table>
+    <div class="callout callout-key">
+      <h4>🔑 目标函数（工程意义上的）</h4>
+      <p>PPT 的收尾一句话点题：<strong>目标不是 0.5 s 内把所有状态估到极高精度，而是"先安全进入 VIO"。</strong>这与第 8 节的安全哲学一致：宁可返回失败等数据，也不给一个可能错误的解；bias 这类短期难观测的量，让它们在进入 tracking 之后再交给后端继续优化。</p>
+    </div>
+  </div>
+
+  <div id="sec12" class="section-card">
+    <h2>12. 小结</h2>
+    <p>本讲沿着作者的路线走了一整圈：</p>
+    <ol>
+      <li><strong>分离</strong>：三个非凸来源（$SO(3)$ 上的旋转扰动、重力模长二次约束、$s\,\delta p_{n}$ 双线性耦合）无法一次性硬解，所以先把 rotation correction 拆出去——Gyro-only 子问题单独解出 $\xi_{R}^{*}$，短窗口内旋转主要由陀螺仪决定，这就是近似解耦的依据；</li>
+      <li><strong>降维</strong>：旋转固定后只剩 $s, \mathbf{g}, \mathbf{v}, \delta \mathbf{p}$，代入平移残差得到 biaffine 形式，堆叠后成为带单约束的 biquadratic 目标；其中 $s \in \mathbb{R}$ 是唯一需要外层探索的一维变量；</li>
+      <li><strong>求解结构</strong>：外层 1-D exhaustive search over scale，内层 Globally solvable QCQP-1C——一般 QCQP 困难，但单约束的特殊结构可以全局求解；</li>
+      <li><strong>判别</strong>：global optimality 不等于 estimation correctness（$t = 0.3\mathrm{s}$ 全局最优反而远离真值；$t = 0.6\mathrm{s}$ 错误模式消失、$P(s)$ 单峰）。因此枚举所有竞争 mode，只允许两种输出——唯一则返回该解，多模式则返回失败并等待更多运动数据；</li>
+      <li><strong>落地</strong>：Find modes → $\chi^{2}$ filtering → Unique? → CRLB test → $\chi^{2}$ validation → ACCEPT，安全性来自多层统计检查；实验由 Monte-Carlo（建模是否必要）、公共数据集（EuRoC-MH/VR、TUM-CR：RMS 16.6% / Median 7.3%，0 divergence）、真实无人机（0.5 s 内失效恢复）三层构成；</li>
+      <li><strong>权衡</strong>：10,066 行 initializer（约占完整 VIO 48%）、依赖 MSfM、概率性正确、0.5 s 窗口内加速度计 bias 难以充分观测——目标是先安全进入 VIO。</li>
+    </ol>
+    <div class="callout callout-mission">
+      <h4>🚀 一句话带走</h4>
+      <p>把"求解"和"可信"分开处理：求解用<strong>降维</strong>（一维外层 + 可全局求解的内层），可信用<strong>枚举与拒答</strong>（不唯一就等更多运动）。这个"知道自己不能确定"的 auxiliary 能力，才是一个初始化器真正进入系统级的标志。</p>
+    </div>
+  </div>
+
+  <div id="quiz" class="section-card exercise-box">
+    <h2>📝 练习与自测</h2>
+
+    <div class="exercise">
+      <h4>练习1：为什么"全局最优"会落在错误的位置？</h4>
+      <p>请用 $t = 0.3\mathrm{s}$ 与 $t = 0.6\mathrm{s}$ 两个时刻的 $P(s)$ 曲线，解释 global optimality 与 estimation correctness 的区别。</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>$t = 0.3\mathrm{s}$ 时数据不足，$P(s)$ 有两个竞争模式，全局最优恰好落在远离真值的那一个——因为"全局最优"只是<strong>当前目标函数</strong>的最低点，它不承诺落在真值所在的 mode；多个物理假设都能同样好地解释这段短数据。到 $t = 0.6\mathrm{s}$，随运动时间增加，错误模式消失、$P(s)$ 变为单峰，此时全局最优才和正确解一致。所以"求到全局最优"只解决了求解问题，正确性必须单独判别。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习2：$s$ 为什么可以放在外层？内层为什么能全局求解？</h4>
+      <p>请结合堆叠后的 biquadratic form 说明"一维外层搜索 + QCQP-1C 内层"这一分工的依据。</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>堆叠形式中，$s$ 只以标量形式出现（在 $\mathbf{B}_{I} s$ 块与 $\boldsymbol{\beta} s$ 项里），而 $\mathbf{x} = [\mathbf{x}_{I}; \mathbf{x}_{V}]$ 是高维变量。固定 $s$ 后，剩余问题成为内层：对 $\mathbf{x}$ 的二次目标，只带一个二次等式约束 $\mathbf{x}_{I}^{T} \mathbf{C}_{I} \mathbf{x}_{I} = \|\mathbf{g}^{w}\|^{2}$——这就是 QCQP-1C（单约束）。一般 QCQP 的全局求解可能很困难，但单约束的特殊结构可以做到全局求解；所以外层只需要对一维的 $s$ 做穷举搜索，代价可控。整个高维非凸问题由此降成"一维搜索 + 每点一次全局内层求解"。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习3（数值）：从尺度误差表算改善倍数</h4>
+      <p>已知 $|e_{s}|$ 的 RMS：Ours = 16.6%，VINS-Mono = 166%，ORB-SLAM3 @ 4 Hz = 366%；Median：Ours = 7.3%，VINS-Mono = 63.6%。请计算：(a) RMS 上 VINS-Mono 相对 Ours 的倍数；(b) RMS 上 ORB-SLAM3 相对 Ours 的倍数；(c) Median 上 VINS-Mono 相对 Ours 的倍数。</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>(a) $166\% / 16.6\% = 10.0$ 倍；(b) $366\% / 16.6\% \approx 22.0$ 倍；(c) $63.6\% / 7.3\% \approx 8.7$ 倍。可见在这批约 1500 次随机初始化里，传统松耦合初始化的尺度误差比本文方法高出一个数量级左右，ORB-SLAM3 @ 4 Hz 在 RMS 上差距更被拉开到 20 倍以上（其 Max 达到 2020%）。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习4：为什么"不唯一就返回失败"比"选全局最优"更好？</h4>
+      <p>系统检测到多个竞争模式时选择返回失败（$\bot$）并等待。请问"等待的数据"本质是什么？这个设计避免了一个什么样的风险？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>等待的本质是<strong>等更多运动</strong>：更长的运动时间会不断新增图像关键帧以及关键帧之间的预积分观测，让 $P(s)$ 从多峰走向单峰（如 $t = 0.6\mathrm{s}$ 时错误模式消失）。这个设计避免了"在多个模式中赌一个可能最低的答案"的风险——在双峰时选全局最优，很可能直接落到错误解上。所以宁可返回失败，等观测更充分后再重新尝试。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习5：acceptance pipeline 里的两道 $\chi^{2}$ 是同一件事吗？</h4>
+      <p>请说明 $\chi^{2}$ filtering（卡方滤波）与 $\chi^{2}$ validation（最终校验）在流水线中的不同角色，并解释"安全性来自多层统计检查，不只来自 mode counting"。</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>不是同一件事。$\chi^{2}$ filtering 位于 mode 搜索之后、唯一性判断之前：对每个候选计算 p-value 并与阈值比较，<strong>剔除明显不合理的候选</strong>（例如 p-value 90% 与 5% 并存时剔除 5% 那个），作用是 candidate filtering、防止过度保守。$\chi^{2}$ validation 位于末尾 ACCEPT 之前：检验<strong>最终解</strong>的统计质量与 outlier 影响。中间还有 CRLB test 检查状态可观性。所以安全性由"mode counting + 卡方筛选 + 可观性检查 + 最终统计校验"多层构成——单靠数峰（mode counting）不够；而当多个候选的 p-value 都高于阈值（如 90% 与 89%）时，流水线也不强行二选一，而是回到等待更多数据。</p>
+      </details>
+    </div>
+  </div>
+
+  <div class="nav-links">
+    <a href="0039-北理工分享-VIO初始化-1.html" class="prev">← VIO 初始化(1/2)：问题建模与尺度耦合误差</a>
+    <a href="0041-组内分享-徐臻-隐私状态估计-1.html" class="next">隐私保护分布式状态估计(1/2)：问题建模与 Paillier 密码基础 →</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+  </div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 30 · 北理工分享 · 吴一昊（2026-09-12）</p>
+    <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px">内容来源：视频转写 + PPT 版面文字 OCR</p>
+  </div>
+</div>
+<script src="assets/shiclass.js"></script>
+<script src="../shared/lesson-tools.js"></script>
+</body>
+</html>

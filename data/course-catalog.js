@@ -210,6 +210,16 @@ window.SHICLASS_DATA = {
       description: "第 0037-0038 课。收敛定理五步证明的收官——等式②（闭环能量衰减）、S3 能观性+反证法证 P 严格正定、S4 夹逼定理推广到任意初值 P_0≥0、S5 唯一性，以及五步方法清单总复盘。",
       quickOpen: "lessons/0037-KF-L22-Riccati收敛-1.html",
       meta: ["2 节课", "~60 分钟", "正定性 / 夹逼定理 / 唯一性"]
+    },
+    {
+      id: "shares-30-31",
+      groupId: "seminars",
+      kind: "分享",
+      title: "北理工分享 & 组内分享（系列 30-31）",
+      subtitle: "系列 30-31",
+      description: "第 0039-0042 课。吴一昊分享单目 VIO 快速初始化（T-RO 2026 一维代价近似），徐臻分享隐私保护分布式状态估计（改进 Paillier 密码系统）。",
+      quickOpen: "lessons/0039-北理工分享-VIO初始化-1.html",
+      meta: ["4 节课", "~140 分钟", "VIO 初始化 / 隐私保护 / 状态估计"]
     }
   ],
     lessons: [
@@ -581,6 +591,42 @@ window.SHICLASS_DATA = {
       subtitle: "A1 终端权重单调、A2 稳态增益次优控制、Sandwich 定理、不动点唯一性、定理收官",
       duration: "30 min",
       tags: ["Riccati", "夹逼定理", "唯一性", "定理收官"]
+    },
+    {
+      id: "0039",
+      collectionId: "shares-30-31",
+      path: "lessons/0039-北理工分享-VIO初始化-1.html",
+      title: "VIO 初始化(1/2)：问题建模与尺度耦合误差",
+      subtitle: "单目 VIO 初始化 · 尺度歧义 · 尺度耦合视觉误差 · LC-MVIO 建模",
+      duration: "40 min",
+      tags: ["VIO", "初始化", "状态估计", "北理工分享"]
+    },
+    {
+      id: "0040",
+      collectionId: "shares-30-31",
+      path: "lessons/0040-北理工分享-VIO初始化-2.html",
+      title: "VIO 初始化(2/2)：一维降维与正确性判别",
+      subtitle: "Translation-only 降维 · QCQP-1C · 多模态正确性 · 卡方检验 · 无人机 0.5s 恢复",
+      duration: "40 min",
+      tags: ["VIO", "QCQP", "正确性检验", "北理工分享"]
+    },
+    {
+      id: "0041",
+      collectionId: "shares-30-31",
+      path: "lessons/0041-组内分享-徐臻-隐私状态估计-1.html",
+      title: "隐私保护分布式状态估计(1/2)：问题建模与 Paillier 密码基础",
+      subtitle: "分布式信息滤波 · 窃听与 HBC 威胁 · Paillier 同态加密 · 编码与量化误差界",
+      duration: "30 min",
+      tags: ["隐私保护", "分布式估计", "Paillier", "组内分享"]
+    },
+    {
+      id: "0042",
+      collectionId: "shares-30-31",
+      path: "lessons/0042-组内分享-徐臻-隐私状态估计-2.html",
+      title: "隐私保护分布式状态估计(2/2)：融合协议与理论保证",
+      subtitle: "CI 隐私融合 · 抗窃听定理 · Lyapunov 误差界 · 稳定性假设与实验",
+      duration: "30 min",
+      tags: ["隐私保护", "CI融合", "误差界", "组内分享"]
     },
   ]
 };

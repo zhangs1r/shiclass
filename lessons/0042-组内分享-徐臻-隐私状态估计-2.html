@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>隐私保护分布式状态估计(2/2)：融合协议与理论保证 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="assets/shiclass.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+</head>
+<body>
+<div class="page">
+
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · 系列31 · 组内分享</div>
+    <h1>隐私保护分布式状态估计(2/2)：融合协议与理论保证</h1>
+    <p class="subtitle">密文上的 CI 融合（融合量与恢复量）· Definition 4 高隐私度 · Theorem 2(i) 抗窃听 · 四个标准假设 · Lemma 3 信息矩阵有界性 · Theorem 3 误差一致有界（Lyapunov 型证明）· Fig.3 / Fig.4 实验验证</p>
+    <div class="hero-meta">
+      <span>📅 2026-09-19</span>
+      <span>🎙️ 徐臻（组内分享）</span>
+      <span>📚 论文：Fu et al., Privacy-preserving distributed state estimation</span>
+    </div>
+  </div>
+
+  <div class="lead-grid">
+    <div class="callout">
+      <h4>🎯 学完本节，你应能</h4>
+      <ul>
+        <li>说清密文通信建立之后，CI 融合如何"在密文上"完成：融合量 $\hat{\varphi}_{k}^{i}$、$\hat{\chi}_{k}^{i}$ 与恢复量 $\check{\varphi}_{k}^{ij}$、$\check{\chi}_{k}^{ij}$ 两个公式分别是什么、各部分的角色是什么</li>
+        <li>用 Definition 4 的两条要求说清"高隐私度"要对哪两类对手成立，并复述 Theorem 2(i)：为什么在最坏情况下（对手拿到 P、Q、$\mathcal{H}$ 与全部密文）依然锁得住</li>
+        <li>列出稳定性分析的四个标准假设，说清 Lemma 3 给出的两个界为什么是后续证明的地基</li>
+        <li>说出 Theorem 3 的结论与两个前提，并按"构造 → 递推 → 转化"复述 Lyapunov 型证明骨架</li>
+        <li>用 Fig.3 / Fig.4 说明理论结论怎么被实验验证，以及"隐私的代价很小"从何而来</li>
+      </ul>
+    </div>
+    <div class="callout">
+      <h4>🔑 核心思想</h4>
+      <p>上一节把"路"修好了——同态性质保证密文上算得动，Lemma 1 保证误差可控。本节回答两个剩下的问题：<strong>融合协议</strong>与<strong>理论保证</strong>。协议上，CI 融合的"加权组合"被搬进了密文世界：智能体 i 从收到的变量里<strong>恢复</strong>出邻居的贡献 $\check{\varphi}_{k}^{ij}$（recovered quantities），再按 CI 权重拼出自己的融合量 $\hat{\varphi}_{k}^{i}$——<strong>原始数据从未上路</strong>。理论上，"看不见"由 Definition 4 与 Theorem 2(i) 背书（没有私钥 $S$，一堆公开材料加全部密文也解不开）；"算得稳"由四个标准假设 + Lemma 3 + Theorem 3 背书（估计误差被常数 $\varepsilon$ 一致界住，且加密失真随编码参数 $Q$ 以 $O(1/Q)$ 收缩——隐私的代价不是固定税）。</p>
+    </div>
+  </div>
+
+  <div class="toc">
+    <h3>📖 目录</h3>
+    <ul>
+      <li><a href="#sec1">1. 承上启下：密文通了，融合怎么算</a></li>
+      <li><a href="#sec2">2. 隐私保护 CI 融合（一）：融合量</a></li>
+      <li><a href="#sec3">3. 隐私保护 CI 融合（二）：恢复量</a></li>
+      <li><a href="#sec4">4. 隐私的形式化：Definition 4 与 Theorem 2(i)</a></li>
+      <li><a href="#sec5">5. 稳定性分析的地基：四个标准假设</a></li>
+      <li><a href="#sec6">6. Lemma 3：信息矩阵的上下界</a></li>
+      <li><a href="#sec7">7. Theorem 3：估计误差的一致有界性</a></li>
+      <li><a href="#sec8">8. 实验验证：Fig.3 与 Fig.4</a></li>
+      <li><a href="#sec9">9. 全课小结：从问题到实验</a></li>
+      <li><a href="#quiz">📝 练习与自测</a></li>
+    </ul>
+  </div>
+
+  <div id="sec1" class="section-card">
+    <h2>1. 承上启下：密文通了，融合怎么算</h2>
+    <p>上一节（<a href="0041-组内分享-徐臻-隐私状态估计-1.html">1/2：问题建模与 Paillier 密码基础</a>）停在安全通信算法的三步——它建立的是一条<strong>密文通道</strong>：</p>
+
+    <div class="grid-3">
+      <div class="mini-card">
+        <h4>Step 1（上节）</h4>
+        <p>智能体 $i$ 选择公钥 $P$、私钥 $S$ 与编码参数 $Q$。</p>
+      </div>
+      <div class="mini-card">
+        <h4>Step 2（上节）</h4>
+        <p>借助 $P$、$Q$，算得 $\mathbf{E}_{\mathbf{NM}}(\tilde{\varphi}, Q)$ 与 $\mathbf{E}_{\mathbf{NM}}(\tilde{\chi}, Q)$。</p>
+      </div>
+      <div class="mini-card">
+        <h4>Step 3（上节）</h4>
+        <p>把两个密文连同 $Q$、$P$ 发给邻居 $j$；<strong>私钥 $S$ 留在本地</strong>，且每个时刻换新密钥对。</p>
+      </div>
+    </div>
+
+    <p>到这一步，密文能安全地在邻居之间流动了，但有一个关键问题还悬着：</p>
+
+    <div class="callout callout-key">
+      <h4>🔑 本节要回答的问题</h4>
+      <p>信息滤波的融合（CI fusion）本质上就是"把邻居的信息按权重加到自己的信息上"——一组合法与数乘。<strong>当邻居的信息只有密文时，这组运算怎么做？</strong>做完之后，估计器还稳不稳、误差会不会发散？</p>
+    </div>
+
+    <p>本节的路线图：</p>
+    <ol>
+      <li><strong>融合协议</strong>（第 2–3 节）：在密文上构造融合量 $\hat{\varphi}_{k}^{i}$、$\hat{\chi}_{k}^{i}$ 与恢复量 $\check{\varphi}_{k}^{ij}$、$\check{\chi}_{k}^{ij}$；</li>
+      <li><strong>隐私的形式化</strong>（第 4 节）：Definition 4 与 Theorem 2(i)——"看不见"的正式含义；</li>
+      <li><strong>理论保证</strong>（第 5–7 节）：四个标准假设 → Lemma 3 → Theorem 3——"稳得住"的完整链条；</li>
+      <li><strong>实验验证</strong>（第 8 节）：Fig.3 与 Fig.4；</li>
+      <li><strong>全课小结与练习</strong>（第 9–10 节）。</li>
+    </ol>
+
+    <div class="callout callout-note">
+      <h4>📝 记法提醒（第一次出现，先钉死）</h4>
+      <ul>
+        <li><strong>φ 系</strong>与信息向量相关：$\tilde{\varphi}$ 是被保护的原始量，$\check{\varphi}$ 是<strong>恢复量</strong>（recovered），$\hat{\varphi}$ 是<strong>融合量</strong>（fused）；<strong>χ 系</strong>同理，对应信息矩阵。</li>
+        <li>$\mathbf{E}_{\mathbf{N}}$（EN）= encoding，<strong>编码</strong>；$\mathbf{E}_{\mathbf{M}}$（EM）= encryption，<strong>加密</strong>；$\mathbf{E}_{\mathbf{NM}}$（ENM）= encoding-encryption，<strong>编码-加密</strong>。</li>
+        <li>$\mathbf{P}_{\mathbf{M}}$（PM）= full operation，<strong>完整操作</strong>（编码 → 加密 → 密文运算 → 解密 → 解码）。从效果上看，它扮演一次"<strong>投影 / 量化</strong>"操作：把实数投到编码格点上再还原——量化偏差有多大，正是 Lemma 1 的界宽 $n/(2Q)$ 说的。</li>
+        <li>定理部分改用 $\widetilde{\Omega}$、$\tilde{q}$ 指代被保护的信息矩阵与信息向量——与融合一节的 $\tilde{\chi}$、$\tilde{\varphi}$ 相对应，只是论文不同章节的写法。</li>
+      </ul>
+    </div>
+  </div>
+
+  <div id="sec2" class="section-card">
+    <h2>2. 隐私保护 CI 融合（一）：融合量</h2>
+    <p>OCR 帧 "Privacy-preserving CI fusion"（t1950 / t2100）的第一块内容：<em>Agent i derives the fused quantities</em>——智能体 $i$ 这样得到自己的融合量：</p>
+
+    <div class="formula-box">
+      $$\left\{ \begin{array}{l} \hat{\varphi}_{k}^{i} = w_{ii}\,\tilde{\varphi}_{k}^{i} + \sum_{j \in \mathcal{N}_{i},\, j \neq i} w_{ij}\,\check{\varphi}_{k}^{ij} \\ \hat{\chi}_{k}^{i} = w_{ii}\,\tilde{\chi}_{k}^{i} + \sum_{j \in \mathcal{N}_{i},\, j \neq i} w_{ij}\,\check{\chi}_{k}^{ij} \end{array} \right.$$
+      <p style="margin-top:8px;font-size:0.9rem">融合量 = 自己的一项（本地量）+ 邻居各项（恢复量），按 CI 权重加权</p>
+    </div>
+
+    <h3>2.1 各部分都是什么</h3>
+    <table class="data-table">
+      <thead><tr><th>记号</th><th>含义</th></tr></thead>
+      <tbody>
+        <tr><td>$\hat{\varphi}_{k}^{i}$、$\hat{\chi}_{k}^{i}$</td><td>智能体 $i$ 在时刻 $k$ 的<strong>融合量</strong>：融合后的信息向量与信息矩阵</td></tr>
+        <tr><td>$\tilde{\varphi}_{k}^{i}$、$\tilde{\chi}_{k}^{i}$</td><td>$i$ 自己的信息向量与信息矩阵（本地量）</td></tr>
+        <tr><td>$\check{\varphi}_{k}^{ij}$、$\check{\chi}_{k}^{ij}$</td><td><strong>恢复量</strong>（recovered quantities）：$i$ 从密文变量中恢复出的邻居 $j$ 的贡献——下一节的主角</td></tr>
+        <tr><td>$w_{ii}$</td><td>$i$ 对自己信息的权重</td></tr>
+        <tr><td>$w_{ij}$</td><td>$i$ 对邻居 $j$ 贡献的权重，$j \in \mathcal{N}_{i}$ 且 $j \neq i$（$\mathcal{N}_{i}$ 为 $i$ 的邻居集合）</td></tr>
+      </tbody>
+    </table>
+
+    <h3>2.2 与明文融合的唯一区别</h3>
+    <p>把式子读一遍会发现：融合的<strong>数学形式没有变</strong>——还是"自己 + 邻居们的加权和"，权重还是 CI 融合的那套 $w$。真正的区别只在邻居那一项：它不是邻居的原始量 $\tilde{\varphi}_{k}^{j}$，而是<strong>恢复量</strong> $\check{\varphi}_{k}^{ij}$。</p>
+
+    <div class="callout callout-intuition">
+      <h4>💡 直觉</h4>
+      <p>加密没有改变融合的外形，只改变了"邻居那一项从哪来"：从"直接读邻居的明文"，变成"从密文变量里算出来"。这就是"在密文上做融合"的要义——<strong>形式不变、数据不可见</strong>。</p>
+    </div>
+  </div>
+
+  <div id="sec3" class="section-card">
+    <h2>3. 隐私保护 CI 融合（二）：恢复量</h2>
+    <p>融合式里最有技术含量的是邻居那一项。OCR 帧给出了它的构造（<em>Recovered quantities</em>）：</p>
+
+    <div class="formula-box">
+      $$\left\{ \begin{array}{l} \check{\varphi}_{k}^{ij} = \lambda_{k}^{ij}\,\mathbf{P}_{\mathbf{M}}\big(\tilde{\varphi}_{k}^{i}, Q_{k}^{i}\big) + \big(1 - \lambda_{k}^{ij}\big)\,\mathbf{P}_{\mathbf{M}}\big(\tilde{\varphi}_{k}^{j}, Q_{k}^{i}\big) \\ \check{\chi}_{k}^{ij} = \lambda_{k}^{ij}\,\mathbf{P}_{\mathbf{M}}\big(\tilde{\chi}_{k}^{i}, Q_{k}^{i}\big) + \big(1 - \lambda_{k}^{ij}\big)\,\mathbf{P}_{\mathbf{M}}\big(\tilde{\chi}_{k}^{j}, Q_{k}^{i}\big) + \dfrac{n}{2Q_{k}^{i}}\,I \\ \lambda_{k}^{ij} = \dfrac{\mathcal{U}_{k}^{ij}}{\mathcal{H}_{k}^{ij}} \end{array} \right.$$
+      <p style="margin-top:8px;font-size:0.9rem">恢复量 = 自己的一项与邻居的一项，按 $\lambda_{k}^{ij}$ 与 $1-\lambda_{k}^{ij}$ 加权组合；信息矩阵的恢复式多一个 $n/(2Q_{k}^{i})I$ 项</p>
+    </div>
+
+    <h3>3.1 三个要点</h3>
+    <ul>
+      <li><strong>两个 $\mathbf{P}_{\mathbf{M}}(\cdot)$ 项</strong>：分别是"自己的量"与"邻居的量"走一遍编码回路的产物，都以 $Q_{k}^{i}$ 为编码参数（OCR 原式如此）。注意它们带 $\mathbf{P}_{\mathbf{M}}$——也就是<strong>"近似"的入口</strong>：量化/加密的失真就是从这里进来的，定量刻画见 Lemma 1 与 Theorem 3。</li>
+      <li><strong>权重 $\lambda_{k}^{ij}$ 与 $1-\lambda_{k}^{ij}$</strong>：一项归自己、一项归邻居，是一次<strong>加权平均</strong>；权重来自比值 $\lambda_{k}^{ij} = \mathcal{U}_{k}^{ij}/\mathcal{H}_{k}^{ij}$。</li>
+      <li><strong>多出来的 $+\dfrac{n}{2Q_{k}^{i}}I$</strong>：信息矩阵的恢复式 $\check{\chi}_{k}^{ij}$ 比信息向量多出一项——形式上正是 Lemma 1 的量化误差界宽 $n/(2Q)$：可以理解为恢复时把量化偏差显式计入的修正项。</li>
+    </ul>
+
+    <div class="callout callout-key">
+      <h4>🔑 为什么这样就"看不见"了（OCR 原注）</h4>
+      <p><em>"Why it works: agent i recovers the neighbor's contribution from the received variables — the raw data never travels."</em>——智能体 $i$ 是从<strong>收到的变量</strong>里恢复出邻居的贡献的：<strong>原始数据从未上路</strong>。同态运算在这里承担了"数乘 + 相加"这组加权组合（上节的两条性质：密文幂 = 明文的数乘、密文乘 = 明文的加），任何一方都没有见过对方的原始 $\varphi$、$\chi$。</p>
+    </div>
+
+    <div class="callout callout-note">
+      <h4>📝 PPT 上的推导草稿（OCR 摘录，符号含义本次未展开）</h4>
+      <p>这一页幻灯片上还留着几行推导草稿：</p>
+      <p>(1) 三条变换：$\bar{\xi} \to T\xi + U\tilde{\varphi}^{i}$、$\widetilde{\xi} \to T\big(\tilde{\varphi}^{j} - \xi\big)$；信息矩阵侧同构：$\overline{\Xi} \to T\Xi + U\tilde{\chi}^{i}$、$\widetilde{\Xi} \to T\big(\tilde{\chi}^{j} - \Xi\big)$。</p>
+      <p>(2) 结论行：$U\tilde{\varphi}^{i} + T\tilde{\varphi}^{j}$ ⟶ $\lambda\tilde{\varphi}^{i} + (1-\lambda)\tilde{\varphi}^{j}$ ⟶ 除以 $(U+T)$。</p>
+      <p>连起来的读法是：两方的量先各自带权（$U$、$T$）相加，再除以二者之和 $(U+T)$——一次<strong>加权平均</strong>；恢复式里的 $\lambda$ 与 $1-\lambda$ 正是这组权重的角色。草稿中 $\xi$、$\Xi$、$T$、$U$ 的进一步含义本次分享没有展开，这里如实保留。</p>
+    </div>
+  </div>
+
+  <div id="sec4" class="section-card">
+    <h2>4. 隐私的形式化：Definition 4 与 Theorem 2(i)</h2>
+    <p>"原始数据从未上路"是一句白话。论文用 Definition 4 把"高隐私度"写成两条可检验的要求（OCR 帧 t2250 / t2850）：</p>
+
+    <h3>4.1 Definition 4 —— high degree of privacy（高隐私度）</h3>
+    <div class="formula-box">
+      <p style="margin:0"><strong>(i)</strong> external eavesdroppers are unable to access any information on the sensitive data of each agent.</p>
+      <p style="margin:8px 0 0 0"><strong>(ii)</strong> privacy of normal agents is preserved in the presence of strong-collusion HBC attacks.</p>
+    </div>
+    <ul>
+      <li><strong>(i) 抗外部窃听</strong>：外部窃听者无法获得关于任何智能体<strong>敏感数据</strong>的任何信息；</li>
+      <li><strong>(ii) 抗强共谋 HBC</strong>：在 <strong>strong-collusion HBC 攻击</strong>（多个"诚实但好奇"节点合谋）存在时，<strong>正常节点</strong>的隐私仍然受到保护。</li>
+    </ul>
+    <p>把两条对照上一节的两类威胁：<strong>(i) 对准外部窃听者</strong>（从链路上截获）；<strong>(ii) 对准内部威胁</strong>、而且是内部威胁里最强的一档——多个好奇节点<strong>串通</strong>起来，正常节点的隐私依旧要保住。两类对手能力不同、威胁入口不同，所以要分开立要求。</p>
+
+    <h3>4.2 Theorem 2(i) —— defense against eavesdroppers（抗窃听）</h3>
+    <div class="callout callout-key">
+      <h4>🔑 结论</h4>
+      <p>即使外部窃听者<strong>截获了全部通信链路</strong>，他们也无法提取 $\widetilde{\Omega}$ 与 $\tilde{q}$（被保护的信息矩阵与信息向量）。</p>
+    </div>
+    <p>证明把对手放在<strong>最坏情况（worst case）</strong>下考察——假设对手能非法弄到尽可能多的公开材料与密文：</p>
+    <div class="formula-box">
+      $$\mathbf{E}_{\mathbf{NM}}\big(\widetilde{\Omega}_{k,i}^{p}, Q_{k}^{i}\big), \qquad \mathbf{E}_{\mathbf{NM}}\big(\tilde{q}_{k,i}^{p}, Q_{k}^{i}\big), \ \ldots$$
+      <p style="margin-top:8px;font-size:0.9rem">最坏情况下对手手里的加密消息（OCR 举例）——此外还能拿到公钥 $P$、编码参数 $Q$ 与量 $\mathcal{H}$</p>
+    </div>
+
+    <table class="data-table">
+      <thead><tr><th></th><th>内容</th></tr></thead>
+      <tbody>
+        <tr><td>能拿到（最坏情况）</td><td>公钥 $P$、编码参数 $Q$、量 $\mathcal{H}$，以及链路上全部加密消息（如 $\mathbf{E}_{\mathbf{NM}}(\widetilde{\Omega}_{k,i}^{p}, Q_{k}^{i})$、$\mathbf{E}_{\mathbf{NM}}(\tilde{q}_{k,i}^{p}, Q_{k}^{i})$ 等）</td></tr>
+        <tr><td>拿不到</td><td><strong>私钥 $S$</strong>——它从未出门（上节协议：the private key $S$ stays local）</td></tr>
+        <tr><td>结论</td><td>无法提取 $\widetilde{\Omega}$、$\tilde{q}$。OCR 原注："without private key $S$ + $P$, $Q$ and $\mathcal{H}$ contain no sensitive information by design"——没有私钥 $S$，$P$、$Q$、$\mathcal{H}$ 按设计不含任何敏感信息</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-intuition">
+      <h4>💡 直觉</h4>
+      <p>把定理读成一句话：给对手<strong>全套公开材料 + 全链路密文</strong>，锁依然打不开——因为钥匙（$S$）从设计上就不在链路上。上节协议里那两条看似平凡的要求（私钥留本地、每时刻换新密钥对），到这里兑现成了定理级的保证。</p>
+    </div>
+  </div>
+
+  <div id="sec5" class="section-card">
+    <h2>5. 稳定性分析的地基：四个标准假设</h2>
+    <p>协议回答"怎么算、看不见"，理论还要回答"稳不稳"。论文的稳定性分析建立在一组<strong>四个标准假设</strong>上（OCR 帧 "Four standard assumptions"，t2400）。徐臻在分享中特别强调：<strong>这四个假设在后续的证明中都会用到</strong>。</p>
+
+    <table class="data-table">
+      <thead><tr><th>假设</th><th>内容</th><th>备注</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>假设 1</strong></td>
+          <td>无向图 $\mathcal{G}$ <strong>连通</strong>，且加权邻接矩阵 $W$ 为<strong>行随机</strong>（row stochastic，每行元素之和为 1）</td>
+          <td>融合是按图上的邻居做加权平均，图与权重矩阵先要"良定"</td>
+        </tr>
+        <tr>
+          <td><strong>假设 2</strong></td>
+          <td><strong>系统参数一致有界</strong>（uniformly bounded）：一组常数界，见下方公式</td>
+          <td>后续证明里一切"放缩"的合法性来源；注意 $A_{k}$、$C_{k}^{i}$ 都带 $k$——这是<strong>时变系统</strong>的标准要求</td>
+        </tr>
+        <tr>
+          <td><strong>假设 3</strong></td>
+          <td>系统 <strong>集体可观测</strong>（collectively observable）</td>
+          <td>OCR 原注：a prerequisite for state estimation——<strong>状态估计的前提</strong></td>
+        </tr>
+        <tr>
+          <td><strong>假设 4</strong></td>
+          <td>$A$ 矩阵的最小特征值有一致下界：$\inf_{k \in \mathbb{N}} \lambda_{\min}\{A_{k}A_{k}^{T}\} \geq \beta$</td>
+          <td>OCR 原注：Matrix $A$ stays non-singular for all $k$——$A$ 对一切时刻非奇异</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>5.1 假设 2 的完整式子</h3>
+    <div class="formula-box">
+      $$\|A_{k}\| \leq \bar{a}, \quad \|C_{k}^{i}\| \leq \bar{c}, \quad \underline{p}\,I \leq P_{0}^{i} \leq \bar{p}\,I, \quad \underline{q}\,I \leq Q_{k} \leq \bar{q}\,I, \quad \underline{r}\,I \leq R_{k}^{i} \leq \bar{r}\,I, \quad Q_{k}^{i} \leq \bar{g}, \quad \mathcal{H}_{k}^{i} \leq \bar{h}$$
+      <p style="margin-top:8px;font-size:0.9rem">状态矩阵、观测矩阵、初始量与若干（带上、下界的）矩阵量，以及编码相关量 $Q_{k}^{i}$、$\mathcal{H}_{k}^{i}$——统统被常数界住</p>
+    </div>
+
+    <h3>5.2 假设 4 的完整式子</h3>
+    <div class="formula-box">
+      $$\inf_{k \in \mathbb{N}} \lambda_{\min}\{A_{k}A_{k}^{T}\} \geq \beta$$
+      <p style="margin-top:8px;font-size:0.9rem">$\lambda_{\min}$ 取 $A_{k}A_{k}^{T}$ 的最小特征值：$\beta > 0$ 意味着 $A$ 永远不会"塌"成奇异矩阵</p>
+    </div>
+
+    <div class="callout callout-note">
+      <h4>📝 记法提醒：两个不同的 $Q$</h4>
+      <p>假设 2 里同时出现两个"$Q$"，不要混淆：<strong>$Q_{k}$</strong>（不带智能体上标）是一个带<strong>双侧矩阵界</strong>的量（$\underline{q}I \leq Q_{k} \leq \bar{q}I$）；而<strong>编码参数</strong>写作 <strong>$Q_{k}^{i}$</strong>（带上标，只有上界 $\bar{g}$）。另外 $\mathcal{H}_{k}^{i} \leq \bar{h}$ 与第 4 节 Theorem 2 中对手可获得的 $\mathcal{H}$ 是同一族记号。</p>
+    </div>
+  </div>
+
+  <div id="sec6" class="section-card">
+    <h2>6. Lemma 3：信息矩阵的上下界</h2>
+    <p>四个假设立好之后，第一个"地基式"的结果是 Lemma 3——OCR 帧标题：<em>Lemma 3 — the information matrix stays bounded</em>（信息矩阵保持有界）：</p>
+
+    <div class="formula-box">
+      $$\underline{\omega}\,I \leq \widehat{\Omega}_{k,i}^{p} \leq \bar{\omega}\,I$$
+      <p style="margin-top:8px;font-size:0.9rem">融合得到的信息矩阵被两个正定矩阵"夹住"：上有 $\bar{\omega}I$、下有 $\underline{\omega}I$</p>
+    </div>
+
+    <h3>6.1 两个界各自管什么（OCR 原注）</h3>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>上界 $\bar{\omega}I$</h4>
+        <p>Upper bound: prevents numerical divergence——防止数值发散。</p>
+      </div>
+      <div class="mini-card">
+        <h4>下界 $\underline{\omega}I$</h4>
+        <p>Lower bound: guarantees $(\Omega)^{-1}$ is well-conditioned——保证信息矩阵的<strong>逆良定</strong>。</p>
+      </div>
+    </div>
+
+    <h3>6.2 证明思路与意义</h3>
+    <p>徐臻介绍这条引理的证明思路：<strong>用前面已有的条件做放缩</strong>，把信息矩阵的界"放"出来——也就是把 Assumption 2 的一致界逐个代进去，从系统参数的界推出信息矩阵的界。</p>
+
+    <div class="callout callout-intuition">
+      <h4>💡 直觉：为什么它是 Theorem 3 的地基</h4>
+      <p>Theorem 3 的证明要在"误差能量"与"误差大小"之间来回换算：要把能量度量 $V$ 的上界折算成误差范数的上界，必须手里有一个<strong>正的一致下界</strong> $\underline{\omega}$（否则"除以 $\Omega$"这一步过不去）；而全过程的放大又要求<strong>上界</strong> $\bar{\omega}$ 不爆炸。徐臻的原话意思也正是这样：利用（假设给出的）界保证信息矩阵有一个下界，再把 Lyapunov 函数的上界转化成普通的误差上界。一上一下，正好够用。</p>
+    </div>
+  </div>
+
+  <div id="sec7" class="section-card">
+    <h2>7. Theorem 3：估计误差的一致有界性</h2>
+    <p>到这里，本节的主定理登场（OCR 帧 t2550 / t2700）。</p>
+
+    <h3>7.1 结论：误差有界</h3>
+    <div class="formula-box">
+      $$\|\mathbb{E}\{\hat{e}_{k}^{i}\}\| \leq \varepsilon, \qquad \hat{e}_{k}^{i} \triangleq \hat{x}_{k,i}^{p} - x_{k}$$
+      <p style="margin-top:8px;font-size:0.9rem">Theorem 3：若 Assumptions 1–4 成立，则存在 $\varepsilon > 0$，使期望意义下的估计误差被一致界住；$\hat{e}_{k}^{i}$ 定义为后验估计 $\hat{x}_{k,i}^{p}$ 与真实状态 $x_{k}$ 之差</p>
+    </div>
+    <p>读法：误差 $\hat{e}_{k}^{i}$ 的期望的范数不超过一个常数 $\varepsilon$——关键是这个界<strong>与时刻 $k$ 无关</strong>，误差不会随时间发散。</p>
+
+    <h3>7.2 两个前提</h3>
+    <ol>
+      <li><strong>$Q$ 取得足够大</strong>（$Q$ is chosen sufficiently large）：保证编码回路 $\mathbf{P}_{\mathbf{M}}$ 足够接近"恒等映射"，加密带来的失真足够小；</li>
+      <li><strong>初始估计误差有界</strong>（initial estimation errors are bounded）：证明的起点要站得住。</li>
+    </ol>
+
+    <h3>7.3 证明骨架：Lyapunov 型论证</h3>
+    <p>OCR 标题：<em>Proof skeleton — a Lyapunov-type argument</em>。三步走：</p>
+
+    <p><strong>第 1 步 · 构造</strong>——定义一个标量 $V_{k}^{i}$，用来度量"误差能量"（a scalar measuring the error energy）：</p>
+    <div class="formula-box">
+      $$V_{k}^{i} \triangleq \mathbb{E}\{\bar{e}_{k}^{i}\}^{T}\,\overline{\Omega}_{k,i}^{p}\,\mathbb{E}\{\bar{e}_{k}^{i}\}$$
+      <p style="margin-top:8px;font-size:0.9rem">误差向量先被信息矩阵"加权"，再作二次型——一个非负的标量</p>
+    </div>
+
+    <p><strong>第 2 步 · 递推</strong>——每一步收缩一个因子 $\tilde{\gamma} \lt 1$（contracts by a factor $\tilde{\gamma} \lt 1$ each step）：也就是说，"误差能量"每一步都在缩水，永远不会超过初始时刻的水平（徐臻的讲法：收缩因子保证它最大不会超过初始的界，且对所有时刻都成立）。</p>
+
+    <p><strong>第 3 步 · 转化</strong>——用 <strong>Lemma 3 + Assumption 2</strong>，把能量上界折算成误差范数的上界：</p>
+    <div class="formula-box">
+      $$\|\mathbb{E}\{\bar{e}_{k+1}^{i}\}\| \leq \bar{a}\,\varepsilon_{0}\sqrt{\frac{\bar{a}^{2} + \bar{q}\,\underline{\omega}}{\underline{q}\,\underline{\omega}}}$$
+      <p style="margin-top:8px;font-size:0.9rem">等式右边全部来自 Assumption 2 的一致界与 Lemma 3 的下界 $\underline{\omega}$——都是常数，与 $k$ 无关：这就是"一致有界"</p>
+    </div>
+
+    <p><strong>关键洞察（The key insight）</strong>——整个论证能成立的"阀门"在这一条：</p>
+    <div class="formula-box">
+      $$\mathbf{P}_{\mathbf{M}}\big(\tilde{q}_{k,j}^{p}, Q_{k}^{i}\big) \approx \tilde{q}_{k,j}^{p}$$
+      <p style="margin-top:8px;font-size:0.9rem">当编码参数 $Q$ 取得足够大时：改进密码体制趋近恒等映射——加密失真趋于消失</p>
+    </div>
+
+    <div class="callout callout-key">
+      <h4>🔑 代价的性质：可控，而不是"固定税"</h4>
+      <p>OCR 原注的一句总结非常到位：安全通常会以<strong>固定速率</strong>损耗精度；而这里，损耗按 $O(1/Q)$ 收缩——是<strong>可控</strong>的，不是固定税。所以加密后的估计器能够保持在<strong>未加密经典算法</strong>的附近（也就预告了 Fig.4 的结果）。</p>
+    </div>
+
+    <div class="callout callout-note">
+      <h4>📝 转写勘误与记法说明</h4>
+      <p>转写在这段证明里把若干术语写坏了（如"雅库比""雅马森"）；本页一律以 OCR 版面文字为准：证明骨架是 <strong>Lyapunov 型论证</strong>（a Lyapunov-type argument），所引条件为 <strong>Assumption 2 与 Lemma 3</strong>。</p>
+      <p>另外：定理陈述里的误差写作 $\hat{e}_{k}^{i}$，证明里构造 $V$ 用的是 $\bar{e}_{k}^{i}$——OCR 原样如此，本页保留两种记号。</p>
+    </div>
+  </div>
+
+  <div id="sec8" class="section-card">
+    <h2>8. 实验验证：Fig.3 与 Fig.4</h2>
+    <p>理论说"误差一致有界、失真随 $Q$ 收缩"，论文用两组数值实验来验证（OCR 帧 t3000）：</p>
+
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>Fig. 3 · error boundedness（误差有界性）</h4>
+        <p>100 个智能体的<strong>平均估计误差 $M\hat{e}$ 稳定在一条带状区间内</strong>——不随时间发散，直接<strong>印证 Theorem 3</strong> 的"一致有界"。</p>
+      </div>
+      <div class="mini-card">
+        <h4>Fig. 4 · AMSE 对比</h4>
+        <p>在 AMSE 指标上，所提方法<strong>优于 PPDKF / DEFE</strong> 等已有方案，且<strong>只略高于未加密的经典算法</strong>（Algorithm 1）——隐私的代价很小。</p>
+      </div>
+    </div>
+
+    <div class="callout callout-key">
+      <h4>🔑 实验和理论对上了</h4>
+      <ul>
+        <li>Fig.3 对应 <strong>Theorem 3</strong>：误差不进带、不发散，"误差能量"的收缩在数值上看得见；</li>
+        <li>Fig.4 对应 <strong>key insight</strong>：$\mathbf{P}_{\mathbf{M}}$ 随 $Q$ 趋近恒等映射、失真按 $O(1/Q)$ 收缩，所以加密方法的性能能贴在未加密经典算法的旁边——"隐私不必以精度为代价"从主张变成了曲线。</li>
+      </ul>
+    </div>
+  </div>
+
+  <div id="sec9" class="section-card">
+    <h2>9. 全课小结：从问题到实验</h2>
+    <p>把两节课合起来看，这篇论文的完整链条是：<strong>问题 → 密码学工具 → 协议 → 理论 → 实验</strong>。</p>
+
+    <table class="data-table">
+      <thead><tr><th>环节</th><th>结论</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>问题</strong></td>
+          <td>分布式状态估计必须通信；明文交换信息矩阵/信息向量会被外部窃听者截获、被内部 HBC 节点推断（上节）。核心问题：<strong>不暴露原始 $\Omega$、$q$ 的前提下完成正确的 CI 融合，并保持估计的有效性</strong></td>
+        </tr>
+        <tr>
+          <td><strong>密码学工具</strong></td>
+          <td>Paillier 加法同态 + 密文幂运算 → 密文上可做加法与数乘；编码-加密-解码回路把实数搬进整数世界；<strong>Lemma 1</strong>：量化误差界宽 $n/(2Q)$，与 $Q$ 成反比（上节）</td>
+        </tr>
+        <tr>
+          <td><strong>协议</strong></td>
+          <td>安全通信三步（发 $\mathbf{E}_{\mathbf{NM}}(\tilde{\varphi}, Q)$、$\mathbf{E}_{\mathbf{NM}}(\tilde{\chi}, Q)$、$Q$、$P$，私钥留本地）+ 本节<strong>密文上的 CI 融合</strong>：恢复量 $\check{\varphi}_{k}^{ij}$、$\check{\chi}_{k}^{ij}$ → 融合量 $\hat{\varphi}_{k}^{i}$、$\hat{\chi}_{k}^{i}$；原始数据从未上路</td>
+        </tr>
+        <tr>
+          <td><strong>理论</strong></td>
+          <td><strong>Definition 4</strong> 高隐私度（抗外部窃听 + 抗 strong-collusion HBC）；<strong>Theorem 2(i)</strong>：最坏情况下也无法提取 $\widetilde{\Omega}$、$\tilde{q}$（没有私钥 $S$）；<strong>Assumptions 1–4</strong> → <strong>Lemma 3</strong> 信息矩阵上下有界 → <strong>Theorem 3</strong> 误差一致有界（Lyapunov 型论证）</td>
+        </tr>
+        <tr>
+          <td><strong>实验</strong></td>
+          <td><strong>Fig.3</strong>：100 个智能体的 $M\hat{e}$ 稳定在带宽内（验证 Theorem 3）；<strong>Fig.4</strong>：所提方法 &lt; PPDKF/DEFE，且仅略高于未加密经典算法（隐私代价小）</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-mission">
+      <h4>🎓 两节课的一条主线</h4>
+      <p>为什么必须保护、要防谁（问题）→ 拿什么保护（Paillier + 编码回路）→ 怎么在密文上完成融合（协议）→ 为什么看得住、算得稳（理论）→ 用数字说话（实验）。这条"<strong>看不见 + 算得准 + 稳得住</strong>"的三位一体，也是读一切"密码学 × 估计理论"交叉论文的通用路线。</p>
+    </div>
+  </div>
+
+  <div id="quiz" class="section-card exercise-box">
+    <h2>📝 练习与自测</h2>
+
+    <div class="exercise">
+      <h4>练习1：Definition 4 的两条，各防谁？</h4>
+      <p>Definition 4（高隐私度）有两条要求。请分别指出它们针对哪一类对手，并说明为什么"只防住外部窃听者"不算满足了高隐私度。</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p><strong>(i)</strong> 针对<strong>外部窃听者</strong>：要求其无法获得任何智能体敏感数据的任何信息；<strong>(ii)</strong> 针对 <strong>strong-collusion HBC 攻击</strong>：要求在这种内部合谋攻击下，正常节点的隐私依然受保护。</p>
+        <p>只满足 (i) 不够：上一节已分析过，内部"诚实但好奇"（HBC）节点本就在网络里、会正常收发报文，它们的威胁不来自"链路被截获"，而来自"合法收到的信息被用来推断"；而且多个 HBC 节点还可以<strong>合谋</strong>，能力更强。威胁入口不同、能力不同，所以要单独立 (ii)。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习2：展开融合量公式</h4>
+      <p>设智能体 $i$ 的邻居集合为 $\mathcal{N}_{i} = \{j_{1}, j_{2}\}$。写出 $\hat{\varphi}_{k}^{i}$ 与 $\hat{\chi}_{k}^{i}$ 的展开形式，并指出每一项里哪些量来自本地、哪些量来自密文恢复。</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>展开：</p>
+        <p>$$\hat{\varphi}_{k}^{i} = w_{ii}\,\tilde{\varphi}_{k}^{i} + w_{ij_{1}}\,\check{\varphi}_{k}^{ij_{1}} + w_{ij_{2}}\,\check{\varphi}_{k}^{ij_{2}}, \qquad \hat{\chi}_{k}^{i} = w_{ii}\,\tilde{\chi}_{k}^{i} + w_{ij_{1}}\,\check{\chi}_{k}^{ij_{1}} + w_{ij_{2}}\,\check{\chi}_{k}^{ij_{2}}$$</p>
+        <p>自己的那一项 $w_{ii}\tilde{\varphi}_{k}^{i}$、$w_{ii}\tilde{\chi}_{k}^{i}$ 用<strong>本地</strong>的明文量；邻居各项用<strong>恢复量</strong> $\check{\varphi}_{k}^{ij}$、$\check{\chi}_{k}^{ij}$——它们是从邻居的密文变量里算出来的，而不是从邻居的明文里读出来的。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习3：恢复式里的两个细节</h4>
+      <p>(1) 为什么说恢复式是对"自己"与"邻居"贡献的一次加权平均？权重是什么、加起来等于多少？(2) 信息矩阵的恢复式 $\check{\chi}_{k}^{ij}$ 比信息向量的多出哪一项？它和 Lemma 1 是什么关系？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>(1) 两项分别以 $\lambda_{k}^{ij}$ 与 $1-\lambda_{k}^{ij}$ 加权，而 $\lambda_{k}^{ij} + (1-\lambda_{k}^{ij}) = 1$——权重之和为 1，正是"加权平均"；权重的来源是 $\lambda_{k}^{ij} = \mathcal{U}_{k}^{ij}/\mathcal{H}_{k}^{ij}$。</p>
+        <p>(2) 多出的项是 $+\dfrac{n}{2Q_{k}^{i}}I$。而 $\dfrac{n}{2Q}$ 正是 <strong>Lemma 1</strong> 的量化误差界宽（$F - \dfrac{n}{2Q}I \leq \mathbf{P}_{\mathbf{M}}(F, Q) \leq F + \dfrac{n}{2Q}I$）——可以理解为恢复时把量化偏差显式计入的修正项。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习4：复述 Theorem 3 的证明骨架</h4>
+      <p>请按"构造 → 递推 → 转化"复述 Theorem 3 的证明骨架，并回答：(a) 一致上界 $\bar{a}\varepsilon_{0}\sqrt{(\bar{a}^{2} + \bar{q}\underline{\omega})/(\underline{q}\underline{\omega})}$ 用到了哪些结果？(b) 两个前提（$Q$ 足够大、初始误差有界）分别在论证的哪个位置起作用？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p><strong>构造</strong>：定义 $V_{k}^{i} \triangleq \mathbb{E}\{\bar{e}_{k}^{i}\}^{T}\overline{\Omega}_{k,i}^{p}\mathbb{E}\{\bar{e}_{k}^{i}\}$——一个度量"误差能量"的标量（Lyapunov 型论证）。</p>
+        <p><strong>递推</strong>：每一步收缩一个因子 $\tilde{\gamma} \lt 1$，因此 $V$ 不会超过初始时刻的水平——"误差能量"单调收敛。</p>
+        <p><strong>转化</strong>：借 Lemma 3 的下界与 Assumption 2 的一致界，把能量的上界折算成误差范数的上界 $\|\mathbb{E}\{\bar{e}_{k+1}^{i}\}\| \leq \bar{a}\varepsilon_{0}\sqrt{(\bar{a}^{2} + \bar{q}\underline{\omega})/(\underline{q}\underline{\omega})}$——右边全是常数、与 $k$ 无关，这就是"一致有界"。</p>
+        <p>(a) 用到了 <strong>Lemma 3</strong>（信息矩阵的上下界）与 <strong>Assumption 2</strong>（系统参数的一致界）。(b) "初始误差有界"提供上界里的 $\varepsilon_{0}$（起点）；"$Q$ 足够大"保证 $\mathbf{P}_{\mathbf{M}}(\tilde{q}_{k,j}^{p}, Q_{k}^{i}) \approx \tilde{q}_{k,j}^{p}$——加密失真足够小，这是整个论证的 key insight。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习5：读实验——Fig.3 与 Fig.4 说明了什么？</h4>
+      <p>(1) Fig.3 与 Fig.4 各验证了什么结论？(2) 结合 key insight（$Q$ 增大时 $\mathbf{P}_{\mathbf{M}}$ 趋近恒等映射、失真按 $O(1/Q)$ 收缩），解释为什么所提方法的 AMSE 只是"略高于"未加密的经典算法。</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>(1) <strong>Fig.3</strong>：100 个智能体的平均估计误差 $M\hat{e}$ 稳定在一条带状区间内——不随时间发散，直接印证 <strong>Theorem 3</strong> 的误差一致有界；<strong>Fig.4</strong>：在 AMSE 指标上，所提方法<strong>优于 PPDKF / DEFE</strong> 等已有方案，且<strong>只略高于未加密的经典算法</strong>（Algorithm 1）。</p>
+        <p>(2) 因为加密带来的失真不是"固定税"：$Q$ 取得足够大时 $\mathbf{P}_{\mathbf{M}}$ 趋近恒等映射，失真按 $O(1/Q)$ 收缩、可以被压得很小。所以隐私的代价能保持轻微——加密估计器的性能贴在未加密版本的附近。</p>
+      </details>
+    </div>
+  </div>
+
+  <div class="nav-links">
+    <a href="0041-组内分享-徐臻-隐私状态估计-1.html" class="prev">← 隐私保护分布式状态估计(1/2)：问题建模与 Paillier 密码基础</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+  </div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 31 · 组内分享 · 徐臻（2026-09-19）</p>
+    <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px">内容来源：视频转写 + PPT 版面文字 OCR</p>
+  </div>
+</div>
+<script src="assets/shiclass.js"></script>
+<script src="../shared/lesson-tools.js"></script>
+</body>
+</html>
