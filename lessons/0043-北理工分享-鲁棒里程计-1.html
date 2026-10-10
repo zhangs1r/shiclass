@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>鲁棒机器人里程计(1/2)：问题建模与分层自适应框架 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="assets/shiclass.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+</head>
+<body>
+<div class="page">
+
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · 系列32 · 北理工分享</div>
+    <h1>鲁棒机器人里程计(1/2)：问题建模与分层自适应框架</h1>
+    <p class="subtitle">Super Odometry 2.0 的建模篇——环境退化时"怎样继续估计运动" · 四类问题与四个适应对象 · 相机与激光残差 · 视觉特征适应 · 方向退化与逐自由度融合 · 估计与学习的双路径闭环</p>
+    <div class="hero-meta">
+      <span>📅 2026-09-26</span>
+      <span>🎙️ 仲崇毅（北京理工大学）</span>
+      <span>📚 论文：Super Odometry 2.0 · CMU（Science Robotics）</span>
+    </div>
+  </div>
+
+  <div class="lead-grid">
+    <div class="callout">
+      <h4>🎯 学完本节，你应能</h4>
+      <ul>
+        <li>说清这篇工作要解决的核心问题——当环境不再提供可靠观测，机器人怎样继续估计运动——以及论文给出的回答</li>
+        <li>解释为什么"一味增加传感器"不能根本解决退化问题（传感器可能同时失效，也可能只在部分运动方向缺信息）</li>
+        <li>对照四类问题与四个适应对象：特征不可靠 → 单个观测及权重；方向信息不足 → 每个运动自由度；模块持续低贡献 → 整个约束来源；运动规律改变 → 惯性网络参数</li>
+        <li>写出相机投影残差与 LiDAR 点到平面残差，说明残差为什么是"约束位置"的基本单位</li>
+        <li>用协方差椭圆与 $\Sigma_{d} \approx \sigma^{2}H^{-1}$ 解释视觉特征适应为什么具有方向性；用 $(\mathbf{n}^{T}\mathbf{u})^{2}$ 解释走廊方向退化与逐自由度的融合调整</li>
+        <li>描述估计主线 + 学习反馈的双路径闭环，解释"闭环"为什么是本文的重要贡献</li>
+      </ul>
+    </div>
+    <div class="callout">
+      <h4>🔑 核心思想</h4>
+      <p>传统鲁棒性只关心"哪个传感器坏了"，然后做一个非此即彼的取舍；这篇工作把退化拆成四个层级，让系统<strong>按需升级干预</strong>——从"单个观测信多少"（权重），到"哪个运动方向缺信息"（自由度），到"整个约束来源要不要退出"（模块），再到"运动规律变了就重学"（网络参数）。与此同时，估计器与惯性网络形成闭环：可靠阶段，估计器当老师，用自己的几何估计给惯性网络生成伪标签；退化阶段，已适应的惯性网络反过来当先验供给者，用速度预测接住估计。可靠性因此从"静态冗余"变成了"分级的、可进可出的适应性"。</p>
+    </div>
+  </div>
+
+  <div class="toc">
+    <h3>📖 目录</h3>
+    <ul>
+      <li><a href="#sec1">1. 分享背景：论文身份与核心问题</a></li>
+      <li><a href="#sec2">2. 退化环境的挑战：坏观测与"缺信息"</a></li>
+      <li><a href="#sec3">3. 四类问题 ↔ 四个适应对象</a></li>
+      <li><a href="#sec4">4. 传感器残差如何约束位置</a></li>
+      <li><a href="#sec5">5. 系统架构：估计主线与学习反馈双路径</a></li>
+      <li><a href="#sec6">6. 分层自适应的意义</a></li>
+      <li><a href="#sec7">7. 第一层自适应：视觉特征适应</a></li>
+      <li><a href="#sec8">8. 第二层自适应：走廊里的方向退化</a></li>
+      <li><a href="#sec9">9. 第二层自适应：支持度统计与逐自由度融合</a></li>
+      <li><a href="#sec10">10. 小结与下节预告</a></li>
+      <li><a href="#quiz">📝 练习与自测</a></li>
+    </ul>
+  </div>
+
+  <div id="sec1" class="section-card">
+    <h2>1. 分享背景：论文身份与核心问题</h2>
+    <p>本节来自 2026-09-26 的研讨会系列 32（北理工分享），由<span class="hl">仲崇毅</span>讲解一篇 CMU 团队的新工作：</p>
+    <div class="formula-box">
+      <p style="font-style:italic;text-align:center;margin-bottom:6px">Super Odometry 2.0: Resilient Odometry via Hierarchical Adaptation</p>
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary)">Shibo Zhao 等 · CMU AirLab（Sebastian Scherer 组）</p>
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary)">主讲人介绍发表于 Science Robotics · 项目网站 superodometry.com · arXiv:2608.25427</p>
+    </div>
+    <p>PPT 首页给出的中文题目是《基于分层自适应的鲁棒机器人里程计》（Resilient odometry via hierarchical adaptation）。这篇工作关注的不是一个局部补丁，而是一个更根本的问题——<span class="hl">当环境不再提供可靠观测，机器人怎样继续估计运动？</span></p>
+    <p>报告给出的回答可以概括成一句话（PPT 第 01 页原意）：<strong>调整观测、方向和模块的贡献，并让可靠阶段的几何估计教会惯性模型当前运动</strong>。系统面向三类传感器——IMU（惯性线索）、相机（视觉线索）、LiDAR（几何线索）——目标是在传感器退化甚至完全失效时，里程计仍能连续输出状态估计。</p>
+    <h3>1.1 验证规模：200 公里与 800 小时</h3>
+    <p>"韧性"不是实验室里的口号。论文报告该框架在六年时间里，跨越空中、轮式、足式与手持平台，累计完成 <strong>200 公里、800 个运行小时</strong>的验证——覆盖多样的传感器配置、环境退化与激烈运动。这是理解本课所有设计取舍的前提：每一个机制最终都要在真实长时运行中兑现。</p>
+    <h3>1.2 两讲的分工</h3>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>本讲（1/2）：问题建模与框架</h4>
+        <p>退化问题的四类建模、四个适应对象、传感器残差、双路径架构，以及前两层机制——视觉特征适应与方向适应。</p>
+      </div>
+      <div class="mini-card">
+        <h4>下一讲（2/2）：模块、学习与实验</h4>
+        <p>第三层引擎适应（模块管理）、惯性学习（在线 LoRA 与速度预测）以及完整的实验验证。</p>
+      </div>
+    </div>
+    <div class="callout callout-note">
+      <h4>📝 转写勘误说明</h4>
+      <p>本课术语全部以 PPT 版面文字（OCR）与论文原文为准。视频转写中的典型误写已在正文中统一纠正，例如：「长杆器」应为「传感器」，「运动显眼」应为「运动先验」，「运输的来源」应为「约束的来源」，「关系网络」应为「惯性网络」，「位标签」应为「伪标签」。</p>
+    </div>
+  </div>
+
+  <div id="sec2" class="section-card">
+    <h2>2. 退化环境的挑战：坏观测与"缺信息"</h2>
+    <p>报告从一个具体的旅程讲起：机器人从一个正常环境走进长走廊，再走进烟雾里——系统会依次遇到什么？先要把退化分级。论文把环境退化分成四类，严重程度从轻到重：</p>
+    <table>
+      <thead><tr><th>退化类型</th><th>典型场景</th><th>被损害的能力</th></tr></thead>
+      <tbody>
+        <tr><td>视觉退化（Visual）</td><td>低光、黑暗、运动模糊、烟雾遮挡</td><td>相机的特征提取与跟踪</td></tr>
+        <tr><td>激光（几何）退化（LiDAR / Geometric）</td><td>长走廊、开阔无结构空间</td><td>LiDAR 在部分运动方向上的配准约束</td></tr>
+        <tr><td>混合退化（Mixed）</td><td>视觉与几何线索间歇性退化（如暗走廊）</td><td>两类外部信息来源交替受损</td></tr>
+        <tr><td>完全退化（Complete）</td><td>浓烟、沙尘暴、大雪</td><td>视觉与激光同时不可用</td></tr>
+      </tbody>
+    </table>
+    <p>退化的危险是一根链条：<span class="hl">特征提取与跟踪变难 → 错误的数据关联 → 漂移甚至失效</span>（论文）。报告特别提醒了两个容易被忽略的事实，它们正是"全退化"问题的根子：</p>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>① 传感器可能同时失效</h4>
+        <p>烟雾、沙尘、雪对相机和激光是"一锅端"的——论文指出，持续烟雾会同时影响视觉与 LiDAR，此时"多传感器冗余"瞬间消失。</p>
+      </div>
+      <div class="mini-card">
+        <h4>② 也可能只在部分运动方向缺信息</h4>
+        <p>长走廊里激光并没有"坏"：它只是恰好在前进方向上提供不了有效约束。缺的不是观测的数量，而是覆盖某些自由度的信息。</p>
+      </div>
+    </div>
+    <p>这就解释了为什么<strong>一味增加传感器不能根本解决问题</strong>（ASR）：问题不在于"有没有信号"，而在于信号是否可靠、是否覆盖了全部运动自由度。</p>
+    <div class="callout callout-note">
+      <h4>📝 论文归纳的三个挑战</h4>
+      <ul>
+        <li><strong>持续严重退化下的韧性</strong>：多传感器可能同时退化、且持续很久（如野火烟雾会同时影响视觉与 LiDAR）；</li>
+        <li><strong>鲁棒与效率的平衡</strong>：把所有传感器全时深度融合能换来冗余，但计算代价高昂；</li>
+        <li><strong>跨退化场景的泛化</strong>：多数方法建立在"刚性"框架与"固定"参数上，换一个环境就要重新整定。</li>
+      </ul>
+      <p>三个挑战共同指向同一个解法方向——<span class="hl">分层 + 自适应</span>。</p>
+    </div>
+  </div>
+
+  <div id="sec3" class="section-card">
+    <h2>3. 四类问题 ↔ 四个适应对象</h2>
+    <p>把挑战再具体化：报告用一张表（PPT 第 02 页）把"发生了什么"映射到"该适应什么"。这张表是整场报告的骨架，逐行读：</p>
+    <table>
+      <thead><tr><th>发生了什么</th><th>具体例子</th><th>适应对象</th></tr></thead>
+      <tbody>
+        <tr><td>特征不可靠</td><td>烟雾散射、弱纹理、错误匹配</td><td>单个观测及其权重</td></tr>
+        <tr><td>方向信息不足</td><td>走廊前进方向难以辨识</td><td>每个运动自由度</td></tr>
+        <tr><td>模块持续低贡献</td><td>相机遮挡或激光长期退化</td><td>整个约束来源</td></tr>
+        <tr><td>运动规律改变</td><td>小型地面车换成全地形车</td><td>惯性网络参数</td></tr>
+      </tbody>
+    </table>
+    <ul>
+      <li><strong>特征不可靠 → 单个观测及其权重</strong>：烟雾散射、弱纹理、错误匹配让"这一个观测量不可信"。处理粒度是<em>单个特征</em>——判断它值多少信任，可信度低就降权。</li>
+      <li><strong>方向信息不足 → 每个运动自由度</strong>：注意，这一行的问题不是"观测错了"，而是<em>某个运动方向没有被约束</em>。处理粒度是每个自由度：缺哪个方向，就想办法在哪个方向补信息。</li>
+      <li><strong>模块持续低贡献 → 整个约束来源</strong>：短时波动用权重处理；但当一个模块（如相机）长期贡献极低，就该考虑让<em>整个约束来源</em>退出优化。</li>
+      <li><strong>运动规律改变 → 惯性网络参数</strong>：当运动分布本身变了（小型地面车换成全地形车），要改的不是融合权重，而是<em>学习模型自身的参数</em>——在线更新惯性网络。</li>
+    </ul>
+    <div class="callout callout-key">
+      <h4>🔑 关键区别（PPT 副标题）</h4>
+      <p>错误观测、缺少信息、持续失效和运动分布变化，<strong>需要不同的处理</strong>——不能用同一种"调权重"的手段包打天下。这正是"四类问题对应四个适应对象"的含义。</p>
+    </div>
+    <p>这张表也预告了课程结构：第一、二行分别由第一、二层自适应处理（本讲）；第三、四行（模块管理与惯性学习）放到下一讲。PPT 页脚给出一句总纲，第 6 节展开：<span class="hl">先处理局部问题，再按需要改变约束结构和运动先验</span>。</p>
+  </div>
+
+  <div id="sec4" class="section-card">
+    <h2>4. 传感器残差如何约束位置</h2>
+    <p>在讲"怎么适应"之前，先把最底层的问题说清楚：传感器数据究竟以什么形式"约束"机器人的位置？答案是一条条<strong>残差</strong>。报告用左右两图复习了两种最基本的形式。</p>
+    <h3>4.1 相机：投影残差（观测像素 vs 预测像素）</h3>
+    <p>在相机模型中，机器人的位置决定了一个 3D 点实际投影到图像的哪个位置：按当前位姿<strong>预测</strong>一个像素坐标，再与图像上实际<strong>观测</strong>到的像素坐标相减，就是投影残差。位姿差一点，预测像素就偏一点——优化的目标，就是让所有点的"预测与观测之差"尽可能小。</p>
+    <h3>4.2 LiDAR：点到平面残差</h3>
+    <p>激光雷达中，把当前激光点通过位姿变换到地图坐标系，再计算它与局部平面的有符号距离——这就是点到平面残差：</p>
+    <div class="formula-box">
+      $$ r_{\mathrm{pl}} = \mathbf{n}^{T}(\mathbf{s} - \mathbf{a}) $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">其中 $\mathbf{s}$ 是（变换后的）激光点，$\mathbf{a}$ 是局部平面上的参考点，$\mathbf{n}$ 是平面法向。这个式子在方向退化一节（第 8 节）会再次出现。</p>
+    </div>
+    <p>论文把这类残差放进一个最小二乘目标里——例如点云配准中的 alignment error（论文补充材料式 (S1)）：</p>
+    <div class="formula-box">
+      $$ E = \sum_{i=1}^{k}\left((R\,\mathbf{p}_{i} + \mathbf{t} - \mathbf{q}_{i})^{T}\mathbf{n}_{i}\right)^{2} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">每个点对贡献一个平方项：旋转 $R$、平移 $\mathbf{t}$ 决定每条残差被"拉多紧"。</p>
+    </div>
+    <div class="callout callout-intuition">
+      <h4>💡 为什么要从残差讲起</h4>
+      <p>后面所有的"自适应"，最终都落回这样一条条残差上：某个残差要不要信（第一层）、某个方向上的残差够不够（第二层）、整个残差来源还要不要（第三层）。还有一个关键伏笔——<span class="hl">残差对位姿的敏感程度是有方向的</span>，这正是第二层自适应要用雅可比回答的问题（第 8 节）。</p>
+    </div>
+  </div>
+
+  <div id="sec5" class="section-card">
+    <h2>5. 系统架构：估计主线与学习反馈双路径</h2>
+    <p>整个系统由两条路径组成（PPT 第 04 页）。副标题概括得很准：<strong>相机和激光提供几何信息；同一 IMU 同时用于常规惯性计算与学习预测</strong>。</p>
+    <div class="formula-box" style="font-size:0.95rem;line-height:2">
+      <p><strong>估计主线：</strong>相机 / LiDAR → 几何约束；IMU 时间序列 → 常规 IMU 约束；惯性网络 → 速度预测（转成运动先验）。三者一起进入 <strong>自适应融合后端</strong> → 状态 $\mathbf{x}$</p>
+      <p><strong>学习反馈：</strong>状态 $\mathbf{x}$ →（可靠估计生成伪标签）→ 更新 LoRA → 惯性网络。更新后的惯性网络再把速度预测送回融合后端——闭环。</p>
+    </div>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>估计主线（几何 + 惯性的融合）</h4>
+        <p>相机与 LiDAR 提供几何约束，IMU 提供常规惯性约束；融合后端还接收一组"自适应信号"：<strong>特征质量、方向支持、模块状态</strong>（PPT 图注）。三路约束加自适应信号，一起产出状态估计。</p>
+      </div>
+      <div class="mini-card">
+        <h4>学习反馈（可靠阶段的教学）</h4>
+        <p>后端输出的可靠估计被写成"伪标签"，用来在线更新惯性网络中的 LoRA 参数。这一路让同一段 IMU 数据既参与常规惯性计算，又喂养学习预测。</p>
+      </div>
+    </div>
+    <p>为什么说"闭环"是重要贡献（ASR）？论文把它描述成一个两层级协作（bilevel）结构：下层是自适应传感器融合（"老师"），给上层的惯性里程计（"学生"）提供监督；上层反过来给下层提供运动先验。报告页脚的原话是：<span class="hl">可靠时：估计器提供监督；退化时：已适应的惯性模型提供运动先验</span>。</p>
+    <div class="callout callout-key">
+      <h4>🔑 提前备课、临场接手</h4>
+      <p>学习并非离线一次性完成——可靠阶段的"教学"结果（LoRA 参数）会在退化阶段兑现。论文还特别强调：这是传感器融合中第一次把 IMU 提升为与相机、LiDAR 同等重要的独立信息来源，而不是只做预积分的辅助传感器。</p>
+    </div>
+  </div>
+
+  <div id="sec6" class="section-card">
+    <h2>6. 分层自适应的意义</h2>
+    <p>回到框架层面：为什么不能是一条"固定流水线"？报告的原则是——<strong>不是所有时刻都需要执行完整流程；从轻量干预开始，不够再升级</strong>（ASR 讲述）。论文的说法是：低层级提供快速、省资源的适应；若不足以解决问题，高层级再给出更复杂、计算量更大的干预。</p>
+    <table>
+      <thead><tr><th>层级</th><th>触发的问题</th><th>适应对象</th><th>干预方式</th></tr></thead>
+      <tbody>
+        <tr><td>第一层：视觉特征适应</td><td>特征不可靠（视觉退化）</td><td>单个观测及其权重</td><td>轻量：逐特征评估、加权</td></tr>
+        <tr><td>第二层：方向适应</td><td>方向信息不足（几何退化）</td><td>每个运动自由度</td><td>中等：逐方向调整约束贡献</td></tr>
+        <tr><td>第三层：引擎适应</td><td>模块持续低贡献（混合退化）</td><td>整个约束来源</td><td>较重：改变约束集合、模块进出优化（下一讲）</td></tr>
+        <tr><td>第四层：惯性学习</td><td>运动规律改变（完全退化）</td><td>惯性网络参数</td><td>最重：学习模型更新与接管（下一讲）</td></tr>
+      </tbody>
+    </table>
+    <p>论文还从假设层面解释了"为什么必须分层"：传统方法隐含两个假设——<strong>测量噪声服从高斯分布</strong>、<strong>平均冗余测量能得到准确估计</strong>。但在烟雾、黑暗这类退化环境里，两个假设都会破裂：传感器信号偏离预期分布，被污染的测量会在某些状态方向上占据主导。此时"统一增权减权"不再成立，必须按层级重新组织信息。</p>
+    <div class="callout callout-key">
+      <h4>🔑 分层的意义（PPT 页脚）</h4>
+      <p>先处理局部问题，再按需要改变<strong>约束结构</strong>和<strong>运动先验</strong>。——局部问题（单个观测、单个方向）用轻量手段兜住；只有当退化持续、或波及整个模块时，才升级为改变"哪些约束在场"（约束结构）与"学习模型的参数"（运动先验）的全局干预。效率与鲁棒性因此得以兼得。</p>
+    </div>
+  </div>
+
+  <div id="sec7" class="section-card">
+    <h2>7. 第一层自适应：视觉特征适应</h2>
+    <p>第一层针对视觉特征。PPT 用一句话概括：<strong>沿边缘滑动，像素定位更不确定</strong>——图像梯度先给出局部位移信息，再影响该特征进入估计时的贡献。</p>
+    <h3>7.1 角点与边缘：两种确定性</h3>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>角点：两个方向都有梯度</h4>
+        <p>移动图像小块会明显改变光度误差——定位稳定，协方差椭圆较<strong>紧</strong>；两个方向都能贡献信息。</p>
+      </div>
+      <div class="mini-card">
+        <h4>边缘：切向定位不确定</h4>
+        <p>沿边缘切向滑动时外观变化小——切向位移难以确定。协方差椭圆被<strong>拉长</strong>：长轴方向方差大，沿该方向的误差惩罚较弱。</p>
+      </div>
+    </div>
+    <p>在烟雾、弱纹理、低光照下，报告展示了一批带不确定性椭圆的特征（PPT 第 05 页）：椭圆描述的是"像素定位在不同方向上的精度"——越长轴的方向，越不可信。</p>
+    <h3>7.2 椭圆为什么会长：$\Sigma_{d} \approx \sigma^{2}H^{-1}$</h3>
+    <p>把局部图像梯度累加起来，构成 Hessian 矩阵 $\mathbf{H}$（梯度外积的和）；特征定位的协方差可以近似写成：</p>
+    <div class="formula-box">
+      $$ \Sigma_{d} \approx \sigma^{2}H^{-1} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">PPT 页脚结论：信息强弱具有方向性；$\mathbf{H}$ 来自局部图像梯度。</p>
+    </div>
+    <p>代入两种特征：</p>
+    <ul>
+      <li><strong>角点</strong>：两个方向梯度都强 → $\mathbf{H}$ 在两个方向上都大 → $H^{-1}$ 小 → 协方差紧、定位准；</li>
+      <li><strong>边缘</strong>：切向梯度几乎为零 → $\mathbf{H}$ 沿切向近似奇异 → $H^{-1}$ 沿切向被放大 → 椭圆长轴。</li>
+    </ul>
+    <p>关键的一步是：<span class="hl">噪声协方差的逆会进入加权误差</span>——因此"不确定方向"上的残差会被自动降权。这就是"单个观测及其权重"的落地方式：特征的质量不是二值的（好 / 坏），而是<strong>带方向的</strong>（这个方向准、那个方向飘）。</p>
+    <div class="callout callout-note">
+      <h4>📝 两个补充说明</h4>
+      <ul>
+        <li>这一层刻画的是<strong>局部定位精度</strong>，本身并不负责判别所有错误匹配——它是"特征级"的轻量干预，不是万能的异常检测器。</li>
+        <li>工程上，这一步之前还有光度校准（调整曝光时间，让图像随时间保持一致），并且是<strong>主动选择最有信息量的特征</strong>，而不是被动跟踪全部特征（论文）。</li>
+      </ul>
+    </div>
+    <p>至此第一层自适应的逻辑闭环：图像梯度 → Hessian $\mathbf{H}$ → 协方差 $\Sigma_{d}$ → 每个特征进入估计时的方向化权重。</p>
+  </div>
+
+  <div id="sec8" class="section-card">
+    <h2>8. 第二层自适应：走廊里的方向退化</h2>
+    <p>第二层处理一个更隐蔽的问题：<strong>观测本身可能没有错，但某些运动方向缺少信息</strong>。经典场景是长走廊（PPT 第 07 页）：<span class="hl">沿走廊移动时，点到两侧墙面的法向距离几乎不变</span>——即使匹配全部正确，前进方向仍可能缺少信息。</p>
+    <p>用雅可比把这个现象说清楚。设局部平面上一点 $\mathbf{a}$、平面法向 $\mathbf{n}$，当前（变换后的）激光点 $\mathbf{s}$，点到平面残差为：</p>
+    <div class="formula-box">
+      $$ r = \mathbf{n}^{T}(\mathbf{s} - \mathbf{a}) $$
+    </div>
+    <p>残差对位姿的雅可比是（前三个分量作用于旋转、后三个作用于平移）：</p>
+    <div class="formula-box">
+      $$ \mathbf{J} = \left[(\mathbf{s} \times \mathbf{n})^{T} \quad \mathbf{n}^{T}\right] $$
+    </div>
+    <p>看平移部分：沿单位运动方向 $\mathbf{u}$ 滑动时，残差的变化率正比于 $\mathbf{n}^{T}\mathbf{u}$；而残差平方项贡献的信息量正比于：</p>
+    <div class="formula-box">
+      $$ (\mathbf{n}^{T}\mathbf{u})^{2} $$
+    </div>
+    <ul>
+      <li><strong>沿走廊前进</strong>：运动方向与侧墙法向近似正交 → $\mathbf{n}^{T}\mathbf{u} \approx 0$ → 信息量趋近于 0，约束弱；</li>
+      <li><strong>朝侧墙运动</strong>：$\mathbf{n}^{T}\mathbf{u} \neq 0$ → 残差对运动敏感 → 约束强。</li>
+    </ul>
+    <p>注意一个容易误解的点：这跟"残差大不大"无关。走廊里所有点的残差都可能又小又干净——缺的不是质量，而是<span class="hl">对某个方向的敏感性</span>。</p>
+    <div class="callout callout-key">
+      <h4>🔑 页脚结论：剔除救不了缺失</h4>
+      <p><strong>剔除大残差无法补足缺失信息，必须由其他可靠约束支持退化方向。</strong>——异常值剔除只能去掉坏约束，不能创造原本不存在的约束：这正是需要"方向适应"而不是"更狠的滤波"的原因。</p>
+    </div>
+    <div class="callout callout-note">
+      <h4>📝 为什么以 LiDAR 为分析对象？</h4>
+      <p>论文在前端（优化之前）就做两件事：配准风险预测与逐点可观测性分析——而不是等优化结束再看 Hessian，那样对"预测潜在失败"来说可能太晚。论文的解释是：LiDAR 能给出更可靠的可观测性与逐方向不确定性估计；<span class="hl">一旦 LiDAR 量化了方向不确定性，视觉权重就可以据此调整</span>——这就接上了第 9 节的融合。</p>
+    </div>
+  </div>
+
+  <div id="sec9" class="section-card">
+    <h2>9. 第二层自适应：支持度统计与逐自由度融合</h2>
+    <p>方向退化不可能靠"单个匹配"看出来。报告强调一个关键设计（ASR）：<strong>系统并不计算"激光传感器整体好不好"的单一分数，而是分析每个匹配主要在支持哪个状态方向，再统计成方向支持度</strong>。流程（PPT 第 08 页）：对应关系方向分析 → 统计 x、y、z 与转动标签 → 按自由度调整各方向约束贡献。</p>
+    <h3>9.1 从标签统计到逐方向置信度</h3>
+    <p>论文给每个对应关系打上标签——它主要约束状态空间里的哪个方向（x, y, z 与 roll, pitch, yaw 六项），再统计各方向的标签数 $N_{i}$ 与总标签数 $N_{\mathrm{total}}$（论文式 (7)、(8)）：</p>
+    <div class="formula-box">
+      $$ \boldsymbol{\gamma}_{\mathrm{trans}} = 6\left[\frac{N_{x}}{N_{\mathrm{total}}}, \frac{N_{y}}{N_{\mathrm{total}}}, \frac{N_{z}}{N_{\mathrm{total}}}\right]^{T} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">平动方向的置信度向量（转动部分 $\boldsymbol{\gamma}_{\mathrm{rot}}$ 同理，对应 roll / pitch / yaw）。乘 6 是为了归一化：标签在六个方向上均匀分布时，每个方向的期望值恰好是 1。</p>
+    </div>
+    <div class="formula-box">
+      $$ \Sigma_{\mathrm{cov}} = \mathrm{diag}(\boldsymbol{\gamma}_{\mathrm{trans}},\ \boldsymbol{\gamma}_{\mathrm{rot}}) $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">论文式 (9)：逐方向置信度合成对角矩阵，把"方向支持"变成可以进入融合的量。</p>
+    </div>
+    <p>直觉：论文假设在一个结构良好的环境里，可观测性应当"均匀铺满"六个状态方向；因此哪个方向的标签占比明显偏低，就说明该方向的激光约束"真空"——$\boldsymbol{\gamma}$ 小的方向，就是需要补充先验的方向。（PPT 的置信度曲线上：x 方向明显低、y 方向高。）</p>
+    <h3>9.2 一个退化时刻的融合比例</h3>
+    <p>在长走廊实验的某个退化时刻，系统给出的融合比例为（PPT 表格）：</p>
+    <table>
+      <thead><tr><th>方向</th><th>LiDAR / 视觉</th></tr></thead>
+      <tbody>
+        <tr><td>x 前进</td><td>10% / 90%</td></tr>
+        <tr><td>y 横向</td><td>100% / 0%</td></tr>
+        <tr><td>z 高度</td><td>80% / 20%</td></tr>
+      </tbody>
+    </table>
+    <p>逐行读：x 方向上激光只保留 10% 话语权，视觉顶上 90%；y 方向完全交给激光（100% / 0%）；z 方向激光依旧主导（80% / 20%）。页脚结论给出原则：<span class="hl">保留强方向的激光信息，同时给弱方向补充可靠先验</span>。这不是"换传感器"，而是"按自由度分配两类信息"：</p>
+    <ul>
+      <li><strong>强方向（y）</strong>：激光本身可靠 → 保持它主导；</li>
+      <li><strong>弱方向（x）</strong>：激光说不出话 → 由视觉的相对位姿先验顶上。</li>
+    </ul>
+    <div class="callout callout-note">
+      <h4>📝 先验是怎么进来的</h4>
+      <p>论文把视觉等来源的相对位姿作为 <em>prior</em> 因子加入因子图，并定义"先验的不确定性"为激光置信度的补集——激光在某方向越弱，留给先验的调整空间越大，目标是让约束<strong>均匀分布到所有状态方向</strong>，从而化解激光退化（论文补充材料）。</p>
+    </div>
+    <div class="callout callout-intuition">
+      <h4>💡 一句话总结第二层</h4>
+      <p>把"传感器之间的切换"细化为"每个状态方向上的<strong>软融合</strong>（soft fusion）"：不是关掉激光，而是在它说不清话的方向上少听它一点——论文称之为逐轴（across each axis）的软融合，而不是开关式的非此即彼。</p>
+    </div>
+  </div>
+
+  <div id="sec10" class="section-card">
+    <h2>10. 小结与下节预告</h2>
+    <h3>10.1 本节主线</h3>
+    <ol>
+      <li><strong>核心问题</strong>：当环境不再提供可靠观测，机器人怎样继续估计运动。论文的回答：调整观测、方向、模块的贡献，并让可靠阶段的几何估计教会惯性模型当前运动；该框架在六年里跨平台累积了 200 km / 800 h 的验证。</li>
+      <li><strong>退化的两副面孔</strong>：错误关联 → 漂移；以及"缺信息"——传感器可能同时失效（浓烟），也可能只在部分运动方向缺信息（走廊）。所以"加传感器"不治本。</li>
+      <li><strong>四类问题 ↔ 四个适应对象</strong>：特征不可靠 → 单个观测及权重；方向信息不足 → 每个运动自由度；模块持续低贡献 → 整个约束来源；运动规律改变 → 惯性网络参数。</li>
+      <li><strong>残差是约束的基本单位</strong>：相机投影残差（预测像素 vs 观测像素）；LiDAR 点到平面残差 $r = \mathbf{n}^{T}(\mathbf{s} - \mathbf{a})$。</li>
+      <li><strong>双路径闭环</strong>：估计主线 = 几何约束 + 常规 IMU 约束 + 运动先验 → 自适应融合后端 → 状态 $\mathbf{x}$；学习反馈 = 可靠估计 → 伪标签 → LoRA 更新 → 惯性网络 → 速度预测。可靠时估计器当老师，退化时学习模型供先验。</li>
+      <li><strong>分层意义</strong>：不是固定流水线——局部问题（观测、方向）轻量处理，结构性问题（约束集合、运动先验）按需升级。</li>
+      <li><strong>第一层（视觉特征适应）</strong>：角点 / 边缘的协方差椭圆；$\Sigma_{d} \approx \sigma^{2}H^{-1}$；信息强弱具有方向性，方向化权重由此进入估计。</li>
+      <li><strong>第二层（方向适应）</strong>：走廊里 $\mathbf{n}^{T}\mathbf{u} \approx 0$ 使前进方向无信息；信息量正比于 $(\mathbf{n}^{T}\mathbf{u})^{2}$；用逐方向支持度统计与逐自由度融合（x：10% / 90%，y：100% / 0%，z：80% / 20%）把强方向留给激光、弱方向补先验。</li>
+    </ol>
+    <h3>10.2 下一节预告</h3>
+    <ul>
+      <li><strong>第三层：引擎适应（模块管理）</strong>——当某个约束来源持续低贡献时，如何让整个模块退出优化、又何时让它重新参与；</li>
+      <li><strong>惯性学习</strong>——用历史 IMU 序列预测速度与不确定性、在线 LoRA 更新、以及"可靠阶段的伪标签"如何决定更新质量；</li>
+      <li><strong>实验验证</strong>——综合退化场景、多平台离线学习对比与烟雾环境下的接管表现。</li>
+    </ul>
+  </div>
+
+  <div id="quiz" class="section-card exercise-box">
+    <h2>📝 练习与自测</h2>
+
+    <div class="exercise">
+      <h4>练习1（概念）：核心问题与"两个不"</h4>
+      <p>(a) 这篇工作要解决的核心问题是什么？论文给出的回答包含哪两个动作？(b) 为什么"一味增加传感器"不能根本解决退化问题？请举出两种情形。</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>(a) 核心问题：<strong>当环境不再提供可靠观测，机器人怎样继续估计运动</strong>。回答：<strong>调整观测、方向和模块的贡献</strong>，并<strong>让可靠阶段的几何估计教会惯性模型当前运动</strong>。</p>
+        <p>(b) 情形一：不同传感器可能<strong>同时失效</strong>——浓烟、沙尘会同时损害相机与激光，"多传感器冗余"瞬间消失；情形二：传感器未必"坏"，而可能<strong>只在部分运动方向缺信息</strong>——长走廊里激光工作正常，但前进方向没有任何约束。问题不在"有没有信号"，而在信号是否可靠、是否覆盖全部运动自由度。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习2（概念）：角点还是边缘</h4>
+      <p>在烟雾、弱纹理、低光场景中，特征不确定性椭圆的形状反映了什么？请说明角点与边缘特征的椭圆形态，并用 $\Sigma_{d} \approx \sigma^{2}H^{-1}$ 解释（提示：$\mathbf{H}$ 由局部图像梯度构成）。这样的协方差如何影响估计？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>椭圆描述"像素定位在不同方向上的精度"——不确定性具有<strong>方向性</strong>。角点：两个方向都有梯度 → $\mathbf{H}$ 在两个方向上都大 → $H^{-1}$ 小 → 椭圆较紧、定位稳定，两个方向都能贡献信息。边缘：沿切向滑动外观变化小 → 切向梯度弱 → $\mathbf{H}$ 沿切向近似奇异 → $H^{-1}$ 沿切向放大 → 椭圆拉长；长轴方向方差大，沿该方向的误差惩罚弱。</p>
+        <p>协方差的逆进入加权误差：<strong>不确定方向上的残差被自动降权</strong>——"单个观测及其权重"由此落地。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习3（配对）：四类问题 ↔ 四个适应对象</h4>
+      <p>把下列问题与适应对象配对，并指出对应第几层自适应：(a) 烟雾中错误匹配频发；(b) 长走廊前进方向难以辨识；(c) 相机被遮挡、持续低贡献；(d) 平台从小型地面车换成全地形车。选项：① 单个观测及其权重；② 每个运动自由度；③ 整个约束来源；④ 惯性网络参数。</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>(a)–①，第一层（视觉特征适应）；(b)–②，第二层（方向适应）；(c)–③，第三层（引擎适应，下一讲）；(d)–④，第四层（惯性学习在线适应，下一讲）。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习4（计算）：雅可比信息量</h4>
+      <p>平面法向 $\mathbf{n} = (0,1,0)$，残差 $r = \mathbf{n}^{T}(\mathbf{s} - \mathbf{a})$ 沿运动方向 $\mathbf{u}$ 的信息量正比于 $(\mathbf{n}^{T}\mathbf{u})^{2}$。</p>
+      <p>(a) 计算三种运动方向的信息量：$\mathbf{u} = (1,0,0)$、$\mathbf{u} = (0,1,0)$、$\mathbf{u} = (1/\sqrt{2}, 1/\sqrt{2}, 0)$；</p>
+      <p>(b) 在走廊场景中（侧墙法向 $\mathbf{n} = (0,1,0)$），哪个方向是"退化方向"？与 PPT 的判定 $\mathbf{n}^{T}\mathbf{u} \approx 0$ 一致吗？</p>
+      <p>(c) 若要求信息量不低于最大值的 25%，运动方向与法向的夹角最大可以到多少？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>(a) 信息量 = $(\mathbf{n}^{T}\mathbf{u})^{2}$：$\mathbf{u} = (1,0,0)$ → $(0)^{2} = 0$；$\mathbf{u} = (0,1,0)$ → $(1)^{2} = 1$（峰值）；$\mathbf{u} = (1/\sqrt{2}, 1/\sqrt{2}, 0)$ → $(1/\sqrt{2})^{2} = 0.5$，即峰值的 50%。</p>
+        <p>(b) $\mathbf{u} = (1,0,0)$（沿走廊前进）满足 $\mathbf{n}^{T}\mathbf{u} = 0$，信息量为 0，是退化方向；朝侧墙的 $\mathbf{u} = (0,1,0)$ 信息量最大。与"沿走廊 $\mathbf{n}^{T}\mathbf{u} \approx 0$（约束弱）、朝侧墙 $\mathbf{n}^{T}\mathbf{u} \neq 0$（残差敏感）"的判定一致。</p>
+        <p>(c) 要求 $(\mathbf{n}^{T}\mathbf{u})^{2} \ge 0.25$；对单位向量，$\mathbf{n}^{T}\mathbf{u} = \cos\theta$（θ 为运动方向与法向的夹角），故 $|\cos\theta| \ge 0.5$，即 $\theta \le 60^{\circ}$。直观地说：偏离墙法向超过 60°，这道墙能提供的信息不到峰值的四分之一。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习5（辨析）：为什么"剔除大残差"不够</h4>
+      <p>走廊里即使全部匹配正确，前进方向仍缺信息。请解释：(a) 为什么"多剔除一些大残差 / 调稳健核"无法补足？(b) "必须由其他可靠约束支持退化方向"在实践中怎么实现（结合逐自由度融合比例）？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>(a) 缺信息不等于有坏点：走廊前进方向上残差对运动本来就不敏感（$\mathbf{n}^{T}\mathbf{u} \approx 0$），所有残差都可能又小又干净，但它们对前进位移没有区分度。<strong>剔除大残差只能去掉坏约束，不能创造原本不存在的信息。</strong></p>
+        <p>(b) 系统按方向支持度逐自由度调整融合：弱方向减少激光贡献、换上视觉相对位姿先验（x：激光 10% / 视觉 90%）；强方向保持激光主导（y：100% / 0%）；其余方向按置信度分配（z：80% / 20%）。这就是"保留强方向的激光信息，给弱方向补充可靠先验"。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习6（综合）：双路径闭环</h4>
+      <p>描述系统的两条路径：估计主线与学习反馈各包含哪些环节？为什么说"闭环"是这篇工作的重要贡献？（提示：分别在"可靠阶段"与"退化阶段"想一想信息往哪流。）</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>估计主线：相机 / LiDAR → 几何约束；IMU → 常规 IMU 约束；惯性网络 → 速度预测（转成运动先验）；三者一起进入自适应融合后端 → 状态 $\mathbf{x}$。学习反馈：状态 $\mathbf{x}$ 的可靠估计生成伪标签 → 更新（LoRA）惯性网络 → 更新后的惯性网络再把速度预测送回融合后端。</p>
+        <p>闭环的意义：可靠阶段，估计器当"老师"，把准确的几何估计作为监督信号，让惯性网络学会"当前平台、当前的运动规律"；退化阶段，已适应的惯性网络当"先验供给者"，用速度预测接住融合估计。两个阶段互相供给，使系统能够"在可靠时学习、在退化时兑现"——IMU 也因此从辅助传感器上升为独立信息来源。</p>
+      </details>
+    </div>
+  </div>
+
+  <div class="nav-links">
+    <a href="0042-组内分享-徐臻-隐私状态估计-2.html" class="prev">← 隐私保护分布式状态估计(2/2)：融合协议与理论保证</a>
+    <a href="0044-北理工分享-鲁棒里程计-2.html" class="next">鲁棒机器人里程计(2/2)：模块管理、惯性学习与实验验证 →</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+  </div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 32 · 北理工分享 · 仲崇毅（2026-09-26）</p>
+    <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px">内容来源：视频转写 + PPT 版面文字 OCR + 论文原文</p>
+  </div>
+</div>
+<script src="assets/shiclass.js"></script>
+<script src="../shared/lesson-tools.js"></script>
+</body>
+</html>

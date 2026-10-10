@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>鲁棒机器人里程计(2/2)：模块管理、惯性学习与实验验证 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="assets/shiclass.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+</head>
+<body>
+<div class="page">
+
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · 系列32 · 北理工分享</div>
+    <h1>鲁棒机器人里程计(2/2)：模块管理、惯性学习与实验验证</h1>
+    <p class="subtitle">Super Odometry 2.0 下篇——第三层引擎适应与停用判据 · 惯性学习为什么有用 · 速度与不确定性联合学习（MSE + NLL）· 在线 LoRA 闭环 · 三个实验：四平台离线惯性学习 / 2966 m 综合场景 / 数据多样性与在线适应</p>
+    <div class="hero-meta">
+      <span>📅 2026-09-26</span>
+      <span>🎙️ 仲崇毅（北京理工大学）</span>
+      <span>📚 论文：Super Odometry 2.0 · CMU（Science Robotics）</span>
+    </div>
+  </div>
+
+  <div class="lead-grid">
+    <div class="callout">
+      <h4>🎯 学完本节，你应能</h4>
+      <ul>
+        <li>说清第三层「引擎适应」与前两层分工的不同：短时变化用权重处理，持续退化要管理整个约束来源</li>
+        <li>复述停用判据的两个条件（贡献低于 10%、持续约 2–4 秒），解释"时长阈值抑制瞬时切换"，以及为什么"停用模块"不一定意味着关闭物理传感器</li>
+        <li>用 $\delta p(t) \approx \tfrac{1}{2}\,\delta b_{a}\,t^{2}$ 估算偏置漂移（0.01 m/s²、60 s ≈ 18 m），并说明学习模型 $f_{\theta}$ 给退化阶段提供什么</li>
+        <li>写出速度-不确定性联合学习的两个损失（MSE 与 NLL），说清"误差项 + 方差项"各自约束什么、缺一会怎样</li>
+        <li>画出在线 LoRA 闭环（可靠位姿 → 伪标签 → 低秩增量），写出 $W = W_{0} + BA$ 并解释参数量 $dk \to r(d+k)$ 的含义</li>
+        <li>读懂三个实验各自回答的问题与关键数字，并复述现场问答的澄清点与留白</li>
+      </ul>
+    </div>
+    <div class="callout">
+      <h4>🔑 核心思想</h4>
+      <p>前三层都在重新分配"已有观测"的贡献；这篇论文还有一条更大的暗线——把 IMU 从"被预积分的辅助传感器"升级为"被学习驱动的独立约束来源"（论文的说法：elevate IMU to equal importance with camera and LiDAR）。做法是：用 MSE + NLL 联合学出速度与不确定性；趁系统还可靠时，用融合位姿生成伪标签、经 LoRA 低秩增量在线更新；于是当退化真正到来，模型已经提前适应过当前的运动分布。第三层管"谁还值得参与优化"，惯性学习管"没人可看时靠什么继续走"。</p>
+    </div>
+  </div>
+
+  <div class="toc">
+    <h3>📖 目录</h3>
+    <ul>
+      <li><a href="#sec1">1. 承上启下：从"特征与方向"到"管理约束来源"</a></li>
+      <li><a href="#sec2">2. 第三层「引擎适应」：停用判据与设计要点</a></li>
+      <li><a href="#sec3">3. 传感器遮挡实验：Side / Front / Fully / Camera Blocked</a></li>
+      <li><a href="#sec4">4. 惯性学习为什么有用：给纯积分增加运动先验</a></li>
+      <li><a href="#sec5">5. 速度与不确定性联合学习：MSE + NLL</a></li>
+      <li><a href="#sec6">6. 在线 LoRA 闭环：可靠位姿 → 伪标签 → 低秩增量</a></li>
+      <li><a href="#sec7">7. 实验（一）：离线惯性学习，四平台 ATE / T-RTE</a></li>
+      <li><a href="#sec8">8. 实验（二）：综合场景，2966 m 连续任务</a></li>
+      <li><a href="#sec9">9. 实验（三）：数据多样性与在线适应</a></li>
+      <li><a href="#sec10">10. 讨论与问答：现场澄清与留白</a></li>
+      <li><a href="#sec11">11. 小结</a></li>
+      <li><a href="#quiz">📝 练习与自测</a></li>
+    </ul>
+  </div>
+
+  <div id="sec1" class="section-card">
+    <h2>1. 承上启下：从"特征与方向"到"管理约束来源"</h2>
+    <p>上一节（1/2）把整篇论文的骨架搭了起来：当环境不再提供可靠观测，机器人怎样继续估计运动？论文的回答是——<strong>调整观测、方向和模块的贡献，并让可靠阶段的几何估计"教会"惯性模型当前的运动</strong>。当时我们用"四类问题对应四个适应对象"把整场报告拆开；把这张表与分层结构对齐，就是本讲的路线图：</p>
+    <table class="data-table">
+      <thead><tr><th>发生了什么</th><th>适应对象</th><th>归属</th></tr></thead>
+      <tbody>
+        <tr><td>特征不可靠（烟雾散射、弱纹理、错误匹配）</td><td>单个观测及其权重</td><td>第一层：视觉特征适应（1/2 已讲）</td></tr>
+        <tr><td>方向信息不足（走廊前进方向难以辨识）</td><td>每个运动自由度</td><td>第二层：方向适应（1/2 已讲）</td></tr>
+        <tr><td><strong>模块持续低贡献（相机遮挡或激光长期退化）</strong></td><td><strong>整个约束来源</strong></td><td><strong>第三层：引擎适应（本讲）</strong></td></tr>
+        <tr><td><strong>运动规律改变（小型地面车换成全地形车）</strong></td><td><strong>惯性网络参数</strong></td><td><strong>惯性学习与在线适应（本讲）</strong></td></tr>
+      </tbody>
+    </table>
+    <p>前两行由 1/2 讲完；这一节从第三行开始——先看<strong>第三层「引擎适应」</strong>怎么管理"整个约束来源"；再展开第四行：惯性网络为什么有用、怎么学、怎么在线更新。最后用三个实验把这条链验证一遍。</p>
+    <div class="callout callout-note">
+      <h4>📝 分层的意义（承前）</h4>
+      <p>PPT 页脚：<strong>先处理局部问题，再按需要改变约束结构和运动先验</strong>——不是所有时刻都需要完整执行一遍固定流水线。第三层是这条"按需升级"阶梯里最重的一级：动的不再是某个权重，而是"谁参与优化"。</p>
+    </div>
+  </div>
+
+  <div id="sec2" class="section-card">
+    <h2>2. 第三层「引擎适应」：停用判据与设计要点</h2>
+    <p>第三层要处理的问题是四类问题里的第三种——"模块持续低贡献"。关键区别在<strong>时间尺度</strong>：短时的变化用<strong>权重</strong>处理（例如某方向降为 60%、另一路升到 40% 这类连续调整，前两层的机制已经在做）；如果退化<strong>持续且严重</strong>（相机被遮挡、激光长期退化），只调权重就不够了——系统需要管理<strong>整个约束来源</strong>，让相应的模块（因子）从优化中退出。</p>
+    <p>论文给出的停用机制是一组"条件 + 动作"：</p>
+    <table class="data-table">
+      <thead><tr><th>要素</th><th>内容</th></tr></thead>
+      <tbody>
+        <tr><td><strong>条件 1</strong></td><td>贡献低于 10%（某模态对联合状态的贡献掉到 10% 以下）</td></tr>
+        <tr><td><strong>条件 2</strong></td><td>持续约 2–4 s（低贡献状态持续 2–4 秒以上）</td></tr>
+        <tr><td><strong>动作</strong></td><td>停用相应模块 / 因子</td></tr>
+        <tr><td><strong>恢复</strong></td><td>观测改善后重新参与</td></tr>
+        <tr><td><strong>设计要点</strong></td><td>时长阈值抑制瞬时切换</td></tr>
+      </tbody>
+    </table>
+    <div class="callout callout-key">
+      <h4>🔑 模块管理改变约束集合——它不一定意味着关闭物理传感器</h4>
+      <p>"停用"作用的层面是<strong>约束集合</strong>（因子图里哪些项还参与优化），不是硬件开关：传感器可以照常在运行、照常在采集，只是它的数据暂时不进入（或按降权参与）优化；观测条件改善后，模块重新参与。论文强调这套阈值与时间窗是<strong>经验选取、可调</strong>的，目标是让系统既 fail-safe（失效安全）、又 failure-aware（对失效有感知）。</p>
+    </div>
+    <div class="callout callout-intuition">
+      <h4>💡 为什么"退出"比"硬撑"更安全？</h4>
+      <p>一个持续低贡献的模块，通常意味着它这段时间的数据已经不可信；把不可信的观测继续留在优化里，错误约束会持续拖偏整个状态估计（论文的目标表述是"过滤故障数据、防止优化失败"）。把它暂时停掉，等于把约束集合收窄到"当前可信的部分"；等它恢复再回来。这也解释了<strong>时长阈值为什么必不可少</strong>：没有它，系统会在"停一下、开一下"之间反复抖动（瞬时切换）——短时变化交给权重，持续退化才升级到"退场"。</p>
+    </div>
+  </div>
+
+  <div id="sec3" class="section-card">
+    <h2>3. 传感器遮挡实验：Side / Front / Fully / Camera Blocked</h2>
+    <p>论文用一个很直观的实验验证这套模块管理（Sensor Block Experiments）：用纸板按顺序遮挡 LiDAR 的<strong>侧向</strong>、<strong>前后</strong>、<strong>全部</strong>视野，最后再遮挡<strong>相机</strong>——整个遮挡实验持续 600 秒。</p>
+    <table class="data-table">
+      <thead><tr><th>遮挡实验</th><th>LiDAR 置信度</th><th>视觉置信度</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Side Blocked</strong>（侧向遮挡）</td><td>Y 方向降至 60%</td><td>Y 方向升至 40%</td></tr>
+        <tr><td><strong>Front Blocked</strong>（前后遮挡）</td><td>X 方向降至 60%</td><td>X 方向升至 40%</td></tr>
+        <tr><td><strong>Fully Blocked</strong>（完全遮挡）</td><td>所有方向降至 10%</td><td>升至 90%</td></tr>
+        <tr><td><strong>Camera Blocked</strong>（遮挡相机）</td><td>所有方向回升至 90% 以上</td><td>——</td></tr>
+      </tbody>
+    </table>
+    <p>注意前两行里的处理细节：系统先<strong>预测退化的方向</strong>（侧挡 → Y 方向；前后挡 → X 方向），再在那个方向上降低 LiDAR 权重、让视觉补位——第二层的方向机制与第三层的引擎管理在同一段实验里接续上场。全挡时 LiDAR 全方向掉到 10%，按判据退出优化、由视觉（90%）主导；相机被挡后，LiDAR 置信度回到 90% 以上——正对应"观测改善后重新参与"。</p>
+    <p>结果：<strong>600 秒运行中最大 ATE 仅 0.184 m</strong>（论文口径）。这组实验想展示的是 fail-safe 与 failure-aware：临时遮挡被"降权 + 补偿"消化，持续遮挡被"退场 + 回归"管理——传感器被物理挡住，状态估计依然稳。</p>
+    <div class="callout callout-note">
+      <h4>📝 "不关传感器"再强调一次</h4>
+      <p>整个实验里传感器硬件并没有被关机（只是被物理遮挡），动的是它们在优化里的话语权——改变的只是约束集合。</p>
+    </div>
+  </div>
+
+  <div id="sec4" class="section-card">
+    <h2>4. 惯性学习为什么有用：给纯积分增加运动先验</h2>
+    <p>到这里，前三层都在"重新分配已有传感器的贡献"。接下来论文换了个思路：如果外感知彻底不可用——烟雾里相机和激光同时失效——还能靠什么？答案是 IMU：<strong>它不依赖光照或可见几何</strong>，烟雾、黑暗对它的测量没有直接影响；代价是<strong>偏置与姿态误差会随积分不断累积</strong>。</p>
+    <p>这笔账很好算。一段恒定的加速度偏置 $\delta b_{a}$ 会先积成速度误差（$\delta b_{a} \cdot t$），再积成位置漂移——误差随<strong>时间的平方</strong>增长：</p>
+    <div class="formula-box">
+      $$ \delta p(t) \approx \tfrac{1}{2}\, \delta b_{a}\, t^{2} $$
+    </div>
+    <p>代入算例：偏置 0.01 m/s²、积分 60 s，位置漂移约 <strong>18 m</strong>——这就是"纯积分"在几十秒尺度上就会失守的原因。</p>
+    <p>学习模型补充的正是这个先验——它做的是<strong>模式识别</strong>，而不是积分。帧 11 右栏给出的三件事：<strong>从历史 IMU 序列识别运动模式</strong>；<strong>用训练数据学到的规律预测速度</strong>；<strong>向退化阶段提供短时运动约束</strong>。写成接口就是：</p>
+    <div class="formula-box">
+      $$ \text{IMU 窗口} \;\longrightarrow\; f_{\theta} \;\longrightarrow\; \hat{v}, \; \Sigma_{v} $$
+    </div>
+    <p>网络 $f_{\theta}$ 输入一段 IMU 窗口，输出<strong>速度预测 $\hat{v}$ 和它的协方差 $\Sigma_{v}$</strong>。协方差这一项很关键：它不仅告诉我们"预测多快"，还告诉我们"这个预测多可信"——后面的融合与在线更新都会用到它。</p>
+    <div class="callout callout-key">
+      <h4>🔑 页脚结论与两个前提</h4>
+      <p>PPT 页脚：<strong>学习先验改善特定运动分布下的估计，仍受训练覆盖和适应质量限制</strong>。两个前提要记住：① 训练要"见过"这类运动——覆盖不够的分布不受益，这引出后续的在线适应；② 适应质量要好——在线更新学得对不对，这引出伪标签与 LoRA。</p>
+    </div>
+  </div>
+
+  <div id="sec5" class="section-card">
+    <h2>5. 速度与不确定性联合学习：MSE + NLL</h2>
+    <p>网络要学的不只是"速度是多少"，还要学"这个预测有多可信"。PPT 用两个损失把这两件事分开管。先定义速度误差，再看速度损失——它让预测接近监督：</p>
+    <div class="formula-box">
+      $$ e = v - \hat{v} $$
+    </div>
+    <div class="formula-box">
+      $$ L_{\mathrm{MSE}} = \frac{1}{N} \sum_{i} \| e_{i} \|^{2} $$
+    </div>
+    <p>MSE 就是对速度误差的平方和取平均，负责把 $\hat{v}$ 拉向监督 $v$。但光有它不够——网络还得学会"诚实的不确定性"，于是第二个损失登场：<strong>高斯负对数似然（NLL）</strong>，它同时约束误差与方差：</p>
+    <div class="formula-box">
+      $$ L_{\mathrm{NLL}} = \tfrac{1}{2}\, e^{\top} \Sigma_{v}^{-1} e + \tfrac{1}{2} \log |\Sigma_{v}| $$
+    </div>
+    <p>两项各司其职——它们的惩罚方向正好相反，因此能从两端"夹住"不确定性：</p>
+    <table class="data-table">
+      <thead><tr><th>项</th><th>表达式</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><strong>误差项</strong></td><td>$\tfrac{1}{2}\, e^{\top} \Sigma_{v}^{-1} e$</td><td>同样大小的误差，在较小方差下会受到更强惩罚——约束<strong>过度自信</strong>：在协方差小的地方，必须真的准</td></tr>
+        <tr><td><strong>方差项</strong></td><td>$\tfrac{1}{2} \log |\Sigma_{v}|$</td><td>阻止模型只靠不断放大方差来降低误差惩罚——约束<strong>过度保守</strong>：不能靠"什么都说不准"来逃避惩罚</td></tr>
+      </tbody>
+    </table>
+    <div class="callout callout-key">
+      <h4>🔑 页脚结论：协方差的用途与边界</h4>
+      <p><strong>预测协方差用于表达模型可信程度</strong>——它会被下游当作"这条速度预测有多可信"来使用，所以必须是诚实的；<strong>但分布外仍可能失准，需要校准</strong>（calibration）。换句话说：NLL 让协方差在训练分布内变得可用，并没有让它自动免疫分布偏移——这又是一条通向"在线适应"的线索。</p>
+    </div>
+  </div>
+
+  <div id="sec6" class="section-card">
+    <h2>6. 在线 LoRA 闭环：可靠位姿 → 伪标签 → 低秩增量</h2>
+    <p>惯性的另一半工作——"让可靠阶段的几何估计教会惯性模型"——从这里开始。PPT 给出闭环的三个环节：</p>
+    <div class="formula-box">
+      <p style="text-align:center;font-size:1.02rem;margin-bottom:4px"><strong>可靠融合位姿</strong> → <strong>时间与坐标对齐的伪标签</strong> → <strong>更新 A、B</strong></p>
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary)">在线"自监督"：标签来自估计器自身</p>
+    </div>
+    <p>系统可靠运行时，融合位姿是可信的；把它整理成"与 IMU 序列在<strong>时间</strong>和<strong>坐标系</strong>上都对齐"的伪标签，这份标签就一路监督到网络更新里。之所以叫"自监督"：标签不是人工标注的，而是估计器自己产出的。于是就有那句关键结论——<strong>退化前获得的适应，在退化阶段发挥作用</strong>：趁还能看见的时候学到位，等看不见时靠它。</p>
+    <p>但"更新网络"有一个工程难题：预训练模型很大，直接微调又慢、又容易把预训练知识改坏。论文用 <strong>LoRA（Low-Rank Adaptation，低秩适配）</strong>：冻结预训练权重 $W_{0}$，只训练一个低秩增量 $BA$：</p>
+    <div class="formula-box">
+      $$ W = W_{0} + BA, \qquad r \ll \min(d, k) $$
+    </div>
+    <p>结构上，输入特征分两路：上方 $W_{0}$ 冻结不动，下方 $A$、$B$ 可训练；两路输出相加（论文写法：$h = W_{0}x + BAx$）。参数量因此大幅下降：$W_{0}$ 原本有 $dk$ 个参数，低秩分解后只需训练 $A \in \mathbb{R}^{r \times k}$ 与 $B \in \mathbb{R}^{d \times r}$，合计 $r(d+k)$ 个；由于 $r \ll \min(d,k)$，当 $d = k = 512$、$r = 8$ 时，参数量从 262,144 降到 8,192——只剩约 3%。</p>
+    <div class="callout callout-note">
+      <h4>📝 冻结的另一个好处（论文细节）</h4>
+      <p>冻结 $W_{0}$ 意味着新知识只写进低秩增量里，预训练模型的泛化能力被原样保护——论文的说法是避免<strong>灾难性遗忘</strong>（catastrophic forgetting）。论文还给了一个初始化细节：$A$ 从随机高斯分布初始化、$B$ 从零开始，因此更新起点处 $BA = 0$，不会一上来就扰动预训练行为。</p>
+    </div>
+    <div class="callout callout-key">
+      <h4>🔑 监督质量决定更新是否有益</h4>
+      <p>PPT 页脚：<strong>在线"自监督"的标签来自估计器；监督质量决定更新是否有益</strong>。伪标签来自估计器——估计可靠时，更新让模型更贴近当前平台；监督本身不可信时，等于把错误教给网络。这就是闭环把"可靠融合位姿"放在最前面的原因：<strong>更新要发生在可靠的阶段，收益才会在退化的阶段兑现</strong>。</p>
+    </div>
+  </div>
+
+  <div id="sec7" class="section-card">
+    <h2>7. 实验（一）：离线惯性学习，四平台 ATE / T-RTE</h2>
+    <p>三个实验从三个角度验证惯性学习。第一个先回答最基础的问题：<strong>这个惯性模型自身的预测能力如何？</strong>分享中特别说明：本实验比较的是<strong>惯性学习模型本身</strong>，并不是完整的多传感器系统；为了保证公平，四个对比模型（AI-IMU、RNIN-VIO、TLIO、IMO）与本文模型全部使用<strong>相同的大规模数据</strong>重新训练。</p>
+    <p>两个指标，均为<strong>越低越好</strong>：</p>
+    <ul>
+      <li><strong>ATE</strong>：相对于参考轨迹的整体偏差；</li>
+      <li><strong>T-RTE</strong>（Time-Relative Trajectory Error）：相对平移误差，更关注<strong>局部时间段内</strong>运动预测的一致性。</li>
+    </ul>
+    <h3>7.1 ATE（↓）</h3>
+    <table class="data-table">
+      <thead><tr><th>模型</th><th>Wheeled (car)</th><th>Legged (quadruped)</th><th>Handheld (human)</th><th>Aerial (drone)</th></tr></thead>
+      <tbody>
+        <tr><td>AI-IMU</td><td>7.68</td><td>3.23</td><td>8.26</td><td>4.14</td></tr>
+        <tr><td>RNIN-VIO</td><td>7.82</td><td>3.10</td><td>7.62</td><td>4.32</td></tr>
+        <tr><td>TLIO</td><td>8.12</td><td>3.61</td><td>6.96</td><td>3.93</td></tr>
+        <tr><td>IMO</td><td>8.12</td><td>3.35</td><td>10.19</td><td>3.72</td></tr>
+        <tr><td><strong>IMU-pretrain（本文）</strong></td><td><strong>6.17</strong></td><td><strong>1.46</strong></td><td><strong>4.32</strong></td><td><strong>3.32</strong></td></tr>
+        <tr><td>Improvement</td><td>↑19.63%</td><td>↑54.83%</td><td>↑47.69%</td><td>↑19.81%</td></tr>
+      </tbody>
+    </table>
+    <h3>7.2 T-RTE（↓）</h3>
+    <table class="data-table">
+      <thead><tr><th>模型</th><th>Wheeled (car)</th><th>Legged (quadruped)</th><th>Handheld (human)</th><th>Aerial (drone)</th></tr></thead>
+      <tbody>
+        <tr><td>AI-IMU</td><td>3.33</td><td>1.60</td><td>4.89</td><td>1.45</td></tr>
+        <tr><td>RNIN-VIO</td><td>5.06</td><td>1.58</td><td>5.61</td><td>1.51</td></tr>
+        <tr><td>TLIO</td><td>3.73</td><td>1.73</td><td>4.82</td><td>1.40</td></tr>
+        <tr><td>IMO</td><td>3.73</td><td>1.64</td><td>5.67</td><td>1.34</td></tr>
+        <tr><td><strong>IMU-pretrain（本文）</strong></td><td><strong>2.52</strong></td><td><strong>0.79</strong></td><td><strong>1.95</strong></td><td><strong>1.04</strong></td></tr>
+        <tr><td>Improvement</td><td>↑24.36%</td><td>↑50.63%</td><td>↑60.05%</td><td>↑28.97%</td></tr>
+      </tbody>
+    </table>
+    <p>直接读表：<strong>本文 IMU-pretrain 在四类平台上 ATE 与 T-RTE 全面最低</strong>。两个数字感受一下：Legged（四足）列，本文 ATE 1.46、T-RTE 0.79，而对比方法里 ATE 最低的 RNIN-VIO 也有 3.10；Handheld（手持）列，T-RTE 从 TLIO 的 4.82 降到本文的 1.95。论文口径：四平台平均改善 ATE 35.5%、T-RTE 41.0%。</p>
+    <div class="callout callout-note">
+      <h4>📝 页脚结论</h4>
+      <p><strong>多平台离线训练改善了四类平台的惯性预测，为在线适应提供更好的初始模型</strong>——先把"底子"练好（离线），才有后面"快速适应"（在线）的起点。表中 Improvement 行为论文给出的相对改善比例（↑ 表示误差相对下降）。</p>
+    </div>
+  </div>
+
+  <div id="sec8" class="section-card">
+    <h2>8. 实验（二）：综合场景，2966 m 连续任务</h2>
+    <p>第二个实验回答："<strong>一段连续运行能否跨越多种退化？</strong>"实验设置（帧 17）：</p>
+    <ul>
+      <li>四足机器人；</li>
+      <li>总里程 <strong>2966 m</strong>，约 <strong>46 min</strong>；</li>
+      <li>主要使用<strong>激光-惯性配置</strong>；</li>
+      <li>同一次任务经过黑暗、走廊、楼梯、烟雾及室内外转换（论文：超过 13 类复杂退化场景）。</li>
+    </ul>
+    <table class="data-table">
+      <thead><tr><th>场景（PPT 小图标注）</th><th>退化类型</th></tr></thead>
+      <tbody>
+        <tr><td>Darkness Scene</td><td>视觉退化（Visual Degradation）</td></tr>
+        <tr><td>Multi-Floor &amp; Long Corridor</td><td>几何退化（Geometric Degradation）</td></tr>
+        <tr><td>Stairs Scene</td><td>几何退化（Geometric Degradation）</td></tr>
+        <tr><td>Dark Open Court</td><td>混合退化（Mixed Degradation）</td></tr>
+        <tr><td>Dark Stairs Scenes</td><td>混合退化（Mixed Degradation）</td></tr>
+        <tr><td>Smoke Scenes</td><td>完全退化（Complete Degradation）</td></tr>
+      </tbody>
+    </table>
+    <p>轨迹地图的图例还覆盖了一串环境要素：烟雾、黑暗、低照度、楼梯、开阔平地、室内外转换、长走廊、多层、玻璃走廊——一条轨迹串起多种退化。</p>
+    <p>结果：<strong>终点漂移 0.2 m</strong>（约 20 cm），而且<strong>未使用回环闭合修正</strong>（论文：未使用任何后端优化手段，如 loop closure）。一次连续 2966 m 的任务里，黑暗、走廊、楼梯、烟雾、室内外转换接连出现，系统无失败完成，最终终点误差仅 0.2 m。</p>
+    <div class="callout callout-intuition">
+      <h4>💡 为什么"没有回环闭合"这个条件重要</h4>
+      <p>回环闭合是"回到走过的地方、用重访关系反过来修正轨迹"的后端手段。这次实验有意不用它（论文明确排除了所有后端优化），意味着 0.2 m 的终点精度完全来自<strong>实时里程计本身</strong>——验证的是"连续完成任务的能力"，而不是"事后能修得多好"。</p>
+    </div>
+    <div class="callout callout-note">
+      <h4>📝 页脚结论（诚实边界）</h4>
+      <p><strong>结果支持综合运行能力；各层机制的独立增益仍需要针对性实验</strong>——这也是作者对实验设计边界的主动说明。</p>
+    </div>
+  </div>
+
+  <div id="sec9" class="section-card">
+    <h2>9. 实验（三）：数据多样性与在线适应</h2>
+    <p>第三个实验把"分布差异"拆成两类：帧 19 副标题写着——<strong>左：预训练覆盖更广；右：部署后适应未见过的平台</strong>（ATE 单位为 m）。</p>
+    <h3>9.1 左：混合数据预训练（单平台 vs 全平台）</h3>
+    <p>同一套网络、同一份测试数据，只改变训练数据来自"单一平台"还是"全部平台"：</p>
+    <table class="data-table">
+      <thead><tr><th>平台</th><th>单平台训练 ATE</th><th>全平台（混合数据）训练 ATE</th></tr></thead>
+      <tbody>
+        <tr><td>Car</td><td>7.51</td><td>6.17</td></tr>
+        <tr><td>Quadruped</td><td>3.64</td><td><strong>1.46</strong></td></tr>
+        <tr><td>Human</td><td>6.64</td><td>4.32</td></tr>
+        <tr><td>Drone</td><td>3.84</td><td>3.32</td></tr>
+      </tbody>
+    </table>
+    <p>帧注记：<strong>原图的提升百分比口径不统一，重点比较绝对值</strong>。看点：四足从 3.64 降到 1.46（降到不足一半）——训练时"见过别的平台"，部署时就站得更稳。</p>
+    <h3>9.2 右：SubT 小车适应 TartanDrive</h3>
+    <p>两个模型的对照：<strong>均在 SubT 数据集上训练、采用相同训练过程</strong>，部署到 TartanDrive 上后，<strong>仅使用 60 s 的 IMU 数据</strong>进行在线适应：</p>
+    <table class="data-table">
+      <thead><tr><th>适应时间</th><th>0 s</th><th>30 s</th><th>60 s</th></tr></thead>
+      <tbody>
+        <tr><td>RNIN-VIO ATE</td><td>34.14</td><td>15.56</td><td>4.94</td></tr>
+        <tr><td><strong>本文 ATE</strong></td><td>32.87</td><td><strong>8.27</strong></td><td><strong>1.73</strong></td></tr>
+      </tbody>
+    </table>
+    <p>为什么这组对比能说明问题：源平台是小车（SubT，最高速度约 5 m/s），目标平台是全地形车（TartanDrive，最高速度约 15 m/s）——运动分布差异很大。两者 0 s 出发时水平相近（34.14 / 32.87），但本文模型的<strong>适应速度明显更快</strong>：30 s 时 8.27（对 15.56），60 s 时 1.73（对 4.94）。</p>
+    <div class="callout callout-note">
+      <h4>📝 页脚结论</h4>
+      <p><strong>混合数据扩大先验覆盖，在线更新进一步贴近当前平台的运动分布</strong>——正好对应两类分布差异：训练时"覆盖要广"（左侧），部署后"适应要快"（右侧）。</p>
+    </div>
+  </div>
+
+  <div id="sec10" class="section-card">
+    <h2>10. 讨论与问答：现场澄清与留白</h2>
+    <p>报告之后的问答集中在这几件事上，以下如实整理。</p>
+    <div class="callout callout-note">
+      <h4>📝 问答 ① 追问"四足实验的任务设定"</h4>
+      <p>现场先就实验（二）的任务设定做了追问与澄清：四足机器人是否预先知道地图、知道应沿哪条参考轨迹走？随后把两个实验区分开——<strong>"离线惯性学习"（实验一）用的是多平台离线数据集，在数据上训练/评估惯性模型（相当于"在四个平台上做惯性模型的学习"）；它与四足综合实验（实验二）不是同一件事</strong>。用训练完成的惯性模块，再参与到那类综合实验中。两个实验的角色不同，读数字时不要混在一起。</p>
+    </div>
+    <div class="callout callout-note">
+      <h4>📝 问答 ② IMU 模型的实现细节：ResNet + LSTM、公开数据集、"异构"</h4>
+      <p>现场对 ResNet + LSTM 那一页追问后确认：模型是<strong>时间序列</strong>模型——用 ResNet 从 IMU 数据中提取运动特征、用 LSTM 建模时序依赖，多头输出速度及其协方差（论文细节：一维 ResNet 骨干 + LSTM 层 + 多头输出）。训练用的是<strong>公开数据集</strong>（论文口径：超过 100 小时的真实 IMU 数据，来自 SubT-MRS、TartanDrive、IDOL、Blackbird、UZH 等公开来源，覆盖车、四足、手持、无人机等平台）。现场还确认："异构"（heterogeneous）是因为<strong>四个平台的数据来源不同</strong>——数据由不同机器人平台采集产生，而不是单一平台的数据。</p>
+    </div>
+    <div class="callout callout-note">
+      <h4>📝 问答 ③ 一个未展开的问题："这种自适应与传统方法的区别？"</h4>
+      <p>分享的尾声，老师提出了一个更大的问题：论文里讲的这些"自适应"，与<strong>传统估计中各种自适应做法</strong>相比，区别在哪里？——视频到此处结束，<strong>问题没有展开</strong>。本节如实保留这个空白：它其实是把整场报告放回"经典估计 vs 学习"的坐标系里的一次追问，留给读者继续思考。</p>
+    </div>
+  </div>
+
+  <div id="sec11" class="section-card">
+    <h2>11. 小结</h2>
+    <p>本讲把 Super Odometry 2.0 的下半场走了一遍：</p>
+    <ol>
+      <li><strong>第三层「引擎适应」</strong>：短时变化用权重处理，持续严重退化才管理"整个约束来源"——判据是"贡献低于 10% 且持续约 2–4 秒"，动作是停用相应模块/因子、改善后重新参与；时长阈值抑制瞬时切换。模块管理改变的是约束集合，不一定关闭物理传感器；传感器遮挡实验（Side / Front / Fully / Camera Blocked，600 s 最大 ATE 0.184 m）展示了 fail-safe 与 failure-aware。</li>
+      <li><strong>惯性学习的动机</strong>：IMU 不依赖光照或可见几何，但偏置随积分累积——$\delta p(t) \approx \tfrac{1}{2}\,\delta b_{a}t^{2}$，0.01 m/s² 偏置 60 s 就有约 18 m 的漂移。学习模型 $f_{\theta}$ 从历史 IMU 序列识别运动模式，预测速度 $\hat{v}$ 与协方差 $\Sigma_{v}$，为退化阶段提供短时运动先验。</li>
+      <li><strong>训练目标</strong>：MSE 让预测接近监督；NLL 的误差项约束过度自信、方差项约束过度保守——联合学出"诚实"的速度与不确定性。</li>
+      <li><strong>在线 LoRA 闭环</strong>：可靠融合位姿 → 时间与坐标对齐的伪标签 → 更新低秩增量（$W = W_{0} + BA$，参数量 $dk \to r(d+k)$，冻结 $W_{0}$）；退化前获得的适应在退化阶段发挥作用；监督质量决定更新是否有益。</li>
+      <li><strong>三个实验</strong>：离线惯性学习（四平台 ATE / T-RTE 全面最低，平均改善 35.5% / 41.0%）；综合场景（2966 m、约 46 min、13+ 类退化、无回环闭合、终点漂移 0.2 m）；数据多样性与在线适应（单平台 → 全平台，四足 3.64 → 1.46；SubT → TartanDrive 60 s：32.87 → 1.73 对 34.14 → 4.94）。</li>
+      <li><strong>现场问答</strong>：实验任务澄清（离线惯性学习 ≠ 四足综合实验）、模型细节（ResNet + LSTM 时序模型、公开数据集、异构 = 四平台来源不同），以及一个未展开的问题（"这种自适应与传统方法的区别"）。</li>
+    </ol>
+    <div class="callout callout-mission">
+      <h4>🚀 一句话带走</h4>
+      <p>第三层回答"<strong>谁还值得参与优化</strong>"——管理约束集合而不是硬撑不可信的观测；惯性学习回答"<strong>没人可看时靠什么走</strong>"——用可靠阶段的监督把 IMU 训练成独立运动先验，并趁退化到来之前完成在线适应。两者合起来，才是这篇工作所说的"分层自适应"的完整含义。</p>
+    </div>
+  </div>
+
+  <div id="quiz" class="section-card exercise-box">
+    <h2>📝 练习与自测</h2>
+
+    <div class="exercise">
+      <h4>练习1（数值）：偏置积分的漂移</h4>
+      <p>用 $\delta p(t) \approx \tfrac{1}{2}\,\delta b_{a}\,t^{2}$ 计算：(a) 加速度偏置 0.01 m/s²、积分 60 s 的位置漂移；(b) 若偏置增大到 0.02 m/s²、时间不变，漂移是多少；(c) 保持 0.01 m/s²，时间延长到 120 s，漂移是多少？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>(a) $\tfrac{1}{2} \times 0.01 \times 60^{2} = 18$ m。(b) 与偏置成正比：36 m。(c) 与时间平方成正比：$18 \times 4 = 72$ m。这就是"纯积分"的可怕之处——误差对时间是二次的，偏置稍微大一点、时间稍微长一点，漂移就迅速上升。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习2（读表）：实验一的 Legged 列</h4>
+      <p>从实验一表格（ATE 表与 T-RTE 表）完成：(a) 本文（IMU-pretrain）在 Legged (quadruped) 列的 ATE 与 T-RTE 各是多少？(b) 四个对比方法中，Legged ATE 最低的是哪个、数值多少？(c) 本文 Legged ATE 相对该对比方法低约几倍？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>(a) ATE 1.46、T-RTE 0.79。(b) RNIN-VIO，3.10（其余对比：AI-IMU 3.23、IMO 3.35、TLIO 3.61）。(c) $3.10 / 1.46 \approx 2.12$ 倍。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习3（概念）：停用判据的两个条件</h4>
+      <p>第三层的停用判据要求"贡献低于 10%"且"持续约 2–4 s"两个条件同时满足。请回答：(a) "持续约 2–4 s"这个时长阈值，主要是为了抑制什么？(b) 为什么说"停用某个模块"不一定意味着关闭物理传感器？(c) 观测改善之后模块会怎样？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>(a) 抑制"瞬时切换"——没有时长要求的话，系统会在"停一下、开一下"之间反复抖动；有了它，短时变化交给权重处理，只有持续退化才触发"退场"这类重操作。(b) 停用改变的是<strong>约束集合</strong>（因子图里哪些项参与优化），不是硬件开关；传感器可以仍在运行、仍在采集，只是数据暂时不进入（或按降权参与）优化；论文强调阈值与时间窗为经验选取、可调，目标是 fail-safe 与 failure-aware。(c) 观测改善后模块<strong>重新参与</strong>优化——对应传感器遮挡实验里"相机被挡后 LiDAR 置信度回升至 90% 以上"。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习4（概念）：NLL 的两个损失项</h4>
+      <p>解释 NLL 损失中"误差项"与"方差项"的作用，并说明：如果去掉方差项，模型可能出现什么问题？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>误差项 $\tfrac{1}{2}\,e^{\top}\Sigma_{v}^{-1}e$：同样大小的误差，在小方差下受更强惩罚——它约束<strong>过度自信</strong>（在协方差小的地方必须真的准）。方差项 $\tfrac{1}{2}\log|\Sigma_{v}|$：惩罚大方差，阻止模型靠"不断放大方差"来降低误差惩罚——它约束<strong>过度保守</strong>。若去掉方差项：模型有动机把方差越报越大（$\Sigma_{v}^{-1}$ 变小，误差项随之变小），得到"名义误差小"但毫无信息量的不确定性，协方差就不再可信。NLL 用两项联立，才让预测协方差真正表达模型可信程度（分布外仍可能失准，需要校准）。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习5（数值）：在线适应表</h4>
+      <p>根据"SubT 小车适应 TartanDrive"表格（0 / 30 / 60 s：RNIN-VIO 34.14 / 15.56 / 4.94；本文 32.87 / 8.27 / 1.73）：(a) 本文 ATE 从 0 s 到 60 s 的下降幅度（百分比）；(b) 60 s 时本文 ATE 是 RNIN-VIO 的几分之一（即差距几倍）；(c) 用同样口径算 RNIN-VIO 的下降幅度。</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>(a) $(32.87 - 1.73) / 32.87 = 31.14 / 32.87 \approx 94.7\%$。(b) $4.94 / 1.73 \approx 2.86$——RNIN-VIO 的误差约为本文的 2.86 倍。(c) $(34.14 - 4.94) / 34.14 = 29.20 / 34.14 \approx 85.5\%$。附注：两者差距在 30 s 时已经拉开（8.27 对 15.56），说明"适应速度"本身就是被考核的指标。</p>
+      </details>
+    </div>
+  </div>
+
+  <div class="nav-links">
+    <a href="0043-北理工分享-鲁棒里程计-1.html" class="prev">← 鲁棒机器人里程计(1/2)：问题建模与分层自适应框架</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+  </div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 32 · 北理工分享 · 仲崇毅（2026-09-26）</p>
+    <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px">内容来源：视频转写 + PPT 版面文字 OCR + 论文原文</p>
+  </div>
+</div>
+<script src="assets/shiclass.js"></script>
+<script src="../shared/lesson-tools.js"></script>
+</body>
+</html>

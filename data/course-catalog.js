@@ -220,6 +220,16 @@ window.SHICLASS_DATA = {
       description: "第 0039-0042 课。吴一昊分享单目 VIO 快速初始化（T-RO 2026 一维代价近似），徐臻分享隐私保护分布式状态估计（改进 Paillier 密码系统）。",
       quickOpen: "lessons/0039-北理工分享-VIO初始化-1.html",
       meta: ["4 节课", "~140 分钟", "VIO 初始化 / 隐私保护 / 状态估计"]
+    },
+    {
+      id: "shares-32",
+      groupId: "seminars",
+      kind: "分享",
+      title: "北理工分享（系列 32）——鲁棒机器人里程计",
+      subtitle: "系列 32",
+      description: "第 0043-0044 课。仲崇毅分享 Super Odometry 2.0（CMU）：面向严重退化的分层自适应里程计——四类退化问题、自适应特征/方向/引擎选择、学习式惯性里程计与 2966m 四足综合实验。",
+      quickOpen: "lessons/0043-北理工分享-鲁棒里程计-1.html",
+      meta: ["2 节课", "~70 分钟", "退化鲁棒性 / 分层自适应 / 惯性学习"]
     }
   ],
     lessons: [
@@ -627,6 +637,24 @@ window.SHICLASS_DATA = {
       subtitle: "CI 隐私融合 · 抗窃听定理 · Lyapunov 误差界 · 稳定性假设与实验",
       duration: "30 min",
       tags: ["隐私保护", "CI融合", "误差界", "组内分享"]
+    },
+    {
+      id: "0043",
+      collectionId: "shares-32",
+      path: "lessons/0043-北理工分享-鲁棒里程计-1.html",
+      title: "鲁棒机器人里程计(1/2)：问题建模与分层自适应框架",
+      subtitle: "四类退化问题 · 估计主线与学习反馈双路径 · 视觉特征适应 · 方向适应",
+      duration: "40 min",
+      tags: ["鲁棒里程计", "退化环境", "分层自适应", "北理工分享"]
+    },
+    {
+      id: "0044",
+      collectionId: "shares-32",
+      path: "lessons/0044-北理工分享-鲁棒里程计-2.html",
+      title: "鲁棒机器人里程计(2/2)：模块管理、惯性学习与实验验证",
+      subtitle: "引擎适应停用判据 · 在线 LoRA 闭环 · 四平台离线学习 · 2966m 综合实验",
+      duration: "40 min",
+      tags: ["惯性学习", "LoRA", "鲁棒性评估", "北理工分享"]
     },
   ]
 };

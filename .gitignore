@@ -31,6 +31,9 @@ pdf-md-verified/
 
 # But board images used by lessons ARE tracked (copied to lessons/assets/board/)
 !lessons/assets/board/
+
+# Paper source archives (materials, not site content)
+papers/
 *.jpg
 *.png
 *.jpeg
