@@ -44,7 +44,7 @@ AUDIO_SAMPLE_RATE = 16000
 AUDIO_CHANNELS = 1
 
 # Qwen3-ASR-0.6B 最长支持 ~20 分钟音频
-MAX_AUDIO_MINUTES = 20
+MAX_AUDIO_MINUTES = 10
 
 # ── 全局模型（避免重复加载） ──────────────────────
 _model_instance = None
@@ -84,7 +84,7 @@ def get_model():
         model_path,
         dtype=dtype,
         device_map=device,
-        max_new_tokens=512,
+        max_new_tokens=4096,
     )
 
     t1 = time.time()

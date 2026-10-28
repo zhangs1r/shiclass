@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>随机事件触发估计(1/2)：非高斯后验与精确协方差 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="assets/shiclass.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+</head>
+<body>
+<div class="page">
+
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · 系列33 · 组内分享</div>
+    <h1>随机事件触发估计(1/2)：非高斯后验与精确协方差</h1>
+    <p class="subtitle">当"该不该发"由随机规则决定、而信道还会丢包，后验就不再是高斯的——这篇工作沿着 2 的 τ 次方条路径把贝叶斯公式展开，把误差协方差写成闭式</p>
+    <div class="hero-meta">
+      <span>📅 2026-10-17</span>
+      <span>🎙️ 曾畅（组内分享）</span>
+      <span>📚 论文：Stochastic Event-Triggered Estimation With Smart Sensors Over Packet-Dropping Links · IEEE TCNS 2025</span>
+    </div>
+  </div>
+
+  <div class="lead-grid">
+    <div class="callout">
+      <h4>🎯 学完本节，你应能</h4>
+      <ul>
+        <li>说清这篇工作要回答的问题：在"随机事件触发 + 丢包"下，远程估计过程到底是什么分布、误差协方差怎么演化</li>
+        <li>画出系统链条上的两个开关——$s_{k}$（发不发，我们设计）与 $\gamma_{k}$（到不到，信道决定），并说明为什么 ACK 让两端共享同一个信息状态</li>
+        <li>写出增量新息 $\eta_{k}$、保持时间 $\tau_{k}$、增广新息 $\varepsilon_{k,\tau_{k}}$ 与调度矩阵 $\Lambda_{k,\tau_{k}}$，并解释触发概率 $1-\exp(-\tfrac{1}{2}\varepsilon^{T}\Lambda\varepsilon)$ 的直觉</li>
+        <li>说明非高斯是怎么"生"出来的：一步未收到 = 没触发（乘 $\lambda$）或 丢了（乘 $1-\lambda$），$\tau$ 步就长出 $2^{\tau}$ 条路径</li>
+        <li>写出混合高斯的定义（含权重 $\chi$ 与协方差 (10b)）与定理 3.2 的三段递推：指示项、历史传播 $\Gamma$、协方差 $\Xi$</li>
+        <li>复述证明骨架：$\tau=1$ 的两分量、$\tau=2$ 的四分量、归纳时每个分量一分为二</li>
+      </ul>
+    </div>
+    <div class="callout">
+      <h4>🔑 核心思想</h4>
+      <p>事件触发让传感器"少说话"，但代价是<strong>远程端拿到的不再是完整历史，而是一个被筛选过的子集</strong>；再叠加丢包，"这一步没收到"就有了两种完全不同的原因。这两件事一起把高斯特性的根基抽掉了。本文的做法不是去近似它，而是<strong>把贝叶斯公式沿路径一条一条展开</strong>：每条路径对应一个高斯分量，权重由丢包率 $\lambda$ 逐层相乘，于是非高斯性被精确地写成<strong>高斯混合</strong>。一旦分布是精确的，误差协方差就能写成闭式递推——调度参数的选择也就从"凭经验试"变成了"按模型算"。</p>
+    </div>
+  </div>
+
+  <div class="toc">
+    <h3>📖 目录</h3>
+    <ul>
+      <li><a href="#sec1">1. 分享背景：论文身份与两讲地图</a></li>
+      <li><a href="#sec2">2. 问题从哪里来：事件触发 + 丢包 = 非高斯</a></li>
+      <li><a href="#sec3">3. 系统模型：一条链上的两个开关</a></li>
+      <li><a href="#sec4">4. 两个关键量：增量新息与保持时间</a></li>
+      <li><a href="#sec5">5. 非高斯是怎么长出来的：一棵二叉树</a></li>
+      <li><a href="#sec6">6. 工具：带权重的高斯混合</a></li>
+      <li><a href="#sec7">7. 主定理：精确的误差协方差递推</a></li>
+      <li><a href="#sec8">8. 证明骨架：从两分量到 $2^{\tau}$ 分量</a></li>
+      <li><a href="#sec9">9. 特例与速率：把经典结果收进来</a></li>
+      <li><a href="#sec10">10. 小结与下节预告</a></li>
+      <li><a href="#quiz">📝 练习与自测</a></li>
+    </ul>
+  </div>
+
+  <div id="sec1" class="section-card">
+    <h2>1. 分享背景：论文身份与两讲地图</h2>
+    <p>本节来自 2026-10-17 的研讨会系列 33（组内分享），由<span class="hl">曾畅</span>讲解一篇发表在 IEEE 控制网络系统汇刊上的工作：</p>
+    <div class="formula-box">
+      <p style="font-style:italic;text-align:center;margin-bottom:6px">Stochastic Event-Triggered Estimation With Smart Sensors Over Packet-Dropping Links</p>
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary)">Yahan Deng · Nachuan Yang · Yuzhe Li</p>
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary)">IEEE Transactions on Control of Network Systems, Vol. 12, No. 2, pp. 1756–1768, June 2025 · DOI: 10.1109/TCNS.2025.3534281</p>
+    </div>
+    <p>报告开场的定位很清楚：这是一个<span class="hl">"把两件麻烦事放在一起"</span>的问题。事件触发（event-triggered scheme, ETS）本来是为了省通信——不必每步都发；智能传感器（smart sensor）本身带算力，可以先跑一个本地卡尔曼滤波，把<span class="hl">本地估计</span>而不是原始量测发出去；但无线信道会丢包，而调度器只有知道"对方到底收到没有"，才能做出正确的发送决策。三者叠加之后，一个看似常规的滤波问题，变成了"后验分布到底是什么形状"的问题。</p>
+
+    <h3>1.1 两讲的分工</h3>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>本讲（1/2）：问题、模型与精确协方差</h4>
+        <p>为什么非高斯、两个开关与两个关键量、随机触发规则、混合高斯工具、定理 3.2 及其证明骨架，以及把经典结果收进来的几个特例。</p>
+      </div>
+      <div class="mini-card">
+        <h4>下一讲（2/2）：三种工程约束与仿真</h4>
+        <p>存储有限（滑动窗口 $\ell$）、丢包率高（混合调度 HSS + 超时）、没有 ACK（火山口分布 CGC），以及人工堰系统的数值验证。</p>
+      </div>
+    </div>
+
+    <div class="callout callout-note">
+      <h4>📝 转写勘误与术语对照</h4>
+      <p>本课术语以 PPT 版面文字与论文原文为准。视频转写中的典型误写集中列在这里，正文不再重复：论文期刊名被听成 <em>I C P E Transactions on Control Network</em>（应为 IEEE Transactions on Control of Network Systems）；<em>MLS 估计</em>（应为 mmse 估计）；<em>拉普诺夫</em>（应为 Lyapunov）；<em>高斯缓型分布</em>（应为高斯火山口型分布，CGC）；<em>脏广信息</em>（应为增广信息）；<em>长杆器</em>（应为传感器）；<em>西格玛 / 伽马</em>（应为 $\sigma$ / $\lambda$）；<em>派 k</em>（应为 $\Pi_{k}$）；<em>收异地</em>（应为收益递减）。</p>
+    </div>
+  </div>
+
+  <div id="sec2" class="section-card">
+    <h2>2. 问题从哪里来：事件触发 + 丢包 = 非高斯</h2>
+    <p>信息物理系统（CPS）把感知、通信、计算与控制揉在一起，代价是<span class="hl">沉重的通信负担与计算复杂度</span>。周期采样最省事，但会大量发送"其实没必要发"的数据；事件触发则按需发送，在网络服务质量与系统性能之间找平衡——这是过去十年里最主流的一条省通信思路。</p>
+    <p>问题在于，一旦引入事件触发，<strong>估计器拿到的信息集合就不再是完整的历史序列，而是被事件筛选过的一个子集</strong>。而卡尔曼滤波的最优性（以及"后验仍是高斯"这一整套性质）恰恰建立在信息集合完整的前提上。前提被抽掉，后验分布就退化成非高斯。如果信道还有丢包，这个分布会更加复杂：因为"这一步没收到"本身也携带信息——它可能意味着传感器没发，也可能意味着发了但丢了，两者的含义完全不同。</p>
+
+    <h3>2.1 前人走过的两条路，以及它们的边界</h3>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>① 高斯假设 → 只能得到近似结果</h4>
+        <p>在确定性事件触发下，已有工作给出过高斯近似假设下的误差协方差表达式。近似的好处是可用，坏处是<strong>不知道误差有多大</strong>——用它去选调度参数，等于在错误的模型上做优化。</p>
+      </div>
+      <div class="mini-card">
+        <h4>② 数值积分 → 计算复杂度失控</h4>
+        <p>不做近似就得对非高斯密度做积分。维度随保持时间增长，积分代价迅速爆炸——理论上正确，工程上不可行。</p>
+      </div>
+    </div>
+    <p>随机事件触发（stochastic ETS）提供过一条绕路：不去处理非高斯，而是<strong>设计随机的触发规则，让估计过程本身保持高斯性</strong>。但这条路在丢包面前断了——已有工作证明：<span class="hl">当信道存在丢包时，没有任何一种事件触发器能够保持高斯性质</span>。随后又有工作证明，丢包下的分布是<strong>高斯混合分布</strong>，且混合分量随时间指数增长。</p>
+    <div class="callout callout-note">
+      <h4>📝 论文的定位（引言原意）</h4>
+      <p>已有工作研究的多是"传感器发送原始量测 $y_{k}$"、并强调远程端增益矩阵的递推形式；本文研究的则是<strong>智能传感器发送本地估计 $\hat{x}^{s}_{k}$</strong>，并通过设计调度参数来保证期望的估计性能。本文做的事，是把"智能传感器"与"丢包信道"这两件事合在一起，给出<span class="hl">精确</span>的结果：精确的后验概率密度 + 闭式的误差协方差递推。</p>
+    </div>
+    <p>报告的贡献可以串成一条链：<strong>一个新的调度策略 → 一个精确的闭式结果 → 特例回收与三种工程扩展</strong>。本讲覆盖前两环。</p>
+  </div>
+
+  <div id="sec3" class="section-card">
+    <h2>3. 系统模型：一条链上的两个开关</h2>
+    <p>系统是离散时间线性时不变系统，过程噪声与量测噪声都是零均值、相互独立的高斯噪声：</p>
+    <div class="formula-box">
+      $$ x_{k+1} = A x_{k} + w_{k} $$
+      $$ y_{k} = C x_{k} + v_{k} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">其中 $w_{k}$ 与 $v_{k}$ 为零均值 i.i.d. 高斯噪声，协方差分别为 $Q \geq 0$ 与 $R > 0$；$(A, C)$ 可检测。对应论文式 (1a)(1b)。</p>
+    </div>
+    <p>传感器内嵌一个标准卡尔曼滤波，产出本地估计与相应的误差协方差（论文式 (2)）。为书写方便，定义两个算子 $h$ 与 $g$：</p>
+    <div class="formula-box">
+      $$ h(X) \triangleq A X A^{T} + Q $$
+      $$ g(X) \triangleq X - X C^{T}\left(C X C^{T} + R\right)^{-1} C X $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">$h$ 是"预测"（时间更新），$g$ 是"量测更新里去掉新息的那一半"。对应论文式 (3)。</p>
+    </div>
+    <p>关键的建模选择是<span class="hl">稳态假设</span>：卡尔曼滤波从任意初值都会快速收敛到稳态增益与稳态误差协方差，因此假设本地滤波器一开始就工作在稳态。于是增益与协方差成为常数：</p>
+    <div class="formula-box">
+      $$ P \triangleq \lim_{k \to \infty} P^{s}_{k}, \qquad K \triangleq \bar{P} C^{T}\left(C \bar{P} C^{T} + R\right)^{-1} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">其中 $P \geq 0$ 是 $g(h(X)) = X$ 的唯一解，并记 $\bar{P} \triangleq h(P)$。对应论文式 (4)。这个假设把注意力从"滤波器收敛"挪到了真正的难点——丢包。</p>
+    </div>
+    <p>量测新息 $z_{k} \triangleq y_{k} - C\hat{x}^{s-}_{k}$ 是 i.i.d. 零均值高斯的，协方差记作 $Z \triangleq C\bar{P}C^{T} + R$。</p>
+
+    <h3>3.1 两个开关：我们能控的与不能控的</h3>
+    <p>这是全篇最该记住的一张图（PPT 第 08 页）。链条上有两个二值随机变量，它们的<strong>乘积</strong>才决定远程端这一步到底有没有更新：</p>
+    <table>
+      <thead><tr><th>变量</th><th>含义</th><th>谁来定</th><th>取值</th></tr></thead>
+      <tbody>
+        <tr><td>$s_{k}$</td><td>传感器<strong>发不发</strong>本地估计</td><td>我们设计的调度器</td><td>$s_{k}=1$ 发送；$s_{k}=0$ 静默</td></tr>
+        <tr><td>$\gamma_{k}$</td><td>数据包<strong>到不到</strong>远程端</td><td>信道的随机性，我们控不了</td><td>$\gamma_{k}=1$ 到达；$\gamma_{k}=0$ 丢失</td></tr>
+        <tr><td>$s_{k}\gamma_{k}$</td><td>远程估计器<strong>是否真的更新</strong></td><td>两者共同决定</td><td>$=1$ 才更新</td></tr>
+      </tbody>
+    </table>
+    <p>在"传感器确实发了"的前提下，数据包被接收的概率为 $\lambda$，于是丢包率为 $1-\lambda$。注意一个容易忽略的细节：<span class="hl">如果传感器根本没发，到达概率不是 $\lambda$，而是"什么都不会到达"</span>。写成条件概率就是论文式 (5)：</p>
+    <div class="formula-box">
+      $$ \operatorname{Pr}\left(\gamma_{k} = 1 \mid s_{k} = 1\right) = \lambda, \qquad \lambda \in (0, 1) $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">丢包率 $1-\lambda$ 是整篇分析里最关键的一个参数——后面所有权重都由它乘出来。</p>
+    </div>
+
+    <h3>3.2 ACK：让两端共享同一个信息状态</h3>
+    <p>远程估计器在 $k$ 时刻掌握的信息集合为</p>
+    <div class="formula-box">
+      $$ I_{k} = \left\{s_{i}\gamma_{i}\right\}_{0}^{k} \cup \left\{s_{i}\gamma_{i}\hat{x}^{s}_{i}\right\}_{0}^{k}, \qquad I_{-1} = \varnothing $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">对应论文式 (6)。它包含两部分：所有"发送且到达"的指示变量，以及这些成功接收到的本地估计。</p>
+    </div>
+    <p>这个信息集为什么能"变成"传感器的知识？因为 ACK。远程端把接收状态反馈给传感器，传感器于是知道自己哪些包到达了——<span class="hl">两端共享同一个信息状态</span>，这正是本文与"开环调度"的分界线。报告里强调了一句很实在的话：ACK 只占一个比特，相比发送一个先验估计，带宽代价可以忽略。</p>
+    <div class="callout callout-intuition">
+      <h4>💡 为什么必须先有 ACK，才谈得上"保持时间"</h4>
+      <p>保持时间的定义要用到"最近一次成功接收是哪一步"，而这件事只有靠 ACK 才能被传感器知道。没有 ACK 时，传感器只能数"我发了几次"，数不了"对方收到几次"——这个差别正是下一讲第三种扩展（无 ACK）的全部难点来源。</p>
+    </div>
+  </div>
+
+  <div id="sec4" class="section-card">
+    <h2>4. 两个关键量：增量新息与保持时间</h2>
+    <p>触发器不能只看"这一步误差大不大"，还要看"远程端已经等了多久"。于是定义两个量。</p>
+    <h3>4.1 增量新息：这一步本地估计"新说了什么"</h3>
+    <div class="formula-box">
+      $$ \eta_{k} \triangleq \hat{x}^{s}_{k} - A\hat{x}^{s}_{k-1}, \qquad \Gamma_{\tau_{k}} \triangleq \left[A^{\tau_{k}-1} \; \cdots \; A^{1} \; A^{0}\right] $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">$\eta_{k}$ 是当前本地估计与"上一步估计的预测值"之差。$\Gamma_{\tau_{k}}$ 是把历史增量"搬到当前时刻"的矩阵序列。</p>
+    </div>
+    <h3>4.2 保持时间：远程端等了多久</h3>
+    <div class="formula-box">
+      $$ \tau_{k} \triangleq k - N_{k}, \qquad N_{k} \triangleq \max\left\{j \in \mathbb{N}_{\geq 0} \mid s_{j}\gamma_{j} = 1,\; j \leq k-1\right\} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">$N_{k}$ 是最近一次"发了且到了"的步数——只有 ACK 才能让它可计算。$\tau_{k} \in \mathbb{N}_{>1}$ 即自那以后过了多少步。</p>
+    </div>
+
+    <h3>4.3 随机触发规则：抽一个均匀数，跟指数项比大小</h3>
+    <p>把历史增量堆叠成增广向量，再用一个可调的正定矩阵把它加权成标量：</p>
+    <div class="formula-box">
+      $$ \varepsilon_{k,\tau_{k}} \triangleq \left[\eta^{T}_{k-\tau_{k}+1} \; \cdots \; \eta^{T}_{k-1} \; \eta^{T}_{k}\right]^{T} $$
+      $$ \Lambda_{k,\tau_{k}} \triangleq \Gamma^{T}_{\tau_{k}} \Pi_{k} \Gamma_{\tau_{k}}, \qquad \Pi_{k} > 0 $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">对应论文式 (8) 与 (9)。$\varepsilon$ 的维度随 $\tau_{k}$ 增长——这正是报告现场讨论过的第一处细节。</p>
+    </div>
+    <p>触发规则本身出奇地简单：每一步独立抽一个 $[0,1]$ 上的均匀随机数 $\xi_{k}$，与指数项比大小，</p>
+    <div class="formula-box">
+      $$ s_{k} = \begin{cases} 0, & \text{if } \xi_{k} \leq \exp\left(-\tfrac{1}{2}\varepsilon^{T}_{k,\tau_{k}}\Lambda_{k,\tau_{k}}\varepsilon_{k,\tau_{k}}\right) \\[4pt] 1, & \text{otherwise} \end{cases} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">对应论文式 (7)。随机化的妙处在于：触发决策本身是随机的，因此"发不发"不会泄露太多关于状态的信息。</p>
+    </div>
+    <div class="callout callout-key">
+      <h4>🔑 Remark 2.1：把规则读成一个概率</h4>
+      <p>由于 $\xi_{k}$ 均匀分布，发送概率就是</p>
+      <p style="text-align:center">$\operatorname{Pr}(s_{k}=1) = 1 - \exp\left(-\tfrac{1}{2}\varepsilon^{T}_{k,\tau_{k}}\Lambda_{k,\tau_{k}}\varepsilon_{k,\tau_{k}}\right)$</p>
+      <p>三条直觉由此而来：<strong>①</strong> 增广新息的范数越大，越倾向于发送；<strong>②</strong> 保持时间越长，$\varepsilon$ 堆得越高，发送概率自然抬升——"等久了就该说句话"；<strong>③</strong> $\Pi_{k}$ 是唯一的旋钮，$\Pi$ 越大发得越勤（$\Pi \to 0$ 从不发，$\Pi \to \infty$ 每步都发，见第 9 节的推论 3.6）。</p>
+    </div>
+    <div class="callout callout-note">
+      <h4>📝 现场问答：三个维度的问题</h4>
+      <p>施老师现场追问了触发条件里各量的维度：$\varepsilon_{k,\tau_{k}}$ 的维度随 $\tau_{k}$ <strong>增大</strong>（维度 = $\tau_{k} \times n$，不确定但可算）；$\Gamma_{\tau_{k}}$ 的维度随之变化；$\Lambda_{k,\tau_{k}} = \Gamma^{T}\Pi_{k}\Gamma$ 作为"压缩到标量"的权重矩阵，其维度同样随 $\tau_{k}$ 变化，而 $\Pi_{k}$ 保持 $n \times n$ 不变。分享者的回答是：这些量都随 $\tau_{k}$ 走，具体算法在后面的定理里给出递推。</p>
+    </div>
+  </div>
+
+  <div id="sec5" class="section-card">
+    <h2>5. 非高斯是怎么长出来的：一棵二叉树</h2>
+    <p>先看远程估计器怎么估。如果这一步"发了且到了"，它拿到的是最新的本地估计；否则它只能把上次收到的本地估计往前预测：</p>
+    <div class="formula-box">
+      $$ \hat{x}_{k} = \begin{cases} \hat{x}^{s}_{k}, & \text{if } s_{k}\gamma_{k} = 1 \\[4pt] A^{\tau_{k}}\hat{x}^{s}_{k-\tau_{k}}, & \text{otherwise} \end{cases} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">对应论文正文给出的 mmse 估计器。注意第二种情形里，$\tau_{k}$ 步的空白全靠 $A^{\tau_{k}}$ 外推。</p>
+    </div>
+    <p>无信道丢包时，新息序列是高斯分布。一旦引入丢包，增广新息向量 $\varepsilon_{k,\tau_{k}}$ 就<span class="hl">不再是高斯</span>。为什么？报告用一张分支图说清了（PPT 第 10 页）：<strong>每一步"没收到"都有两种可能</strong>——</p>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>没触发（概率 $\lambda$）</h4>
+        <p>传感器抽到的 $\xi_{k}$ 落在指数项以下，主动选择静默。此时的"未收到"是<strong>设计使然</strong>，它反而说明这一步的新息比较小。</p>
+      </div>
+      <div class="mini-card">
+        <h4>触发了但丢了（概率 $1-\lambda$）</h4>
+        <p>传感器发了，信道把它吞了。此时的"未收到"是<strong>信道事故</strong>，与状态本身无关。</p>
+      </div>
+    </div>
+    <p>两条路径的后果不同、概率不同，混在一起就不再是单个高斯。继续往下推：$\tau_{k}=1$ 时有 2 条路径，$\tau_{k}=2$ 时有 4 条，一般地 $\tau_{k}$ 步就有</p>
+    <div class="formula-box">
+      $$ \underbrace{2 \times 2 \times \cdots \times 2}_{\tau_{k}\ text{ steps}} = 2^{\tau_{k}} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">条路径，每条路径对应混合分布中的一个高斯分量。这就是"分量随保持时间指数增长"的来源。</p>
+    </div>
+    <div class="callout callout-intuition">
+      <h4>💡 一句话记住这篇工作的技术路线</h4>
+      <p>非高斯性不是"噪声变得不听话了"，而是<strong>信息不完整带来的多义性</strong>：同一个观测结果（"没收到"）可以由两种完全不同的世界产生。贝叶斯公式的作用，就是把这个多义性按路径拆开、各自给一个高斯、再按概率加权——于是"非高斯"变成了"可算的高斯混合"。</p>
+    </div>
+  </div>
+
+  <div id="sec6" class="section-card">
+    <h2>6. 工具：带权重的高斯混合</h2>
+    <p>论文先给这类分布一个正式名字与记号（定义 3.1）。给定维数 $l$、均值 $\mu$、权重 $\chi_{l,i}$ 与一组正定矩阵 $\Phi_{l,i}$（$i = 1, \ldots, 2^{l}$），随机向量 $\varepsilon \in \mathbb{R}^{ln}$ 的密度为</p>
+    <div class="formula-box">
+      $$ \psi_{ln}\left(\varepsilon; \mu, \lambda, \Phi_{l,1}, \ldots, \Phi_{l,2^{l}}\right) = \frac{(2\pi)^{-\frac{ln}{2}}}{\sum_{i=1}^{2^{l}} \chi_{l,i}\sqrt{\left\|\Phi_{l,i}\right\|}} \sum_{i=1}^{2^{l}} \chi_{l,i} \exp\left(-\frac{1}{2}(\varepsilon - \mu)^{T}\Phi^{-1}_{l,i}(\varepsilon - \mu)\right) $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">对应论文定义 3.1。分母是归一化因子，$\chi_{l,i}$ 是第 $i$ 个分量的权重，$\Phi_{l,i}$ 是它的协方差。</p>
+    </div>
+    <p>它的均值与协方差分别是</p>
+    <div class="formula-box">
+      $$ \mathbb{E}\left[\varepsilon\right] = \mu $$
+      $$ \operatorname{Cov}\left(\varepsilon\right) = \frac{\sum_{i=1}^{2^{l}} \chi_{l,i}\sqrt{\left\|\Phi_{l,i}\right\|}\,\Phi_{l,i}}{\sum_{i=1}^{2^{l}} \chi_{l,i}\sqrt{\left\|\Phi_{l,i}\right\|}} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">对应论文式 (10a)(10b)。<strong>注意权重不是简单的 $\chi$，而是 $\chi\sqrt{|\Phi|}$</strong>——这是高斯混合"按概率质量加权"的标准结果，也是后面 $\Xi$ 的分子分母长这样的原因。</p>
+    </div>
+    <h3>6.1 权重 $\chi$ 从哪儿来</h3>
+    <p>$\chi_{l,i}$ 表示"在保持时间为 $l$ 时，第 $i$ 种事件组合发生的概率"。它只与丢包率 $\lambda$ 有关，并且是<strong>逐层相乘</strong>得来的：每多走一步，每个已有权重就分成两支——丢包那一支乘 $1-\lambda$，没触发那一支乘 $\lambda$。所以到第 $l$ 步，所有权重加起来恰好是 $[(1-\lambda) + \lambda]^{l} = 1$，分布仍然是归一化的。</p>
+    <div class="callout callout-key">
+      <h4>🔑 一个立刻可算的例子</h4>
+      <p>取 $\lambda = 0.7$、$\tau_{k}=2$，四个权重按"两步各分两支"的顺序排列为</p>
+      <p style="text-align:center">$(1-\lambda)^{2},\; \lambda(1-\lambda),\; (1-\lambda)\lambda,\; \lambda^{2} = 0.09,\; 0.21,\; 0.21,\; 0.49$</p>
+      <p>可见"两步都丢了"的权重只有 0.09，而"两步都没触发"的权重高达 0.49——<strong>未收到的主要原因是传感器没发，而不是信道丢包</strong>。这个不对称是后面数值结果里很多现象的源头。</p>
+    </div>
+  </div>
+
+  <div id="sec7" class="section-card">
+    <h2>7. 主定理：精确的误差协方差递推</h2>
+    <p>有了精确的密度，误差协方差就能写成闭式（定理 3.2）：</p>
+    <div class="formula-box">
+      $$ P_{k} = P + \left(1 - s_{k}\gamma_{k}\right)\Gamma_{\tau_{k}}\Xi_{k,\tau_{k}}\Gamma^{T}_{\tau_{k}} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">对应论文式 (11)。$\Xi_{k,\tau_{k}}$ 是增广新息在"未收到"条件下的条件协方差。</p>
+    </div>
+    <p>而 $\Xi$ 由三个递推块共同决定：</p>
+    <div class="formula-box">
+      $$ \Xi_{k,\tau_{k}} = \frac{\sum_{i=1}^{2^{\tau_{k}}} \chi_{\tau_{k},i}\sqrt{\left\|\Phi_{k;\tau_{k},i}\right\|}\,\Phi_{k;\tau_{k},i}}{\sum_{i=1}^{2^{\tau_{k}}} \chi_{\tau_{k},i}\sqrt{\left\|\Phi_{k;\tau_{k},i}\right\|}} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">式 (12a)：$\Xi$ 是"归一化协方差"——把 $2^{\tau_{k}}$ 个分量的协方差按权重加权平均。</p>
+    </div>
+    <div class="formula-box">
+      $$ \chi_{\tau_{k},i} = \begin{cases} \chi_{\tau_{k}-1,\,i}\,(1-\lambda), & \tau_{k} > 1,\; 1 \leq i \leq 2^{\tau_{k}-1} \\[4pt] \chi_{\tau_{k}-1,\,i-2^{\tau_{k}-1}}\,\lambda, & \tau_{k} > 1,\; i \geq 2^{\tau_{k}-1} \end{cases} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">式 (12b)：路径权重。前一半是"这一步丢了"（乘 $1-\lambda$），后一半是"这一步没触发"（乘 $\lambda$）。</p>
+    </div>
+    <div class="formula-box">
+      $$ \Phi_{k;\tau_{k},i} = \begin{cases} \operatorname{diag}\left\{\Phi_{k-1;\tau_{k}-1,\,i},\ \Delta\right\}, & \tau_{k} > 1,\; 1 \leq i \leq 2^{\tau_{k}-1} \\[4pt] \left(\Phi^{-1}_{k;\tau_{k},\,i-2^{\tau_{k}-1}} + \Lambda_{k,\tau_{k}}\right)^{-1}, & \tau_{k} \geq 1,\; i \geq 2^{\tau_{k}-1} \end{cases} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">式 (12c)：协方差递推。分支前是块对角（把最新一步拼上去），分支后是信息形式（贝叶斯融合）。</p>
+    </div>
+    <div class="formula-box">
+      $$ \chi_{1,1} = 1-\lambda, \quad \chi_{1,2} = \lambda, \quad \Phi_{k;1,1} = \Delta, \quad \Delta \triangleq K Z K^{T} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">初值。$\Delta$ 是单步增量新息的协方差——它是整棵递推树的"叶子"。</p>
+    </div>
+
+    <h3>7.1 把式 (11) 读成三块积木</h3>
+    <ul>
+      <li><strong>指示项 $1 - s_{k}\gamma_{k}$</strong>：这一步到底更新了没有。若"发了且到了"，这一项为 0，协方差<strong>立刻回到稳态 $P$</strong>——因为远程端拿到了最新鲜的本地估计。</li>
+      <li><strong>传播项 $\Gamma_{\tau_{k}}$</strong>：把"上次接收"到"现在"的 $\tau_{k}$ 步历史误差，沿系统动力学搬到当前时刻。</li>
+      <li><strong>协方差项 $\Xi_{k,\tau_{k}}$</strong>：这 $\tau_{k}$ 步里累积的新息有多"不确定"。它由混合高斯的加权平均给出，权重随 $\tau_{k}$ 指数增多。</li>
+    </ul>
+    <div class="callout callout-intuition">
+      <h4>💡 这个式子的物理含义</h4>
+      <p>误差 = <strong>本地估计本身的稳态误差</strong> + <strong>"这段时间没更新"所累积的额外误差</strong>。前者是地板，后者才是调度策略能影响的部分。这也解释了为什么"每步都发"时协方差恒为 $P$：第二项被指示项归零了。</p>
+    </div>
+  </div>
+
+  <div id="sec8" class="section-card">
+    <h2>8. 证明骨架：从两分量到 $2^{\tau}$ 分量</h2>
+    <p>定理的证明是一条标准的"基础情形 + 归纳"，但每一步都值得看清楚，因为它决定了权重的乘法和协方差的拼法。</p>
+
+    <h3>8.1 基础情形 $\tau_{k} = 1$：两分量</h3>
+    <p>只有一步增广时，$\varepsilon_{k,1} = \eta_{k}$，它的先验是标准高斯：</p>
+    <div class="formula-box">
+      $$ p\left(\varepsilon_{k,1} \mid I_{k-1}\right) = p\left(\eta_{k} \mid I_{k-1}\right) = \phi_{n}\left(\eta_{k}; 0, \Delta\right) $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">均值 0，协方差 $\Delta = KZK^{T}$。</p>
+    </div>
+    <p>接着算"给定这一步的新息，仍未成功接收的概率"。这里要把事件拆成两种互斥的原因：</p>
+    <div class="formula-box">
+      $$ \operatorname{Pr}\left(s_{k}\gamma_{k} \neq 1 \mid \varepsilon_{k,1}, I_{k-1}\right) = 1 - \lambda + \lambda\exp\left(-\frac{1}{2}\varepsilon^{T}_{k,1}\Lambda_{k,1}\varepsilon_{k,1}\right) $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">$1-\lambda$ 对应"发了但丢了"；$\lambda\exp(\cdot)$ 对应"传感器没触发"（乘上触发概率的补）。这两项之和，就是非高斯性的出生地。</p>
+    </div>
+    <p>用贝叶斯公式（先验 × 似然 ÷ 归一化），得到后验：</p>
+    <div class="formula-box">
+      $$ p\left(\varepsilon_{k,1} \mid s_{k}\gamma_{k} \neq 1, I_{k-1}\right) = \phi_{n}\left(\eta_{k}; 0, \Delta\right) \frac{1 - \lambda + \lambda\exp\left(-\frac{1}{2}\varepsilon^{T}_{k,1}\Lambda_{k,1}\varepsilon_{k,1}\right)}{\operatorname{Pr}\left(s_{k}\gamma_{k} \neq 1 \mid I_{k-1}\right)} = \psi_{n}\left(\varepsilon_{k,1}; 0, \lambda, \Phi_{k;1,1}, \Phi_{k;1,2}\right) $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">两个高斯分量，正好对应两种"未收到"的原因：$\Phi_{k;1,1} = \Delta$（丢包支路，信息没变），$\Phi_{k;1,2} = ( \Delta^{-1} + \Lambda_{k,1} )^{-1}$（没触发支路，被信息形式收缩）。</p>
+    </div>
+    <p>再对协方差做加权（式 10b），就得到 $\Xi_{k,1}$：</p>
+    <div class="formula-box">
+      $$ \Xi_{k,1} = \frac{(1-\lambda)\sqrt{\left\|\Phi_{k;1,1}\right\|}\,\Phi_{k;1,1} + \lambda\sqrt{\left\|\Phi_{k;1,2}\right\|}\,\Phi_{k;1,2}}{(1-\lambda)\sqrt{\left\|\Phi_{k;1,1}\right\|} + \lambda\sqrt{\left\|\Phi_{k;1,2}\right\|}} $$
+    </div>
+    <p>最后一步是<strong>整个证明的关键分解</strong>：远程误差可以拆成"本地误差 + 新息误差"，</p>
+    <div class="formula-box">
+      $$ \mathbb{E}\left[\left(x_{k}-\hat{x}_{k}\right)\left(x_{k}-\hat{x}_{k}\right)^{T} \mid s_{k}\gamma_{k} \neq 1, I_{k-1}\right] = P + \Gamma_{1}\,\Xi_{k,1}\,\Gamma^{T}_{1} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">第二项成立的原因是 $\varepsilon_{k,1}$ 与 $x_{k} - \hat{x}^{s}_{k}$ <strong>相互独立</strong>——这一步成立，后面的归纳才能一路走下去。</p>
+    </div>
+
+    <h3>8.2 再走一步 $\tau_{k} = 2$：四分量</h3>
+    <p>先验变成两个独立部分的乘积：当前新息的标准高斯 × 上一步混合高斯（因为当前新息与历史完全独立）：</p>
+    <div class="formula-box">
+      $$ p\left(\varepsilon_{k,2} \mid I_{k-1}\right) = \phi_{n}\left(\eta_{k}; 0, \Delta\right)\psi_{n}\left(\varepsilon_{k-1,1}; 0, \lambda, \Phi_{k-1;1,1}, \Phi_{k-1;1,2}\right) $$
+    </div>
+    <p>同样的贝叶斯操作之后，后验变成<strong>四个</strong>协方差不同的高斯分量。四个分量的含义可以一一对应到"两步各发生了什么"：</p>
+    <table>
+      <thead><tr><th>分量</th><th>第 1 步</th><th>第 2 步</th><th>权重（$\lambda = 0.7$）</th></tr></thead>
+      <tbody>
+        <tr><td>$\Phi_{k;2,1}$</td><td>丢包</td><td>丢包</td><td>$(1-\lambda)^{2} = 0.09$</td></tr>
+        <tr><td>$\Phi_{k;2,2}$</td><td>没触发</td><td>丢包</td><td>$\lambda(1-\lambda) = 0.21$</td></tr>
+        <tr><td>$\Phi_{k;2,3}$</td><td>丢包</td><td>没触发</td><td>$(1-\lambda)\lambda = 0.21$</td></tr>
+        <tr><td>$\Phi_{k;2,4}$</td><td>没触发</td><td>没触发</td><td>$\lambda^{2} = 0.49$</td></tr>
+      </tbody>
+    </table>
+    <p>四个协方差的具体形式（论文正文给出）：前两个只是把旧协方差与新一步的 $\Delta$ 块对角拼起来，</p>
+    <div class="formula-box">
+      $$ \Phi_{k;2,1} = \begin{bmatrix} \Phi_{k-1;1,1} & 0 \\ 0 & \Delta \end{bmatrix}, \qquad \Phi_{k;2,2} = \begin{bmatrix} \Phi_{k-1;1,2} & 0 \\ 0 & \Delta \end{bmatrix} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">后两个则在此之上再做一次信息形式的融合（把"没触发"这件事本身也当作信息用）：</p>
+    </div>
+    <div class="formula-box">
+      $$ \Phi_{k;2,3} = \left(\begin{bmatrix} \Phi_{k-1;1,1} & 0 \\ 0 & \Delta \end{bmatrix}^{-1} + \Lambda_{k,2}\right)^{-1}, \qquad \Phi_{k;2,4} = \left(\begin{bmatrix} \Phi_{k-1;1,2} & 0 \\ 0 & \Delta \end{bmatrix}^{-1} + \Lambda_{k,2}\right)^{-1} $$
+    </div>
+
+    <h3>8.3 归纳：每个分量一分为二</h3>
+    <p>一般步的归纳只做两件事：</p>
+    <ul>
+      <li><strong>先验分解</strong>：$p(\varepsilon_{k,j} \mid I_{k-1}) = p(\eta_{k} \mid I_{k-1}) \cdot p(\varepsilon_{k-1,j-1} \mid I_{k-1})$。这一步依赖"第 $j$ 步的新息与自己过去独立"。</li>
+      <li><strong>乘上似然 $1-\lambda+\lambda\exp(-\tfrac{1}{2}\varepsilon^{T}\Lambda\varepsilon)$</strong>：它把每一个已有分量再劈成两支——丢包支路乘 $(1-\lambda)$ 且协方差块对角扩张，没触发支路乘 $\lambda$ 且协方差走信息形式融合。</li>
+    </ul>
+    <div class="formula-box">
+      $$ p\left(\varepsilon_{k,j} \mid s_{k}\gamma_{k} \neq 1, I_{k-1}\right) = \psi_{jn}\left(\varepsilon_{k,j}; 0, \lambda, \Phi_{k;j,1}, \ldots, \Phi_{k;j,2^{j}}\right) $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">于是"$j-1$ 步成立 → $j$ 步成立"，定理得证。整条链只靠一个事实：<strong>增广新息与当前本地估计误差独立</strong>，所以协方差能分解成 $P + \Gamma\Xi\Gamma^{T}$，剩下的都是混合分布的记账工作。</p>
+    </div>
+  </div>
+
+  <div id="sec9" class="section-card">
+    <h2>9. 特例与速率：把经典结果收进来</h2>
+    <h3>9.1 Remark 3.3：ACK 方案与闭环 ETS 等价</h3>
+    <p>作为对照，论文给出一个"闭环事件触发"条件：直接用本地估计与远程先验估计之差 $e_{k} \triangleq \hat{x}^{s}_{k} - A\hat{x}^{s}_{k-1}$ 做触发（无需 ACK）。它的协方差演化同样服从式 (11)。换句话说：</p>
+    <div class="callout callout-key">
+      <h4>🔑 ACK 到底买到了什么</h4>
+      <p>ACK 方案通过<strong>最大化历史数据的利用</strong>，达到了与闭环 ETS 相同的估计精度；而 ACK 只占一个比特，相比发送一个先验估计的带宽可以忽略。因此它是在"通信资源—估计性能"之间更划算的那一侧。</p>
+    </div>
+    <div class="callout callout-note">
+      <h4>📝 现场问答：$e_{k}$ 与 $\varepsilon$ 的区别</h4>
+      <p>施老师追问 Remark 3.3 里的闭环触发项：那里的 $e_{k}$ 是<strong>当前本地估计减远程端上一时刻的预测值</strong>，只有 $n$ 维；而本文触发规则里的 $\varepsilon_{k,\tau_{k}}$ 把这段时间的每个增量都记住了，维度随 $\tau_{k}$ 增长。分享者的解释是：正因为记住了历史，才能推出远程端此刻的完整状态；也问过作者"这个 remark 是直接说的还是证过"，回答是<strong>直接给出、未附证明</strong>。</p>
+    </div>
+
+    <h3>9.2 推论 3.4：两个极限边界</h3>
+    <p>$\lambda = 1$（信道不丢包）时，式 (11) 退化为</p>
+    <div class="formula-box">
+      $$ P_{k} = P + \left(1 - s_{k}\right)\Psi_{k}, \qquad \Psi_{k} = \Sigma_{k} - \Sigma_{k}\left(\Sigma_{k} + \Pi^{-1}_{k}\right)^{-1}\Sigma_{k}, \qquad \Sigma_{k} = \left(1 - s_{k-1}\right)A\Psi_{k-1}A^{T} + \Delta $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">对应论文式 (14)。$\Phi_{0} = 0$。这正是 Wu 等与 Yu 等的结果——<strong>他们的结论是本文的特例</strong>（Remark 3.5）。</p>
+    </div>
+    <p>$\lambda = 0$（信道完全瘫痪）时，远程端既收不到真值、也用不了"未收到"这个隐式信息，协方差退化为标准的 Lyapunov 开环预测：</p>
+    <div class="formula-box">
+      $$ P_{k} = h\left(P_{k-1}\right) $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">对应论文式 (16)。这条式子给出"最坏情况"的参照：没有通信时误差怎么长。</p>
+    </div>
+
+    <h3>9.3 推论 3.6：把旋钮拧到两端</h3>
+    <p>$\left|\Pi_{k}\right| \to 0$ 时 $s_{k} \to 0$（从不发），协方差同样走 Lyapunov 方程；$\left|\Pi_{k}\right| \to \infty$ 时 $s_{k} \to 1$（每步都发），事件触发退化成标准的周期估计，此时</p>
+    <div class="formula-box">
+      $$ P_{k} = \begin{cases} h\left(P_{k-1}\right), & \text{if } \gamma_{k} = 0 \\[4pt] P, & \text{if } \gamma_{k} = 1 \end{cases} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">估计性能完全由信道状态决定——调度器已经"尽力"了，剩下的只能看运气。</p>
+    </div>
+
+    <h3>9.4 引理 3.7 / 3.8：通信率与传输率</h3>
+    <p>两个指标必须分清：<strong>传输率</strong>是传感器"发"的概率，<strong>通信率</strong>是远程端"收到"的概率。二者差一个 $\lambda$：</p>
+    <div class="formula-box">
+      $$ \operatorname{Pr}\left(s_{k}\gamma_{k} = 1 \mid \hat{\tau}_{k-1} = q\right) = \lambda\left(1 - \frac{\sum_{l=1}^{2^{q}}\chi_{q,l}\sqrt{\left\|\Phi_{k;q+1,\,2^{q}+l}\right\|}}{\sum_{l=1}^{2^{q}}\chi_{q,l}\sqrt{\left\|\Phi_{k;q+1,\,l}\right\|}}\right) $$
+      $$ \operatorname{Pr}\left(s_{k} = 1 \mid \hat{\tau}_{k-1} = q\right) = 1 - \frac{\sum_{l=1}^{2^{q}}\chi_{q,l}\sqrt{\left\|\Phi_{k;q+1,\,2^{q}+l}\right\|}}{\sum_{l=1}^{2^{q}}\chi_{q,l}\sqrt{\left\|\Phi_{k;q+1,\,l}\right\|}} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">对应引理 3.7（通信率，带 $\lambda$）与 3.8（传输率，不带 $\lambda$），其中 $\chi_{0,1} = 1$。两式结构完全相同，只差一个因子——所以有恒等式 $\sigma = \lambda s$。</p>
+    </div>
+    <p>这两个式子不只是"算个指标"：下一讲的混合调度方案里，正是用引理 4.4（它们的推广）<strong>反解</strong>出满足给定通信预算的调度参数序列。</p>
+  </div>
+
+  <div id="sec10" class="section-card">
+    <h2>10. 小结与下节预告</h2>
+    <p>本讲把"精确结果"这条主线走完了：</p>
+    <ul>
+      <li>问题：事件触发 + 丢包 → 信息集不完整 → 后验非高斯；近似会失真，积分不可行。</li>
+      <li>模型：smart sensor 发本地估计；两个开关 $s_{k}$（可控）与 $\gamma_{k}$（随机）；ACK 让两端共享信息状态。</li>
+      <li>机制：增量新息 $\eta_{k}$ + 保持时间 $\tau_{k}$ 共同驱动随机触发；触发概率 $1-\exp(-\tfrac{1}{2}\varepsilon^{T}\Lambda\varepsilon)$。</li>
+      <li>结果：非高斯性被精确写成 $2^{\tau_{k}}$ 个分量的高斯混合；误差协方差 $P_{k} = P + (1-s_{k}\gamma_{k})\Gamma\Xi\Gamma^{T}$。</li>
+      <li>回收：$\lambda=1$ 回到经典结果，$\lambda=0$ 回到 Lyapunov，$\Pi$ 的两个极端对应"从不发/每步发"。</li>
+    </ul>
+    <p>但真实系统还有三种约束：<strong>调度器存不下那么长历史</strong>、<strong>信道太差发多少丢多少</strong>、<strong>出于安全考虑没有 ACK 通道</strong>。下一讲看作者怎么用同一套框架把这三件事各吸收成一个扩展——尤其是没有 ACK 时出现的"火山口"分布。</p>
+    <div class="callout callout-note">
+      <h4>📝 一句方法论</h4>
+      <p>"非高斯"并不等于"不可解"。沿着路径展开贝叶斯公式，结构就会显式地露出来——这是本讲最值得带走的一句话。</p>
+    </div>
+  </div>
+
+  <div id="quiz" class="section-card exercise-box">
+    <h2>📝 练习与自测</h2>
+
+    <div class="exercise">
+      <h4>练习1（概念）：非高斯是从哪一步"生"出来的</h4>
+      <p>(a) 为什么在无丢包时增广新息是高斯，一旦有丢包就不是了？(b) 请用"没触发"和"丢包"两种原因，解释 $\tau_{k}$ 步后为什么恰好有 $2^{\tau_{k}}$ 个高斯分量。</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>(a) 无丢包时，$\varepsilon_{k,\tau_{k}}$ 只是若干个独立高斯新息的堆叠，仍是高斯。有丢包后，"这一步没收到"这一观测把两种不同的世界混在了一起：传感器<strong>没触发</strong>（概率 $\lambda$，意味着新息较小）与<strong>发了但丢了</strong>（概率 $1-\lambda$，与状态无关）。同一个观测由两个不同机制产生，似然是两项之和 $1-\lambda+\lambda\exp(-\tfrac{1}{2}\varepsilon^{T}\Lambda\varepsilon)$，乘上先验再归一化后，就变成两个高斯的加权和。</p>
+        <p>(b) 每一步"未收到"都有 2 种解释，各步独立组合，路径数按 $2 \times 2 \times \cdots$ 增长，$\tau_{k}$ 步共 $2^{\tau_{k}}$ 条；每条路径对应一组"哪几步丢包、哪几步没触发"的历史，其条件分布是高斯的，于是分布是 $2^{\tau_{k}}$ 个高斯分量的混合。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习2（计算）：权重与触发概率</h4>
+      <p>取 $\lambda = 0.7$、$\tau_{k} = 2$。(a) 写出四个路径权重 $\chi_{2,i}$，并说明哪一个最大、为什么。(b) 若某一步 $\varepsilon^{T}_{k,\tau_{k}}\Lambda_{k,\tau_{k}}\varepsilon_{k,\tau_{k}} = 2$，求发送概率 $\operatorname{Pr}(s_{k}=1)$。</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>(a) $(1-\lambda)^{2} = 0.09$、$\lambda(1-\lambda) = 0.21$、$(1-\lambda)\lambda = 0.21$、$\lambda^{2} = 0.49$，按"丢包支路乘 $1-\lambda$、没触发支路乘 $\lambda$"的顺序排列。最大的是 $\lambda^{2} = 0.49$，即"两步都没触发"——因为 $\lambda = 0.7 > 0.5$，未收到的原因更可能来自传感器的主动静默，而不是信道丢包。四者之和为 1。</p>
+        <p>(b) $\operatorname{Pr}(s_{k}=1) = 1 - \exp(-\tfrac{1}{2}\cdot 2) = 1 - e^{-1} \approx 1 - 0.3679 = 0.6321$。也就是说增广新息的"加权能量"为 2 时，这一步有约 63% 的概率发送。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习3（推导）：式 (12c) 的两类分支在做什么</h4>
+      <p>请说明 $\Phi_{k;\tau_{k},i}$ 递推中"块对角 $\operatorname{diag}\{\Phi, \Delta\}$"与"信息形式 $(\Phi^{-1}+\Lambda)^{-1}$"分别对应哪条分支、各自的物理含义是什么；并解释为什么"没触发"也能提供信息。</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p><strong>块对角</strong>对应"丢包"分支：这一步的信息<strong>没有</strong>到达远程端，新息 $\eta_{k}$ 只能按先验分布追加进去，与历史互不相关，所以协方差就是把旧协方差与新一步的 $\Delta$ 拼成块对角。</p>
+        <p><strong>信息形式</strong>对应"没触发"分支：这一步没发送，本身就是一条线索——它说明 $\varepsilon^{T}\Lambda\varepsilon$ 比较小（否则大概率会触发）。把这条线索当作一次"观测"，用信息滤波的语言就是先验信息 $\Phi^{-1}$ 加上新信息 $\Lambda$，再取逆回到协方差形式。</p>
+        <p>因此"没触发"不是"没有信息"，而是<strong>一个弱信息</strong>：它把协方差朝"更集中"的方向收缩了一点。这也是为什么随机化触发是必要的——如果触发规则是确定性的，"没触发"会泄露过多关于状态的信息，反而让问题更难处理。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习4（数值）：验证稳态 $\bar{P} = h(P)$</h4>
+      <p>论文的仿真用的是人工堰系统，其系统矩阵与稳态协方差为</p>
+      <div class="formula-box">
+        $$ A = \begin{bmatrix} 0.9 & 0 & 0 \\ 0.43 & 0.8 & 0 \\ 0.15 & 0.35 & 0.7 \end{bmatrix}, \qquad Q = R = C = I $$
+        $$ P = \begin{bmatrix} 0.5919 & 0.0406 & 0.0131 \\ 0.0406 & 0.5950 & 0.0391 \\ 0.0131 & 0.0391 & 0.5781 \end{bmatrix} $$
+      </div>
+      <p>请用 $\bar{P} = APA^{T} + Q$ 计算 $\bar{P}$ 的第 (1,1) 与第 (2,2) 个对角元，并与论文给出的稳态预测协方差（第 (1,1) 元 1.4795、第 (2,2) 元 1.5182、第 (3,3) 元 1.3957）对照。</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>第 (1,1) 元：$A$ 的第一行为 $[0.9, 0, 0]$，所以 $\bar{P}_{11} = 0.9^{2}\times 0.5919 + 1 = 0.81 \times 0.5919 + 1 = 0.4794 + 1 = 1.4794$，与论文的 $1.4795$ 一致（四舍五入）。</p>
+        <p>第 (2,2) 元：$A$ 的第二行为 $[0.43, 0.8, 0]$，需要把交叉项也带上：$\bar{P}_{22} = 0.43^{2}\times 0.5919 + 0.8^{2}\times 0.5950 + 2\times 0.43 \times 0.8 \times 0.0406 + 1 = 0.1095 + 0.3808 + 0.0279 + 1 = 1.5182$，与论文的 $1.5182$ 完全一致。</p>
+        <p>这个验算说明两件事：① 稳态 $P$ 确实是 $g(h(X)) = X$ 的解；② 计算 $h(P)$ 时<strong>不能忽略非对角元</strong>——$0.0279$ 这一项占了约 1.8%，如果只算对角就会算错。</p>
+      </details>
+    </div>
+  </div>
+
+  <div class="nav-links">
+    <a href="0044-北理工分享-鲁棒里程计-2.html" class="prev">← 鲁棒机器人里程计(2/2)：模块管理、惯性学习与实验验证</a>
+    <a href="0046-组内分享-曾畅-随机事件触发估计-2.html" class="next">随机事件触发估计(2/2)：三种工程约束与仿真验证 →</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+  </div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 33 · 组内分享 · 曾畅（2026-10-17）</p>
+    <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px">内容来源：视频转写 + PPT 版面文字 + 论文原文（IEEE TCNS 2025）</p>
+  </div>
+</div>
+<script src="assets/shiclass.js"></script>
+<script src="../shared/lesson-tools.js"></script>
+</body>
+</html>

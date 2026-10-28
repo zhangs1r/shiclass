@@ -230,6 +230,16 @@ window.SHICLASS_DATA = {
       description: "第 0043-0044 课。仲崇毅分享 Super Odometry 2.0（CMU）：面向严重退化的分层自适应里程计——四类退化问题、自适应特征/方向/引擎选择、学习式惯性里程计与 2966m 四足综合实验。",
       quickOpen: "lessons/0043-北理工分享-鲁棒里程计-1.html",
       meta: ["2 节课", "~70 分钟", "退化鲁棒性 / 分层自适应 / 惯性学习"]
+    },
+    {
+      id: "shares-33",
+      groupId: "seminars",
+      kind: "分享",
+      title: "组内分享（系列 33）——随机事件触发估计",
+      subtitle: "系列 33",
+      description: "第 0045-0046 课。曾畅分享 IEEE TCNS 2025 论文：丢包链路下智能传感器的随机事件触发状态估计——2 的 τ 次方条路径上的精确高斯混合、闭式误差协方差，以及存储有限 / 高丢包 / 无 ACK 三种工程扩展。",
+      quickOpen: "lessons/0045-组内分享-曾畅-随机事件触发估计-1.html",
+      meta: ["2 节课", "~70 分钟", "事件触发 / 高斯混合 / 马尔可夫链"]
     }
   ],
     lessons: [
@@ -655,6 +665,24 @@ window.SHICLASS_DATA = {
       subtitle: "引擎适应停用判据 · 在线 LoRA 闭环 · 四平台离线学习 · 2966m 综合实验",
       duration: "40 min",
       tags: ["惯性学习", "LoRA", "鲁棒性评估", "北理工分享"]
+    },
+    {
+      id: "0045",
+      collectionId: "shares-33",
+      path: "lessons/0045-组内分享-曾畅-随机事件触发估计-1.html",
+      title: "随机事件触发估计(1/2)：非高斯后验与精确协方差",
+      subtitle: "两个开关 s_k 与 γ_k · 增量新息与保持时间 · 2^τ 条路径的高斯混合 · 定理 3.2 与证明骨架",
+      duration: "40 min",
+      tags: ["事件触发", "非高斯", "高斯混合", "组内分享"]
+    },
+    {
+      id: "0046",
+      collectionId: "shares-33",
+      path: "lessons/0046-组内分享-曾畅-随机事件触发估计-2.html",
+      title: "随机事件触发估计(2/2)：三种工程约束与仿真验证",
+      subtitle: "滑动窗口 ℓ · 混合调度 HSS 与超时 ℏ · 无 ACK 的火山口分布 · 人工堰系统数值验证",
+      duration: "35 min",
+      tags: ["马尔可夫链", "火山口分布", "丢包", "组内分享"]
     },
   ]
 };
