@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>动态场景图里的变化跟踪(2/2)：手锚位姿、三张表与机器人可用性 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="assets/shiclass.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+</head>
+<body>
+<div class="page">
+
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · 系列35 · 组内分享</div>
+    <h1>动态场景图里的变化跟踪(2/2)：手锚位姿、三张表与机器人可用性</h1>
+    <p class="subtitle">上一讲判出「什么时候动」，这一讲解「动成什么样」：3D 点投影成 query、CoTracker2 保住点的身份、RANSAC-PnP 解旋转、手锚解平移，最后写回图。96 段真机录制、三张表、两个机器人任务，回答的是同一个问题——这张会变的图，机器人敢不敢用。</p>
+    <div class="hero-meta">
+      <span>📅 2026-11-07</span>
+      <span>🎙️ 黄辖（组内分享）</span>
+      <span>📚 论文：Lost &amp; Found: Tracking Changes from Egocentric Observations in 3D Dynamic Scene Graphs · IEEE RA-L 2025</span>
+    </div>
+  </div>
+
+  <div class="lead-grid">
+    <div class="callout">
+      <h4>🎯 学完本节，你应能</h4>
+      <ul>
+        <li>说清 query 的三重来历：Aria 半稠密点云 → 实例 mask 最近邻筛点 → 投影到起始 RGB 帧；并解释为什么这等于「跟踪之前就拿到了 2D-3D 对应」</li>
+        <li>分清 CoTracker2 与 PnP 的分工，写出重投影误差式，说明 RANSAC 抑制哪类错误、又对哪类无能为力</li>
+        <li>复述式 (2)(3)(4)，讲清手锚为什么能替掉 PnP 的平移：一个不变的刚性偏移，把逐帧独立求解变成沿时间传播的约束</li>
+        <li>说出位姿写回图的三个动作（点云、close to、contains），以及 contains 增删的判据与抽屉的一维约束</li>
+        <li>读懂 Table I / II / III，指出「翻译误差降 34%、旋转误差降 56%」各自对着哪个基线</li>
+        <li>解释 hand anchor 为何在 $T_{err}$ 上几乎零收益（5.87 → 5.90 cm）却在 ADD 上多出 7 个百分点</li>
+        <li>说出三条硬边界（刚体、110° 视场、底层误差传播）与两个下游任务各自依赖哪条边</li>
+      </ul>
+    </div>
+    <div class="callout">
+      <h4>🔑 核心思想</h4>
+      <p>区间只回答「什么时候」，位姿才回答「变成什么样」。这一讲的骨架是<strong>把一次性估计换成一条贯穿整个交互的约束链</strong>：3D 点从先验图里来，身份已知；2D 轨迹交给点跟踪器，只保身份不解位姿；旋转由 PnP 逐帧解，视觉对角度的约束最硬；平移交给「手—物刚性偏移不变」，因为手的世界坐标由硬件直接给、握持期间与物体刚性相连。任一环失效都以「位姿漂」的形式冒出来——所以每个数字都要按「误差从哪一环进来」去读。</p>
+    </div>
+  </div>
+
+  <div class="toc">
+    <h3>📖 目录</h3>
+    <ul>
+      <li><a href="#sec1">1. 本讲地图：区间之后还有三件事</a></li>
+      <li><a href="#sec2">2. 位姿输入：关键点从哪来（slide 8）</a></li>
+      <li><a href="#sec3">3. 从二维轨迹到六自由度：CoTracker2 与 RANSAC-PnP（slide 9）</a></li>
+      <li><a href="#sec4">4. 朝向与平移：式 (2)、(3)、(4) 与手锚（slide 10）</a></li>
+      <li><a href="#sec5">5. 把位姿写回图里（slide 11–12）</a></li>
+      <li><a href="#sec6">6. 三张表：全轨迹、终态与消融（slide 13–16）</a></li>
+      <li><a href="#sec7">7. 从地图到机器人，再到这条路的边界（slide 17–18）</a></li>
+      <li><a href="#quiz">📝 练习与自测</a></li>
+    </ul>
+  </div>
+
+  <div id="sec1" class="section-card">
+    <h2>1. 本讲地图：区间之后还有三件事</h2>
+    <p>上一讲停在式 (1)：给定 Aria 一帧帧观测，用 $|B|=|H|=8$ 的滑窗判出「哪只手、碰了哪个物体、从哪一帧到哪一帧」。区间一定，剩下的事看上去直白——估一个 6DoF 位姿。但真做起来要连着回答三个互相牵制的问题。</p>
+    <ol>
+      <li><strong>点从哪来</strong>：位姿估计要 3D-2D 对应。设备没有深度传感器，点只能从先验地图与 SLAM 点云里「借」，借来的还必须是跟得住的点。</li>
+      <li><strong>位姿怎么解</strong>：视觉解旋转稳，解平移很不稳——单目、小物体、快运动、遮挡叠在一起，平移是整条链最脆的一环。</li>
+      <li><strong>图怎么改</strong>：位姿不是一个数字。它要把物体的点云、与它相连的边、以及它是否在抽屉里，一起搬动，而且要局部、要在线。</li>
+    </ol>
+    <table>
+      <thead><tr><th>环节</th><th>依赖的假设</th><th>外部件</th><th>失效时表现成什么</th></tr></thead>
+      <tbody>
+        <tr><td>关键点选取（\III-E）</td><td>初始扫描与 Aria 已配准；mask 干净</td><td>Mask3D、Aria 半稠密点云（视觉 SLAM）、ICP</td><td>点落在物体外或太少 → 整段跟踪一起漂，后面救不回来</td></tr>
+        <tr><td>2D 跟踪（\III-E）</td><td>外观连续、遮挡后能找回同一个点</td><td>CoTracker2 在线版（窗口 8）</td><td>跟到背景 → 2D-3D 对应错 → 位姿跳变</td></tr>
+        <tr><td>旋转（\III-E）</td><td>内点占多数；标定准确</td><td>RANSAC-PnP、Aria 相机位姿</td><td>角度错 → 由杆臂放大成平移错</td></tr>
+        <tr><td>平移（\III-E）</td><td>握点不变；手始终在视野内</td><td>Aria 手部追踪</td><td>手滑移 → 平移出现系统偏差，不会自己回来</td></tr>
+        <tr><td>图更新（\III-B/E）</td><td>最近邻只在局部变化；包围盒够用</td><td>k-d 树、抽屉 3D 包围盒</td><td>关系错 → 下游检索找到错的抽屉</td></tr>
+      </tbody>
+    </table>
+    <p>链路有个不显眼的特点：<strong>误差只往里流，不往回走</strong>。点选坏了，PnP 再鲁棒也只能在坏点上拟合；旋转错了，手锚再准也会把角度误差顺着杆臂搬进平移。</p>
+
+    <div class="callout callout-note">
+      <h4>📝 转写勘误与记法说明</h4>
+      <p>术语以论文原文（Lost &amp; Found, IEEE RA-L 2025）与 Deck 版面文字为准。视频由 Qwen3-ASR 转写，专名错得集中，这里一次列全，正文不再重复：</p>
+      <table>
+        <thead><tr><th>转写里出现的写法</th><th>应为</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>拉斯特 / Lost and Found</td><td>Lost &amp; Found</td><td>论文标题；正文统一写 Lost &amp; Found，表里记作 Lost&amp;Found</td></tr>
+          <tr><td>Mask 三 D</td><td>Mask3D</td><td>Schult et al., ICRA 2023；初始点云上的 3D 实例分割</td></tr>
+          <tr><td>Spot Compose</td><td>Spot-Compose</td><td>Lemke et al., ICRA 2024 Workshop；抽屉检测器</td></tr>
+          <tr><td>co tracker 出</td><td>CoTracker2</td><td>Karaev et al., ECCV 2024；末音节是「2」被听成的字</td></tr>
+          <tr><td>PNP</td><td>PnP</td><td>Perspective-n-Point</td></tr>
+          <tr><td>阿里亚</td><td>Aria</td><td>Project Aria 头戴设备</td></tr>
+          <tr><td>手锚点</td><td>hand anchor（手锚）</td><td>论文 \IV-D 的消融项</td></tr>
+          <tr><td>王霞</td><td>黄辖</td><td>主持人对报告人的称呼；按云盘文件名口径，待确认</td></tr>
+        </tbody>
+      </table>
+      <p><strong>记法</strong>：$\mathbf{T}_{k}=[\mathbf{R}_{k}\;|\;\vec{t}_{k}]\in\mathbb{SE}(3)$ 是 $k$ 时刻物体的位姿；$\mathbf{R}_{k,\mathrm{obj}\to\mathrm{world}}$ 是物体到世界的旋转；$\vec{c}_{o}$ 是物体原点（近似质心）；$\vec{r}_{k,\{l,r\}}$ 是左手或右手的世界坐标；$\vec{\Delta}_{\mathrm{obj}}$ 是「手—物」刚性偏移在物体局部系的表示；$\mathcal{V}_{k}$ 是第 $k$ 帧可见关键点集合；$p_{o}$ 是手物接触概率。</p>
+      <p><strong>一处数字对不上</strong>：现场说手的判别速度是「一点二五米每秒」，论文超参是 $\delta_{\mathrm{diff}}=0.025$ m/s（2.5 cm/s），差两个数量级。按论文取 $0.025$，现场没回头核对。</p>
+    </div>
+  </div>
+
+  <div id="sec2" class="section-card">
+    <h2>2. 位姿输入：关键点从哪来（slide 8）</h2>
+    <p>论文 \III-E 第一句就把事情说完：「We initialize the key points by projecting 3D points of our 3D scene graph that belong to the tracked object O onto the RGB image at the start time.」——<strong>先有点，再有 query</strong>。不是先检测特征再匹配 3D，而是先从图里拿出「属于这个物体的 3D 点」，再投影成图像上的查询点。</p>
+    <ol>
+      <li><strong>取点</strong>：从 Aria 的半稠密点云取。它不是深度相机给的，是视觉 SLAM 的关键点集合——论文特意补了一句「these points are already known to be good key points」：SLAM 能长期跟住的点本来就是角点、纹理点。</li>
+      <li><strong>筛点</strong>：用实例 mask 做最近邻匹配。把该实例在起始帧的 mask 投到图像上，半稠密点云里的 3D 点逐个投影，落在 mask 内的才留下。这一步把「房间的点」缩成「这个相框的点」，通常剩几十到几百个。</li>
+      <li><strong>投影成 query</strong>：用起始帧已知的相机位姿把这些点投到 RGB 图像。每个 query 从出生起就带着自己的 3D 坐标——这就是 PnP 需要的 2D-3D 对应。</li>
+    </ol>
+    <div class="formula-box">
+      $$\lambda\,\tilde{\mathbf{u}}=\mathbf{K}\left(\mathbf{R}_{0,\mathrm{world}\to\mathrm{cam}}\,\mathbf{X}+\vec{t}_{0,\mathrm{world}\to\mathrm{cam}}\right)$$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">针孔投影的教科书形式（非论文编号式；Hartley &amp; Zisserman 是 Deck 上列的参考书）。$\mathbf{X}$ 是图里存的 3D 点，$\mathbf{K}$ 是内参，$\lambda$ 是深度，$\tilde{\mathbf{u}}=(u,v,1)^{\top}$ 是齐次像素坐标。</p>
+    </div>
+    <p>经典管线是「每帧检测 → 提描述子 → 匹配 → RANSAC → 解位姿」，身份每帧重认一遍；这里反过来，身份由先验图一次性给定，跟踪器只管「这个点跑到哪去了」。好处有三：<strong>对应关系免费</strong>；<strong>跟踪器可以很笨</strong>（不必知道物体是什么，出错方式也单一：跟丢、跟到别的东西上）；<strong>刚体假设第一次落地</strong>（点在物体局部系里坐标不变，同一批 3D 坐标可跨帧复用）。</p>
+    <div class="callout callout-intuition">
+      <h4>💡 这套设计的代价：输入决定上限</h4>
+      <p>点质量完全由三件外部件决定——扫描配准（ICP + 基准标记）、实例分割（Mask3D）、SLAM 点云密度。表面弱纹理、反光、或被手挡住大半时，能用的点掉到个位数，PnP 就从「超定」变成「勉强可解」，位姿开始跳。96 段录制选的都是纹理尚可的室内物体（纸箱、相框、时钟、植物、篮子、水壶、球、鞋、收纳盒），不是巧合。</p>
+    </div>
+    <div class="callout callout-note">
+      <h4>📝 现场问答：这套东西有多少是自己的？</h4>
+      <p><strong>提问</strong>（大意）：「他这篇文章做的场景非常局限，就只做这样一个 Lost &amp; Found 的问题是吗？」接着追问：「他用的都是现成的一套东西是吗？就那个眼镜的那套东西，他都没有改。」</p>
+      <p><strong>回答</strong>（现场）：「对，他们主要是做第一人称，就用了这个眼镜……单目的，没有深度信息。」「可以用它输出的数据进行计算。」</p>
+      <p><strong>本课补充（现场未展开）</strong>：这个判断准确，也该当成读论文的前提。相机位姿、半稠密点云、手的三维位置、手物接触概率，四样输入全来自 Aria 的固件与配套模型；作者贡献集中在<strong>「拿到这些量之后怎么组合」</strong>——用先验图给身份、用手锚给平移、用滑窗给时间。好处是工程干净、复现门槛低；代价是换硬件等于重搭前半段。</p>
+    </div>
+  </div>
+
+  <div id="sec3" class="section-card">
+    <h2>3. 从二维轨迹到六自由度：CoTracker2 与 RANSAC-PnP（slide 9）</h2>
+    <p>有了 query，接下来是两件完全不同的事：<strong>点跟踪器负责「同一个点是哪个」，PnP 负责「这些点摆成了什么姿态」</strong>。最容易出的错，是以为跟踪器在估计位姿。</p>
+    <h3>3.1 CoTracker2：只保身份，不解位姿</h3>
+    <p>论文原话：「We then employ a point-tracking algorithm to predict key point positions and visibility for the images within the interaction in an online fashion.」输入是视频片段加起始帧 query，输出是这些点在后续每帧的二维位置，外加<strong>可见性</strong>标志。</p>
+    <ul>
+      <li><strong>它不输出旋转平移</strong>，甚至不知道有「物体」这回事，只跟随视觉上相似的位置。几何全留给 PnP。</li>
+      <li><strong>窗口 8</strong>：与上一讲的 $|H|=8$ 对齐，所以一帧的交互状态判定完成时，这一帧的位姿也刚好算完，两条流水线不用互相等（论文称之为 seamless integration）。</li>
+      <li><strong>在线版本</strong>：「online fashion」意味着不能等整段视频结束再回溯优化，精度换延迟。</li>
+    </ul>
+    <p>可见性输出等于给求解器做了一次免费粗筛：遮挡帧的点不参与 PnP。但它只能筛掉「跟踪器自己知道不确定」的点，筛不掉「跟踪器很自信地跟错了」的点——后者才是 RANSAC 的活。</p>
+    <h3>3.2 PnP：把 2D-3D 对应变成 $\mathbf{R}$ 和 $\vec{t}$</h3>
+    <p>已知 3D 点 $\mathbf{X}_{i}$、它们在当前帧的像素观测 $\mathbf{u}_{i}^{k}$、内参 $\mathbf{K}$，求物体到相机的变换。自由度计数很直白：6 个未知量、每点 2 个方程，理论上 3 个非共面点（P3P）就够；实践中用几十上百个点做最小二乘，再用鲁棒估计压掉错配。</p>
+    <div class="formula-box">
+      $$\mathbf{T}_{k}^{\star}=\arg\min_{\mathbf{T}}\sum_{i\in\mathcal{V}_{k}}\rho\left(\left\|\mathbf{u}_{i}^{k}-\pi\left(\mathbf{K},\mathbf{T},\mathbf{X}_{i}\right)\right\|_{2}\right)$$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">重投影误差的标准形式（本课写出，非论文编号式）。RANSAC 本质上是不用鲁棒核 $\rho$ 而用「内点计数」近似这个目标：先找一组一致的点，再用它们精修。</p>
+    </div>
+    <p>RANSAC 四步没有新意，但每步都对应一个工程选择：随机抽最小点集 → 解候选位姿 → 数重投影误差小于阈值的点 → 重复取内点最多者，最后用全部内点做一次最小二乘。它成立的前提是<strong>内点占多数、且错误是「不一致」的</strong>。</p>
+    <h3>3.3 它抑制的错，和抑制不了的错</h3>
+    <p>论文点出的典型场景是遮挡：「如果一个点被遮挡后，跟踪器可能将它跟踪到背景上」——query 原本对应物体上的 3D 点，现在 2D 位置落在桌面背景纹理上。这种对应错得离谱，单点误差可能几十像素；直接最小二乘会被拉歪，RANSAC 则把它们当外点扔掉。</p>
+    <p>但有一类错它管不了：<strong>系统性偏差</strong>。点云尺度有偏、标定有残差、或 mask 把一个跟着物体一起动的邻近点也带进来，所有点会<strong>一致地</strong>支持一个略微错误的位姿——RANSAC 欣然接受，因为内点率很高。这类误差只能靠外部约束（手锚、物理约束）压。第 18 页说的「底层方法的局限会传播」，就是这一层。</p>
+    <p>留个伏笔：<strong>PnP 的输出本来就有平移</strong>，消融表里「不用手锚」的版本正是只用 PnP 的位姿。那作者为什么还要另起一套平移？下一节回答。</p>
+  </div>
+
+  <div id="sec4" class="section-card">
+    <h2>4. 朝向与平移：式 (2)、(3)、(4) 与手锚（slide 10）</h2>
+    <h3>4.1 朝向：为什么必须链式乘</h3>
+    <p>PnP 解出的是<strong>物体到相机</strong>的旋转——它定义在相机系里，因为投影方程本来就写在相机系。要拿到世界系朝向，必须乘上相机自身的朝向：</p>
+    <div class="formula-box">
+      $$\mathbf{R}_{k,\mathrm{obj}\to\mathrm{world}}=\mathbf{R}_{k,\mathrm{cam}\to\mathrm{world}}\cdot\mathbf{R}_{k,\mathrm{obj}\to\mathrm{cam}}$$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">式 (2)。右乘的因子先作用：先把物体转到相机系，再把相机系转到世界系。顺序反了，等于把相机当成了物体。</p>
+    </div>
+    <p>这里藏着一个容易忽略的事实：$\mathbf{R}_{k,\mathrm{cam}\to\mathrm{world}}$ 来自 Aria 的 SLAM 位姿，精度相当高。这正是 <strong>Head Pose 基线</strong>能打的原因——它直接把相机朝向当物体朝向，跳过整个视觉旋转估计，在 Table I 里拿到 17.62°，比 BundleTrack 的 31.98° 好得多。它输的地方很具体：物体在手里转动而头不动（或反过来）的那些帧。论文原话：「Only when the object is tilted within the camera frame, does the Head Pose heuristic suffer.」</p>
+    <h3>4.2 平移：为什么不直接信 PnP</h3>
+    <ol>
+      <li><strong>单目的深度条件数差</strong>：沿光轴的平移主要由点的张角决定；物体小、离得远、或正对相机时深度约束很弱，几个像素的跟踪误差就能换出几厘米的深度误差。</li>
+      <li><strong>旋转误差顺着杆臂变成平移误差</strong>：把物体原点写成 $\vec{t}=\vec{r}+\mathbf{R}\,\vec{v}$（$\vec{v}$ 是手到物体原点的偏移），一阶展开是 $\delta\vec{t}\approx\delta\vec{r}-\delta\mathbf{R}\,\vec{v}-\mathbf{R}\,\delta\vec{v}$。半径 10 cm、角度误差 10°，第二项就贡献约 1.7 cm；杆臂越长耦合越狠。</li>
+      <li><strong>逐帧独立，帧间没有约束</strong>：每帧自己解一次，误差是白噪声，轨迹就会抖。论文说本文方法「produces visibly smoother 6DoF object trajectories」，靠的不是更好的 PnP，而是下面这条跨帧约束。</li>
+    </ol>
+    <h3>4.3 hand anchor：一条不变的偏移</h3>
+    <p>假设只有一句：<strong>手抓着物体的同一个地方，握点相对物体原点不变</strong>。于是 $t=0$ 量一次偏移就够了，之后每帧用它反推物体在哪。</p>
+    <div class="formula-box">
+      $$\vec{\Delta}_{\mathrm{obj}}=\mathbf{R}_{0,\mathrm{obj}\to\mathrm{world}}^{\top}\cdot\vec{\Delta}_{0,\mathrm{world}},\qquad \vec{\Delta}_{0,\mathrm{world}}=\vec{c}_{o}-\vec{r}_{0,\{l,r\}}$$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">式 (3)。先用起始时刻的物体朝向把世界系偏移转回物体局部系，得到 $\vec{\Delta}_{\mathrm{obj}}$，此后视为常数。$\vec{c}_{o}$ 是物体原点（近似质心），$\vec{r}_{0,\{l,r\}}$ 是起始帧的左手或右手位置。</p>
+    </div>
+    <div class="formula-box">
+      $$\vec{t}_{k}=\vec{r}_{k,\{l,r\}}-\mathbf{R}_{k,\mathrm{obj}\to\mathrm{world}}\cdot\vec{\Delta}_{\mathrm{obj}}$$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">式 (4)。当前手位置减掉「被当前朝向旋转过的偏移」，就是物体原点在世界系的位置。旋转来自视觉（式 2），平移来自手，两个模态各管一半自由度。</p>
+    </div>
+    <p>几何直觉：<strong>把手当成钉在物体上的一个外挂标记点</strong>。世界坐标不用视觉估，Aria 手部追踪直接给；它与物体原点的相对位置又被握持固定住，「物体在哪」于是退化成一道减法。现场说法：「只要确保物体一直牢牢被这个手锁住，那它们的偏差量永远是固定的。」</p>
+    <p>为什么手值得信？现场的判断挺准：手的形态固定、Aria 的手部模型训练充分、握持时与物体刚性连接，「相对位置不变」比纯视觉点稳得多。反过来，这条假设一破——手滑、换手、握点被遮导致追踪跳变——平移就出现<strong>系统性偏差</strong>，且不会自己回来。另两个细节：<strong>①</strong> 两只手各起一套跟踪与位姿估计、各存自己的偏移，双手抓同一物体或同时操作两个物体都能处理；<strong>②</strong> 某只手一经判为接触，就为它单独开一条跟踪。</p>
+    <div class="callout callout-intuition">
+      <h4>💡 符号核对：式 (3) 的 $\vec{\Delta}$ 指向哪边</h4>
+      <p>Deck 第 10 页把手锚记法写作「$a$: fixed <strong>object-to-hand</strong> offset」，即从物体指向手。按这个方向取 $\vec{\Delta}_{0,\mathrm{world}}=\vec{r}_{0}-\vec{c}_{o}$，代入式 (4) 在 $k=0$ 处恰好回到 $\vec{t}_{0}=\vec{c}_{o}$，自洽。若照论文式 (3) 印刷的 $\vec{c}_{o}-\vec{r}_{0,\{l,r\}}$ 直接代入式 (4)，$k=0$ 会得到 $2\vec{r}_{0}-\vec{c}_{o}$，与「$\mathbf{T}_{0}$ 是确定的初始位姿」矛盾。两种写法只差一个整体符号，<strong>关键是式 (3) 与式 (4) 必须成对使用同一约定</strong>。论文正文与现场都没讨论这个细节（现场未展开），但自己复现时一定撞上——验算 $k=0$ 是最快的排查办法。</p>
+    </div>
+  </div>
+
+  <div id="sec5" class="section-card">
+    <h2>5. 把位姿写回图里（slide 11–12）</h2>
+    <p>位姿算出来只是中间结果。要让机器人能用，它必须变成图里的持久状态：点云跟着动、边重连、抽屉里有没有东西要改。论文把这段拆成三件事，顺序不能换。</p>
+    <h3>5.1 先动几何：增量式的点云变换</h3>
+    <p>论文原话：「The object pose is updated by applying the inverse of the pose from the previous step and subsequently the most recent pose prediction.」——先施加<strong>前一步位姿的逆</strong>，再施加<strong>最新的位姿预测</strong>。写成矩阵：</p>
+    <div class="formula-box">
+      $$\mathbf{X}^{\mathrm{new}}=\mathbf{T}_{k}\,\mathbf{T}_{k-1}^{-1}\,\mathbf{X}^{\mathrm{old}}$$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">本课按论文文字写出的矩阵形式（非论文编号式）。$\mathbf{X}^{\mathrm{old}}$ 是按上一帧位姿摆在世界系里的点；左乘 $\mathbf{T}_{k-1}^{-1}$ 退回物体局部系，再左乘 $\mathbf{T}_{k}$ 摆到新位姿上。</p>
+    </div>
+    <p>为什么不直接用新位姿重算？因为点在世界系里是<strong>已经摆好的</strong>，与物体局部系差着上一帧的位姿，要先退回去才能重新摆。工程上还有个好处：真正参与的变换是 $\mathbf{T}_{k}\mathbf{T}_{k-1}^{-1}$ 这个小增量，数值比反复做大角度旋转稳定，也天然适配「每帧只更新一次」的在线循环。</p>
+    <h3>5.2 再改 close to：只在局部重跑最近邻</h3>
+    <p>论文：「We update 'close to' edges by running a new nearest neighbor search on the interacted node and all nodes it was connected to with a 'close to' edge.」注意范围——<strong>交互节点本身，加上它原来的 close to 邻居</strong>，不是全图重建。理由：其它节点都没动，它们之间的距离不会因为一个物体被搬走而改变；唯一会变的是「这个物体现在离谁近」以及「它原来的邻居现在离谁近」。</p>
+    
+    <h3>5.3 最后改 contains：看质心进不进盒子</h3>
+    <p>初始化时 Spot-Compose 给每个抽屉节点存了一个 3D 包围盒，表示<strong>抽屉内容物所占的体积</strong>（第一讲讲过）。更新规则一句话：质心移出抽屉盒子 → 删 contains 边；质心移进最近抽屉的盒子 → 加 contains 边。</p>
+    <p>抽屉自己也会动，所以它同样要跟踪，但运动被约束在<strong>前脸法向的一维</strong>上——抽屉只能推拉。6DoF 降成 1DoF，误差小得多，包围盒位置也因此可信。这一步是第 7 节 Object Retrieval 的全部前提：物体进了抽屉就看不见了，那条 contains 边是唯一还记着它在哪的东西。</p>
+    <h3>5.4 一台交互的完整流水</h3>
+    <p>Deck 第 12 页把 Fig. 2 的例子拆成三步：<strong>①</strong> 二维接触证据加 3D 最近物体（&lt; 10 cm）锁定画框节点、滑窗判出起止帧（上一讲的式 1）；<strong>②</strong> 画框的 3D 点投影成 query、CoTracker2 给每帧 2D 位置、RANSAC-PnP 给旋转、手位置减偏移给平移（本讲 \2–\4）；<strong>③</strong> 点云按增量变换搬到新位姿，画框与旧架子断开、与新架子连上，若进了抽屉盒子则加 contains（\5.1–\5.3）。</p>
+    <div class="callout callout-key">
+      <h4>🔑 为什么值得用图，而不是重扫一遍</h4>
+      <p>重扫的代价不只是时间。物体被放进抽屉后<strong>在物理上就不可观测了</strong>——再怎么扫也扫不到，这是论文开篇立的靶子。图表示把变化记成「一个位姿 + 几条边」，改动量与场景大小无关；而那条 contains 边恰好编码了「看不见但在那里」。第 7 节的两个机器人任务，本质上都在消费它。</p>
+    </div>
+    <div class="callout callout-note">
+      <h4>📝 现场问答：这一页比的到底是哪一段</h4>
+      <p><strong>提问</strong>（大意）：「这一页它做的是什么东西的比较？是整个轨迹……手拿着物体的那一段时间，还没有到放进抽屉，就只是当中那一段是吗？」追问：「它最终还判断了这个东西进抽屉里面的位置吗？」</p>
+      <p><strong>回答</strong>（现场）：「它评价的就是从开始到结束，从搬运到放下。」「它只是放下，放下了之后应该就结束了。」</p>
+      <p>这对读表很关键：Table I 与 Table II 评的都是<strong>一次 pick-and-place 的完整搬运段</strong>（起手 → 放下），不含「放进抽屉之后」。抽屉内的最终位置由 contains 边与包围盒表达，不进入位姿误差统计。</p>
+    </div>
+  </div>
+
+  <div id="sec6" class="section-card">
+    <h2>6. 三张表：全轨迹、终态与消融（slide 13–16）</h2>
+    <h3>6.1 实验怎么搭的</h3>
+    <p>场景是一间按客厅布置的房间（架子、椅子、各种可移动小物）。测试集 <strong>96 段录制、9 类物体</strong>，每类约 10 条轨迹，每段 10–20 秒，只做一次 pick-and-place。<strong>Vicon 动捕</strong>提供参考轨迹：标记刚性贴在物体表面，人工在场景图里选定同一个点，保证真值与预测的初始位姿对齐；Aria 眼镜上也贴了标记，用来把两套参考系做时空对齐——不做这一步，轨迹没法比。</p>
+    <p>96 段里<strong>有两段交互区间提前结束</strong>：结束时刻判错，物体被误判成中途放下。作者让<strong>所有方法（含基线）都用同一个区间</strong>，位姿比较因此公平——但这也意味着这两段暴露的是交互检测的错，而这张表<strong>不消除</strong>交互检测的局限。Table I/II 的分数是在「区间已给对」的前提下拿到的，端到端部署还要乘上检测那一环的可靠性。</p>
+    <div class="callout callout-note">
+      <h4>📝 现场问答：真值从哪来</h4>
+      <p><strong>提问</strong>：「它这里面有跟真实值的对比，它真实的那些值是怎么算出来的？」<strong>回答</strong>（现场）：「它有那个动捕系统。」——Vicon，与论文 \IV-A 一致。现场还确认了这是<strong>真实场景、真人戴眼镜采的数据，不是仿真</strong>。</p>
+    </div>
+    <h3>6.2 Table I：全轨迹误差，以及那两个百分比的归属</h3>
+    <table>
+      <thead><tr><th>方法</th><th>平移 RMSE（cm）↓</th><th>旋转 RMSE（°）↓</th><th>ADD（%）↑</th></tr></thead>
+      <tbody>
+        <tr><td>BundleTrack</td><td>9.16</td><td>31.98</td><td>31.06</td></tr>
+        <tr><td>BundleSDF</td><td>12.44</td><td>26.65</td><td>27.52</td></tr>
+        <tr><td>FoundationPose</td><td>14.41</td><td>46.75</td><td>18.91</td></tr>
+        <tr><td>Head Pose</td><td>10.05</td><td>17.62</td><td>27.09</td></tr>
+        <tr><td><strong>Lost &amp; Found（ours）</strong></td><td><strong>6.02</strong></td><td><strong>7.79</strong></td><td><strong>56.20</strong></td></tr>
+      </tbody>
+    </table>
+    <p>表注：RMSE 按整条轨迹统计；ADD 是「物体点云平均距离小于物体直径 10%」的帧占比，越高越好。9 类物体逐类统计后取均值。</p>
+    <p>摘要那句「比次优方法翻译误差降 34%、旋转误差降 56%」，很多人顺手读成「对同一个第二名全面领先三到五成」。<strong>不是。</strong>算一下：</p>
+    <div class="formula-box">
+      $$1-\frac{6.02}{9.16}\approx 34.3\%,\qquad 1-\frac{7.79}{17.62}\approx 55.8\%$$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">34% 对着 <strong>BundleTrack</strong>（平移次优，9.16 cm）；56% 对着 <strong>Head Pose</strong>（旋转次优，17.62°）。<strong>两个百分比对应两个不同的基线。</strong></p>
+    </div>
+    <p>为什么次优不是同一个方法？四个基线各有长处：BundleTrack 靠鲁棒特征匹配，平移最好（9.16 cm）但旋转很差（31.98°）；Head Pose 直接借相机位姿，旋转最好（17.62°）但平移一般（10.05 cm）；BundleSDF 与 FoundationPose 都卡在单目深度估计上。本文方法在两个维度上同时超过各自第二名，这才是那句话的真正含义。</p>
+    <p>逐类还有两个细节：<strong>相框</strong>几乎完美（1.99 cm / 4.10° / ADD 90.39），因为它薄、平、纹理清楚，投影点都在同一平面上；<strong>水壶</strong>最差（15.58 cm / 9.65°），而这个类上 Head Pose 的平移反而更好（10.63 cm）——论文明确承认，解释成「相机位姿极准的红利」，也说明 Head Pose 几乎没有极端失败案例（它不做 PnP，也就不会 PnP 错配）。</p>
+    <h3>6.3 Table II：终态、达标率与吞吐</h3>
+    <table>
+      <thead><tr><th>方法</th><th>ADD-S（%）↑</th><th>Acc5cm,5°（%）↑</th><th>$T_{\mathrm{end}}$（cm）↓</th><th>$R_{\mathrm{end}}$（°）↓</th><th>FPS ↑</th></tr></thead>
+      <tbody>
+        <tr><td>BundleTrack</td><td>73.81</td><td>16.21</td><td>12.01</td><td>42.79</td><td>（1.72）</td></tr>
+        <tr><td>FoundationPose</td><td>44.56</td><td>10.34</td><td>17.97</td><td>65.00</td><td>2.56</td></tr>
+        <tr><td>BundleSDF</td><td>60.69</td><td>14.18</td><td>15.60</td><td>34.56</td><td>1.45</td></tr>
+        <tr><td>Head Pose</td><td>68.26</td><td>13.51</td><td>12.33</td><td>24.42</td><td>7.48</td></tr>
+        <tr><td><strong>Lost &amp; Found（ours）</strong></td><td><strong>88.10</strong></td><td><strong>53.05</strong></td><td><strong>8.46</strong></td><td><strong>10.91</strong></td><td><strong>6.95</strong></td></tr>
+      </tbody>
+    </table>
+    <p><strong>ADD-S 与 ADD 的区别</strong>：对称物体（球、篮子、方盒）转 90° 可能长得一模一样，按「对应点」算距离会冤枉它。ADD-S 改成「每个点到对方点云里<strong>最近点</strong>」的距离，避开对称歧义。所以 ADD-S 普遍更高，两个数不能横着比。</p>
+    <p><strong>Acc5cm,5° 只有 53.05%</strong>——这条最该被记住。它统计「整条轨迹上平移误差小于 5 cm <strong>且</strong>旋转误差小于 5°」的帧占比。最好的方法也只有约一半的帧同时满足这两个不算苛刻的门槛：记录一次搬运动作够用，精确装配远远不够。</p>
+    <p><strong>末端误差 8.46 cm / 10.91°</strong> 是机器人最关心的两个数：下游只用交互结束时的位姿，中途抖不抖无所谓。这也是作者把终态单列一行的原因——它与全轨迹误差回答的是两个不同问题。</p>
+    <p><strong>6.95 FPS</strong> 要加三个注解：① 不含相机位姿与手部状态估计的时间，这些是所有方法共同依赖的输入，通常由头显固件直接给；② 在 RTX 4090 上测的，唯独 BundleTrack 只跑在 3090 上（表里用括号标出，不完全可比）；③ FPS 是<strong>吞吐</strong>不是<strong>延迟</strong>。论文给的端到端延迟是 1.15 s（$|H|=8$ 帧的前瞻加处理耗时），两个数不能互相替代——6.95 FPS 意味着「一秒能算七帧」，但每帧结果要等未来八帧到齐才给出。</p>
+    <h3>6.4 Table III：hand anchor 到底买到了什么</h3>
+    <table>
+      <thead><tr><th>方法</th><th>hand anchor</th><th>$T_{\mathrm{err}}$（cm）↓</th><th>ADD（%）↑</th><th>ADD-S（%）↑</th></tr></thead>
+      <tbody>
+        <tr><td>Head Pose</td><td>✓</td><td>10.07</td><td>26.91</td><td>68.26</td></tr>
+        <tr><td>BundleTrack</td><td>✗ / ✓</td><td>19.31 / 9.05</td><td>9.61 / 30.99</td><td>35.22 / 73.81</td></tr>
+        <tr><td>FoundationPose</td><td>✗ / ✓</td><td>41.73 / 14.33</td><td>6.04 / 18.70</td><td>24.49 / 44.56</td></tr>
+        <tr><td>BundleSDF</td><td>✗ / ✓</td><td>19.17 / 12.38</td><td>10.65 / 27.28</td><td>34.93 / 60.69</td></tr>
+        <tr><td><strong>Lost &amp; Found（ours）</strong></td><td>✗ / ✓</td><td><strong>5.87 / 5.90</strong></td><td><strong>48.97 / 55.97</strong></td><td><strong>82.62 / 88.10</strong></td></tr>
+      </tbody>
+    </table>
+    <p>表注：✗ 表示只用方法自己预测的位姿，✓ 表示额外用 3D 手位置做锚。两种配置下<strong>朝向完全相同</strong>（旋转始终来自视觉那条链），所以只报全轨迹平移误差、ADD 与 ADD-S。</p>
+    <p>先看基线那一半，结论很干脆：手锚对它们是<strong>救命</strong>的。FoundationPose 的平移误差从 41.73 cm 掉到 14.33 cm，BundleTrack 从 19.31 掉到 9.05，ADD 普遍翻两三倍。这些方法全靠单目深度估计撑平移，而手位置是一个独立、直接、米制的观测，一进来就把最弱的那一维钉住了。</p>
+    <p>再看本文方法那一行，全篇最反直觉的一组数：<strong>平移误差 5.87 → 5.90 cm，加手锚反而略升 0.03 cm；但 ADD 从 48.97 涨到 55.97（+7.0 个点），ADD-S 从 82.62 涨到 88.10（+5.5 个点）。</strong>怎么同时解释？两个指标量的不是同一个东西：$T_{\mathrm{err}}$ 是整条轨迹<strong>质心位移</strong>的 RMSE，一个标量，平方后求和，被少数大误差帧主导；ADD / ADD-S 是<strong>逐帧阈值达标率</strong>（10% 物体直径），对误差的<strong>分布形状</strong>敏感、对平均值不敏感。一个标量略升、一个达标率大涨，唯一自洽的解释是<strong>分布形状变了</strong>：手锚把大量「刚刚超过阈值」的帧压回阈值内（+7 点），同时让少数帧偏差略增（RMSE +0.03 cm）。这也符合直觉——PnP 的平移在某些帧会被深度方向的弱约束甩出去，手锚给的是连续、跨帧一致的估计，抖动被抹平，但抹平的方式不是「每帧都更准」。</p>
+    <div class="callout callout-intuition">
+      <h4>⚠️ 别把这 7 个点讲成「手锚改善了旋转」</h4>
+      <p>论文写得很明确：两种配置下<strong>朝向完全相同</strong>，✓ 只是多用了 3D 手位置。所以数据能支持的因果只有一条——<strong>手锚改变了逐帧平移误差的分布，把更多帧压进了 10% 直径的阈值</strong>。ADD 本身对角度很敏感（点云半径乘角度误差，10 cm 半径配 10° 就是 1.7 cm，超过多数物体的 10% 直径），这是主表选它作主打指标的原因；但在<strong>这张消融表里</strong>旋转被固定住了，涨的 7 个点只能归给平移分布。</p>
+      <p>更准确的总结是：<strong>手锚买的不是「平移的平均精度」，而是「整块位姿的可用率」。</strong>只看 $T_{\mathrm{err}}$ 就断言「手锚没用甚至有害」，正好漏掉那 7 个百分点——而那 7 个百分点，才是下游真正消费的东西。论文自己的表述更克制：「our method achieves competitive results even without this anchor」——没有手锚也能用，所以这套方法并不依赖「手必须一直抓着」；但完整管线仍保留它，因为<strong>手本来就要被跟踪</strong>，顺手当锚不额外花钱。</p>
+    </div>
+    <div class="callout callout-note">
+      <h4>📝 现场问答：第一列反而升高了，怎么读</h4>
+      <p><strong>提问</strong>：「你看这张表，Lost &amp; Found 如果你以第一列 $T_{\mathrm{err}}$ 那个指标来看的话，它反而升高了。」</p>
+      <p><strong>回答</strong>（现场）：「对，但是它升高了一点，就是它比它们都要小。」「加不加入手锚对这个影响不是很大；但你加入手锚之后，对其他算法的改进是很显而易见的。」</p>
+      <p><strong>老师的补充判断</strong>（现场）：「说明它那个眼镜的定位精度更高」「手的特征比较明显，然后你又是刚性地转在手里不动的，相对位置不变，通过这种办法反而能判断得更精准」「纯靠视觉，误差太大了」。</p>
+      <p>这段对话其实已经点到上面的结论：手部观测是<strong>另一路独立模态</strong>，价值不在「更准」，而在「错得不一样」。两个独立误差源做约束，收益体现在分布尾部，而尾部正是阈值型指标（ADD/ADD-S）与下游任务在意的地方。</p>
+    </div>
+  </div>
+
+  <div id="sec7" class="section-card">
+    <h2>7. 从地图到机器人，再到这条路的边界（slide 17–18）</h2>
+    <h3>7.1 Object Retrieval：看不见也能找到</h3>
+    <p>场景选得很刁：人在交互中把物体<strong>放进抽屉</strong>。抽屉一关，物体在物理上就不可观测——重扫也扫不到，任何基于「再看一眼」的方法全部失效。但图里留着一条 contains 边：物体 → 那个抽屉。机器人拿到查询时不需看见物体，顺着边找到抽屉、拉开、取出即可。论文措辞是「despite its lack of visibility at the moment of the query」。这是全篇最有说服力的演示：它证明的不是「跟踪很准」，而是<strong>「表示选对了」</strong>——静态地图在这一刻是彻底无能，不是精度差一点。</p>
+    <h3>7.2 Teach &amp; Repeat：把一次示范变成可复现的动作</h3>
+    <p>流程是：人戴 Aria 做一遍（拉开左上抽屉 → 到房间另一侧拿蓝色玩具 → 放进抽屉 → 关上），系统把整段交互记成物体的起止位姿与关系变化；机器人拿到这些状态后<strong>自己</strong>算抓取、算身体轨迹、算放置。论文强调机器人用的是「object states and relations」，动作由它自己规划，不是照抄人的关节轨迹。意义在抽象层级：图把环境与「人怎么做的」解耦了——换机器人、换示范者，只要状态与关系对得上，动作可以重算；论文提到这类能力可给<strong>非技术背景的人</strong>定义可复用的动作原语。现场补了一句官网演示：机器人也能反过来按「这东西原本在哪个柜子」把它放回去。</p>
+    <h3>7.3 三条边界，都是硬的</h3>
+    <table>
+      <thead><tr><th>边界</th><th>论文怎么说</th><th>后果</th></tr></thead>
+      <tbody>
+        <tr><td>只支持刚性物体的 6DoF</td><td>「Lost &amp; Found is inherently limited to 6DoF pose estimation of rigid objects.」</td><td>毛绒牛能一路跟到被放进抽屉，但更大形变会让「点固定在物体局部系」失效，整条链断在第一步</td></tr>
+        <tr><td>物体必须始终在自我中心视野内</td><td>「the object must remain in the perceptual field of the egocentric observations at all times（110° for the Aria RGB camera）」</td><td>一旦出画，点跟踪就丢了；而人搬东西的自然方式（转身、侧身、把物体拎到身后）恰恰经常出画</td></tr>
+        <tr><td>底层方法的误差会传播</td><td>「Naturally, limitations within the underlying methods do propagate to our method.」</td><td>手物接触检测最易错 → 区间错 → 位姿错 → 图错；而 Table I/II 是在区间已给对的前提下测的</td></tr>
+      </tbody>
+    </table>
+    <p>第二条值得多说一句：作者自己写了「Although this is straightforward to impose, it does not align with how we typically transport certain objects」——很诚实的自我批评。110° 水平视场听起来不小，但搬运是全身运动，物体常被带到身体侧后方。作者把希望寄托在「点跟踪器将来能从遮挡与跟踪丢失中恢复」，也就是说，这条边界是<strong>赌未来</strong>的，不是当下能解的。</p>
+    <h3>7.4 未来三件事</h3>
+    <p><strong>重扫描</strong>：把偶发的重扫结果并进来纠正漂掉的位姿，代价是与「不重扫」的初衷有张力，但作为长周期一致性维护是合理的。<strong>物理约束</strong>：比如「物体总得在地面或某个支撑物上」，能在后处理阶段否决明显错误的跟踪，低成本高收益。<strong>不确定性建模</strong>：给每个位姿带置信度，模棱两可的观测先挂起，等信息更足的观测到来再判定——这与第一讲的滑窗思路一脉相承：宁可晚一点，也要判得准一点。</p>
+    <p>两讲合起来：它解决了静态度量地图「会过期」、自我中心视角加无深度、「看不见但在那里」三件事，也给了机器人一个可消费的接口；但只对刚体成立、物体必须全程在 110° 内、区间检测仍是误差源头、精度只到「约一半的帧满足 5 cm / 5°」。这四条不是实现细节，是这条路线当前的位置。</p>
+    <div class="callout callout-note">
+      <h4>📝 现场问答：这副眼镜多少钱、哪家公司的</h4>
+      <p><strong>提问</strong>（现场）：「那个眼镜它有没有……你去调研一下价格多少？」追问公司、产品年份、大致价格，并要求报告人会后补上。</p>
+      <p><strong>现场回答</strong>：「没有，应该是我买不起的东西吧。」——<strong>现场未展开</strong>，报告人当时没有给出公司与价格。</p>
+      <p><strong>本课补注</strong>：Project Aria 是 Meta（Reality Labs）的科研用头戴设备，不是消费级产品，通常通过研究计划申请而非零售购买，所以「买不起」在性质上是对的——它压根没有面向个人的定价。这段不影响技术结论，但值得记：<strong>这篇论文的输入依赖一台科研设备</strong>，这也是它难以直接复现到消费级硬件上的原因之一。</p>
+    </div>
+  </div>
+
+  <div id="quiz" class="section-card exercise-box">
+    <h2>📝 练习与自测</h2>
+
+    <div class="exercise">
+      <h4>练习1（概念）：三个环节各回答什么，各自死在哪</h4>
+      <p>把「关键点选取 → CoTracker2 → RANSAC-PnP」看成一个串联系统。(a) 用一句话说清每一环的输入、输出与它回答的问题；(b) 各给一个「该环失效但下游看起来仍然正常」的例子，并说明为什么这种失效最危险；(c) 为什么 RANSAC 修不了「点云尺度有偏」这类错误？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>(a) 关键点选取：输入初始图（实例点云）+ Aria 半稠密点云 + 起始帧位姿，输出带 3D 坐标的 2D query，回答「跟踪谁」。CoTracker2：输入视频 + query，输出每帧 2D 位置与可见性，回答「这个点现在在哪」。RANSAC-PnP：输入 3D 点、当前 2D 观测、内参，输出 $\mathbf{R}_{k,\mathrm{obj}\to\mathrm{cam}}$ 与 $\vec{t}$，回答「这些点摆成了什么姿态」。</p>
+        <p>(b) 例一：mask 把邻桌一个静止点也带进来，它在起始帧看起来属于物体，但物体一动它就不动——RANSAC 把它当外点扔掉，位姿仍正常，只是有效点数少了一点，没人会发现。例二：跟踪器遮挡后自信地跟到背景纹理上，恰好那几个点分布均匀，PnP 解出的位姿只偏一点点，肉眼看不出来，但这一帧的 ADD 已掉出阈值。危险在于<strong>没有任何环节会报错</strong>：没有异常、没有低置信度标志，错误一路流进图里，只在检索或复现时以「怎么找不到」的形式暴露。</p>
+        <p>(c) RANSAC 的判据是「一致性」：一组点能否被同一个位姿解释。尺度偏差会让<strong>所有</strong>点一致地支持一个略微缩放/偏移的位姿，内点率接近 100%，RANSAC 完全满意。鲁棒估计只能剔除「不一致」的观测，剔除不了「一致地错」的模型——后者要靠外部约束（手锚、物理约束、重扫描）来纠。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习2（数值）：用手锚算一次平移，并在 $k=0$ 处验算</h4>
+      <p>起始时刻：物体原点 $\vec{c}_{o}=(0.50,\,0.20,\,0.90)$ m，右手 $\vec{r}_{0}=(0.44,\,0.20,\,0.84)$ m，物体朝向与世界对齐（$\mathbf{R}_{0}=\mathbf{I}$）。$k$ 时刻：手移到 $\vec{r}_{k}=(0.62,\,0.26,\,1.02)$ m，物体绕世界 $z$ 轴转了 $90^{\circ}$。按「偏移在物体局部系中不变」，求 $\vec{t}_{k}$，再用 $k=0$ 验证符号约定。</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p><strong>① 算偏移。</strong>$\vec{\Delta}_{0,\mathrm{world}}=\vec{r}_{0}-\vec{c}_{o}=(-0.06,\,0.00,\,-0.06)$ m（物体→手方向）。因 $\mathbf{R}_{0}=\mathbf{I}$，$\vec{\Delta}_{\mathrm{obj}}=(-0.06,\,0,\,-0.06)$。</p>
+        <p><strong>② 验算 $k=0$。</strong>$\vec{t}_{0}=\vec{r}_{0}-\mathbf{R}_{0}\vec{\Delta}_{\mathrm{obj}}=(0.44,0.20,0.84)-(-0.06,0,-0.06)=(0.50,0.20,0.90)=\vec{c}_{o}$ ✓。这步必须过，过不了就是符号取反了。</p>
+        <p><strong>③ 转到 $k$。</strong>绕 $z$ 转 $90^{\circ}$：$(x,y,z)\mapsto(-y,x,z)$，故 $\mathbf{R}_{k}\vec{\Delta}_{\mathrm{obj}}=(-0,\,-0.06,\,-0.06)$。于是 $\vec{t}_{k}=(0.62,0.26,1.02)-(-0,\-0.06,\-0.06)=(0.62,\,0.32,\,1.08)$ m。</p>
+        <p><strong>几何复核</strong>：物体原点相对手的位置在转了 90° 后也跟着转，$(0.06,0,0.06)\mapsto(0,0.06,0.06)$；手在 $(0.62,0.26,1.02)$，相加正是 $(0.62,0.32,1.08)$ ✓。</p>
+        <p><strong>符号提醒</strong>：若把式 (3) 印刷的 $\vec{c}_{o}-\vec{r}_{0}$ 直接塞进式 (4)，得到 $(0.62,0.20,0.96)$——它在 $k=0$ 处给出 $2\vec{r}_{0}-\vec{c}_{o}$，不是 $\vec{c}_{o}$。两个写法只差一个整体符号，成对使用即可；复现时用 $k=0$ 验算最省事。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习3（数值）：那两个百分比到底对不对得上</h4>
+      <p>论文摘要说「比次优方法翻译误差降 34%、旋转误差降 56%」。(a) 用 Table I 的均值行验证这两个数，并指出各自的基线；(b) 若统一拿 BundleTrack 做基线，旋转误差降幅是多少？若统一拿 Head Pose 做基线，平移降幅是多少？(c) 由此说明这句话在传播时最容易被误读成什么。</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>(a) 平移：$1-6.02/9.16=1-0.657=34.3\%$，基线是 <strong>BundleTrack</strong>（9.16 cm，平移次优）。旋转：$1-7.79/17.62=1-0.442=55.8\%$，基线是 <strong>Head Pose</strong>（17.62°，旋转次优）。四舍五入正好 34% 与 56%，<strong>但两个基线不是同一个方法</strong>。</p>
+        <p>(b) 统一对 BundleTrack：$1-7.79/31.98=75.6\%$。统一对 Head Pose：$1-6.02/10.05=40.1\%$。两组都更「好看」，但那是在打不同的靶子。</p>
+        <p>(c) 最容易被读成「对同一个第二名，平移与旋转分别降了三成和五成」，甚至进一步读成「平均降 45%」。实际含义是「两个维度各自击败了该维度的第二名」。这不是文字游戏：若读者以为同一个基线在两维上都输了 34%/56%，就会高估方法相对于「综合最强基线」的优势，而事实上并不存在一个在所有维度都排第二的方法。</p>
+      </details>
+    </div>
+
+  </div>
+
+  <div class="nav-links">
+    <a href="0049-组内分享-黄辖-动态场景图变化跟踪-1.html" class="prev">← 动态场景图里的变化跟踪(1/2)：静态地图为什么会过期，交互区间怎么切</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+  </div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 35 · 组内分享 · 黄辖（2026-11-07）</p>
+    <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px">内容来源：视频转写（Qwen3-ASR）+ Deck 版面文字（18 页）+ 论文原文（Lost &amp; Found, IEEE RA-L 2025）</p>
+  </div>
+</div>
+<script src="assets/shiclass.js"></script>
+<script src="../shared/lesson-tools.js"></script>
+</body>
+</html>

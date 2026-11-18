@@ -240,6 +240,26 @@ window.SHICLASS_DATA = {
       description: "第 0045-0046 课。曾畅分享 IEEE TCNS 2025 论文：丢包链路下智能传感器的随机事件触发状态估计——2 的 τ 次方条路径上的精确高斯混合、闭式误差协方差，以及存储有限 / 高丢包 / 无 ACK 三种工程扩展。",
       quickOpen: "lessons/0045-组内分享-曾畅-随机事件触发估计-1.html",
       meta: ["2 节课", "~70 分钟", "事件触发 / 高斯混合 / 马尔可夫链"]
+    },
+    {
+      id: "shares-34",
+      groupId: "seminars",
+      kind: "分享",
+      title: "北理工分享（系列 34）——世界模型下的机器人操作",
+      subtitle: "系列 34",
+      description: "第 0047-0048 课。曲家玉分享 JEPA 系列世界模型路线：从像素重建到表征预测（I-JEPA / V-JEPA）、动作条件化与 MPC 规划（V-JEPA 2 / 2-AC / 2.1），以及跨机器人动力学建模 RoboJEPA 的四轴 RoPE、双损失与 scaling law。",
+      quickOpen: "lessons/0047-北理工分享-世界模型与JEPA-1.html",
+      meta: ["2 节课", "~80 分钟", "JEPA / 世界模型 / 机器人操作"]
+    },
+    {
+      id: "shares-35",
+      groupId: "seminars",
+      kind: "分享",
+      title: "组内分享（系列 35）——动态场景图的变化跟踪",
+      subtitle: "系列 35",
+      description: "第 0049-0050 课。黄辖分享 IEEE RA-L 2025 论文 Lost & Found：用 Aria 眼镜的第一视角观测跟踪 3D 动态场景图里的物体变化——Mask3D 实例分割 + Spot-Compose 抽屉检测建图，手物接触 + 8+8 帧前瞻窗口判定交互起止（式 1），CoTracker2 + RANSAC-PnP 解旋转、手锚解平移（式 2-4），96 段真机录制上 6.02 cm / 7.79°，6.95 FPS。",
+      quickOpen: "lessons/0049-组内分享-黄辖-动态场景图变化跟踪-1.html",
+      meta: ["2 节课", "~75 分钟", "动态场景图 / 手物交互 / 位姿跟踪"]
     }
   ],
     lessons: [
@@ -683,6 +703,42 @@ window.SHICLASS_DATA = {
       subtitle: "滑动窗口 ℓ · 混合调度 HSS 与超时 ℏ · 无 ACK 的火山口分布 · 人工堰系统数值验证",
       duration: "35 min",
       tags: ["马尔可夫链", "火山口分布", "丢包", "组内分享"]
+    },
+    {
+      id: "0047",
+      collectionId: "shares-34",
+      path: "lessons/0047-北理工分享-世界模型与JEPA-1.html",
+      title: "世界模型下的机器人操作(1/2)：从像素重建到 JEPA 表征学习",
+      subtitle: "策略与世界模型的分野 · 五类控制架构 · 像素重建 vs 表征预测 · I-JEPA 与 EMA 防坍塌 · V-JEPA 时空预测",
+      duration: "40 min",
+      tags: ["JEPA", "表征学习", "I-JEPA", "V-JEPA", "北理工分享"]
+    },
+    {
+      id: "0048",
+      collectionId: "shares-34",
+      path: "lessons/0048-北理工分享-世界模型与RoboJEPA-2.html",
+      title: "世界模型下的机器人操作(2/2)：动作条件化、MPC 规划与 RoboJEPA",
+      subtitle: "V-JEPA 2 与 2-AC 双损失 · CEM-MPC 闭环 · V-JEPA 2.1 稠密监督 · 四轴 RoPE · scaling law 与真机结果",
+      duration: "40 min",
+      tags: ["V-JEPA 2", "MPC", "RoPE", "RoboJEPA", "北理工分享"]
+    },
+    {
+      id: "0049",
+      collectionId: "shares-35",
+      path: "lessons/0049-组内分享-黄辖-动态场景图变化跟踪-1.html",
+      title: "动态场景图的变化跟踪(1/2)：静态地图为什么会过期",
+      subtitle: "Mask3D 实例分割 · Spot-Compose 抽屉检测 · 三类边 close to / part of / contains · 手物接触与 10 cm 判据 · 8+8 帧前瞻窗口 · 式 (1) 起止判定",
+      duration: "40 min",
+      tags: ["动态场景图", "实例分割", "手物交互", "事件检测", "组内分享"]
+    },
+    {
+      id: "0050",
+      collectionId: "shares-35",
+      path: "lessons/0050-组内分享-黄辖-动态场景图变化跟踪-2.html",
+      title: "动态场景图的变化跟踪(2/2)：手锚位姿、三张表与机器人可用性",
+      subtitle: "3D 点投影为 query · CoTracker2 保身份 · RANSAC-PnP 解旋转 · 式 (2)(3)(4) 手锚平移 · 图关系更新 · Table I/II/III 与 6.95 FPS · Object Retrieval 与 Teach & Repeat",
+      duration: "35 min",
+      tags: ["CoTracker2", "PnP", "手锚", "位姿跟踪", "组内分享"]
     },
   ]
 };

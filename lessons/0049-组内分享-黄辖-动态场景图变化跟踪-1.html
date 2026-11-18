@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>动态场景图的变化跟踪(1/2)：静态地图为什么会过期 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="assets/shiclass.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+</head>
+<body>
+<div class="page">
+
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · 系列35 · 组内分享</div>
+    <h1>动态场景图的变化跟踪(1/2)：静态地图为什么会过期</h1>
+    <p class="subtitle">东西被挪走、塞进抽屉，地图却还停在原处——Lost &amp; Found 把「房间变了」拆成「哪个物体、什么时候、怎么动」，本讲用一张可局部更新的场景图解决前两个，并用 8+8 帧的延迟窗口判定交互起止</p>
+    <div class="hero-meta">
+      <span>📅 2026-11-07</span>
+      <span>🎙️ 黄辖（组内分享）</span>
+      <span>📚 Lost &amp; Found: Tracking Changes from Egocentric Observations in 3D Dynamic Scene Graphs · IEEE RA-L 2025</span>
+    </div>
+  </div>
+
+  <div class="lead-grid">
+    <div class="callout">
+      <h4>🎯 学完本节，你应能</h4>
+      <ul>
+        <li>说清静态地图在「东西被收进抽屉」上为什么<strong>不是不准，而是无从表示</strong>，以及重扫为什么解决不了</li>
+        <li>复述论文那一刀：几何（离线、昂贵、不变）与位姿（在线、便宜、每帧变）分开做</li>
+        <li>讲出场景图三要素——节点存什么、三类边各连什么、为什么改一个物体只需改几行</li>
+        <li>解释交互检测的三层证据，以及每层单独用会怎么错</li>
+        <li>说明 look-ahead window 是<strong>延迟</strong>不是<strong>预测</strong>，并算出 8 帧与 1.15 s 之间的隐含观测率</li>
+        <li>逐项拆开式 (1)：$\tau_{o}$、$\tau_{d}$、$\delta_{\mathrm{diff}}$、$\theta_{\mathrm{reg}}$、$\theta_{\mathrm{high}}$ 各在哪一层起作用</li>
+      </ul>
+    </div>
+    <div class="callout">
+      <h4>🔑 核心思想</h4>
+      <p>这篇工作的技巧不在任何一个检测器，而在<strong>把「变化」变成一次局部的、可判定的状态转移</strong>：几何建一次就不动，物体被搬动时只更新它自己的位姿和它牵连的几条边——于是「房间变了」不再等于「重建房间」。而要把一次搬动切出准确的区间，就得承认在线系统无法预知未来：宁可<strong>故意晚 1.15 秒</strong>再回答「这一帧是不是开始」，也不拿单帧检测去赌。</p>
+    </div>
+  </div>
+
+  <div class="toc">
+    <h3>📖 目录</h3>
+    <ul>
+      <li><a href="#sec1">1. 一张会过期的地图：问题与输入</a></li>
+      <li><a href="#sec2">2. 系统总览：五个盒子，两个子问题</a></li>
+      <li><a href="#sec3">3. 场景图初始化：把房间拆成节点</a></li>
+      <li><a href="#sec4">4. 交互检测：哪只手，碰了哪个物体</a></li>
+      <li><a href="#sec5">5. Look-ahead window：为什么必须晚 8 帧</a></li>
+      <li><a href="#sec6">6. 式 (1)：start、continuation 与 end</a></li>
+      <li><a href="#sec7">7. 小结、现场问答与下一讲的钩子</a></li>
+      <li><a href="#quiz">📝 练习与自测</a></li>
+    </ul>
+  </div>
+
+  <div id="sec1" class="section-card">
+    <h2>1. 一张会过期的地图：问题与输入</h2>
+    <p>2026 年 11 月 7 日的组内分享讲的是 IEEE RA-L 2025 的 <strong>Lost &amp; Found</strong>（Behrens、Zurbrügg、Pollefeys、Bauer、Blum）。标题三个词定了边界：<em>egocentric observations</em>（一副眼镜拍的）、<em>3D dynamic scene graphs</em>（要维护的数据结构）、<em>tracking changes</em>（要干的事）。Deck 共 18 页，按四问展开：问题与输入、方法、证据与机器人使用、讨论与结论。本讲覆盖前 7 页，走到「交互区间判定」为止。</p>
+
+    <h3>1.1 静态地图错在哪</h3>
+    <p>论文摘要第一句就把矛头指向静态重建社区：<strong>分割与重建越来越好，但重建出来的世界是死的</strong>。而人待的房间是活的——杯子被挪到水槽、玩具被塞进抽屉。静态语义地图无法表达这些，而「每次变化后重扫一遍」这个朴素办法，论文用的词是<strong>既昂贵又无效</strong>（costly and ineffective）。</p>
+    <p>为什么无效？现场举的就是抽屉。想象一个关着的抽屉：</p>
+    <ul>
+      <li><strong>扫描时它关着</strong>：里面的玩具根本不在点云里。不是「位置错了」，是「压根没有」。</li>
+      <li><strong>人把玩具放进去、关上抽屉</strong>：地图上玩具还留在桌上，看起来一切正常，其实已经错了——而且不会自己暴露，除非有人去那儿找。</li>
+      <li><strong>再扫一遍</strong>：抽屉还是关着，玩具依然看不见；而且重扫要求场景静止，人得先停下来，这本身就破坏了「边用边记」的假设。</li>
+    </ul>
+    <p>这就是标题的字面意思：东西「丢了」（地图上找不到它现在在哪），系统要把它「找回来」（把变化补进图里）。遮挡是几何事实，不是分辨率问题——换再好的扫描仪，关着的抽屉里也扫不出东西。</p>
+
+    <h3>1.2 一刀切成两个问题</h3>
+    <p>这篇论文真正的方法论贡献，是把「动态语义建图」这个笼统得没法下手的目标<strong>拆成两件独立的事</strong>（Introduction 明确写出）：</p>
+    <table>
+      <thead><tr><th>子问题</th><th>需要什么</th><th>什么时候做</th><th>本工作怎么做</th></tr></thead>
+      <tbody>
+        <tr><td>(i) 每个物体的<strong>几何</strong></td><td>高分辨率、多视角、场景静止</td><td>一次性，离线</td><td>现成的静态重建 + 3D 实例分割（第 3 节）</td></tr>
+        <tr><td>(ii) 每个物体的<strong>位姿</strong>随时间怎么变</td><td>连续观测、相机位姿、交互线索</td><td>在线，逐帧</td><td>自我中心视频 + 手部位置 + 点跟踪（第 2 节提，第二讲展开）</td></tr>
+      </tbody>
+    </table>
+    <p>这一刀为什么值钱：<strong>几何最贵，但它不变；位姿最便宜（六个自由度），但它每帧都变</strong>。把贵的冻结成先验，在线就只剩一个 6DoF 跟踪问题。于是整套系统不需要深度、多相机阵列或 CAD 模型——只需一副能给自己定位、能看见自己手的眼镜：<strong>深度不是被估计出来的，是被绕过去的</strong>。</p>
+
+    <h3>1.3 输入清单</h3>
+    <table>
+      <thead><tr><th>输入</th><th>从哪来</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>初始场景图</td><td>iPad Pro + 3D 扫描 app 做高分辨率扫描，再用 Mask3D 分割</td><td>离线一次，整套系统的「底图」</td></tr>
+        <tr><td>自我中心 RGB</td><td>Aria 内置相机，30 fps，$1408\times1408$</td><td>论文写 RGB；现场补充是单目灰度鱼眼，视场约 110 度</td></tr>
+        <tr><td>设备 6DoF 位姿</td><td>Aria 闭环 SLAM 轨迹</td><td>把每帧相机放进世界系</td></tr>
+        <tr><td>半稠密点云</td><td>Aria 视觉 SLAM 的关键点</td><td>第二讲选跟踪点用的就是这套点</td></tr>
+        <tr><td>手部 3D 位置</td><td>Aria 的手腕 / 手掌跟踪</td><td>交互检测与平移估计都靠它</td></tr>
+      </tbody>
+    </table>
+    <p>还有一步容易忽略：场景图与 Aria 录制必须落在<strong>同一参考系</strong>。论文在场景里放固定标定板，对齐 marker 位姿后再用 ICP 精修；不做这步，「手到物体小于 10 cm」之类的判据全是错的——两个坐标系之间还差一个刚体变换。现场讲的「先配准、再最近邻匹配选出属于该对象的点」，就是同一件事。</p>
+
+    <div class="callout callout-note">
+      <h4>📝 现场问答：单目、没深度，怎么会有三维点云</h4>
+      <p><strong>提问</strong>（大意）：「这个眼镜是单目的？没有深度信息？单目的还能做出点云图像？」</p>
+      <p><strong>回答</strong>（现场）：是单目灰度鱼眼，没有深度输出；但设备自带的视觉 SLAM 会给出<strong>半稠密的关键点点云</strong>，论文选跟踪点用的就是这套点，不是每帧现算深度。</p>
+      <p><strong>本课补充</strong>：这也解释了第二讲的设计——跟踪点必须是「SLAM 已认为是好点」的那些点：三角化过、跨帧稳定、带三维坐标，所以能直接投影成 2D 查询点并在后面重新配对。用每帧现算的稠密深度反而做不到，因为点的身份（identity）会丢。</p>
+    </div>
+
+    <div class="callout callout-note">
+      <h4>📝 转写勘误与记法说明</h4>
+      <p>术语以论文原文与 Deck 版面文字为准。视频由 Qwen3-ASR 转写，专名错得集中，这里一次列全，正文不再重复：</p>
+      <table>
+        <thead><tr><th>转写里的写法</th><th>应为</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>Mask 三 D</td><td>Mask3D</td><td>点云 3D 实例分割（Schult et al., ICRA 2023）</td></tr>
+          <tr><td>Spot Compose</td><td>Spot-Compose</td><td>抽屉检测框架（Lemke et al., ICRA Workshop 2024）</td></tr>
+          <tr><td>Co Tracker</td><td>CoTracker2</td><td>2D 点跟踪器（Karaev et al., ECCV 2024），第二讲主角</td></tr>
+          <tr><td>PMP</td><td>PnP</td><td>Perspective-n-Point，用 3D–2D 对应解位姿</td></tr>
+          <tr><td>Area / 阿里亚</td><td>Aria</td><td>Project Aria 眼镜，本工作唯一的传感器</td></tr>
+          <tr><td>Siam 系统</td><td>SLAM 系统</td><td>Aria 自带视觉 SLAM，半稠密点云从这来</td></tr>
+          <tr><td>黄霞 / 王霞</td><td>黄辖</td><td>报告人；现场喊的名字与云盘文件名不一致，以文件名为准</td></tr>
+          <tr><td>Lost and Found</td><td>Lost &amp; Found</td><td>论文名，正文统一带 &amp;</td></tr>
+        </tbody>
+      </table>
+      <p><strong>记法</strong>：$y_{k}$ 是第 $k$ 个观测，$B$ 是存过去帧的 observation buffer，$H$ 是 look-ahead horizon，$\tau$ 一律是阈值，$\theta$ 一律是「要多少张票」，$O$ 是被跟踪物体，$\vec{c}_{O}$ 是它的质心。三类边保留英文原词，中文译名太容易与别的概念混。</p>
+    </div>
+  </div>
+
+  <div id="sec2" class="section-card">
+    <h2>2. 系统总览：五个盒子，两个子问题</h2>
+    <p>Deck 第 3 页把整条流水线画成五个盒子，从左到右读就是一句话：</p>
+    <div class="flow-formula">
+      <p style="font-family:'JetBrains Mono',monospace;font-size:0.95rem;line-height:2">先验场景（objects + relations）→ <strong>哪个物体？何时？</strong> → 旋转 + 平移 → 几何 + 关系 → 更新后的场景</p>
+    </div>
+    <table>
+      <thead><tr><th>#</th><th>盒子</th><th>要回答的问题</th><th>本讲 / 下一讲</th></tr></thead>
+      <tbody>
+        <tr><td>①</td><td>Prior: objects + relations</td><td>本来有什么，彼此什么关系</td><td>本讲第 3 节</td></tr>
+        <tr><td>②</td><td>Which object? When?</td><td>谁被碰了，从哪一刻到哪一刻</td><td>本讲第 4–6 节</td></tr>
+        <tr><td>③</td><td>Rotation + translation</td><td>区间内每帧的 6DoF 位姿</td><td>第二讲</td></tr>
+        <tr><td>④</td><td>Geometry + relations</td><td>位姿变了，点云和边怎么改</td><td>第二讲</td></tr>
+        <tr><td>⑤</td><td>Updated scene</td><td>机器人能查询的新状态</td><td>第二讲 + 机器人任务</td></tr>
+      </tbody>
+    </table>
+    <p>这条链子有个容易忽略的特点：<strong>单向，没有回头路</strong>。第 ② 步把区间判错，第 ③ 步只能在错的区间里估位姿；第 ③ 步位姿一偏，第 ④ 步的 contains 判定就跟着错——因为「质心有没有进抽屉的盒子」全看位姿。论文把「底层方法的局限会传播」写进 limitations，指的就是这条链。</p>
+
+    <p>Fig. 2 的画框（右架 → 左高架）是贯穿全文的例子；Fig. 1 的奶牛玩具终点在抽屉里，多一步 contains 增删。</p>
+
+    <h3>2.1 为什么非要把区间和位姿分开</h3>
+    <p>论文 III-A 之后有一句关键的话：这个形式化「允许我们把估计过程分解成两个不同的预测问题」。区间是<strong>分类</strong>问题（证据够不够，输出两个时刻），位姿是<strong>几何</strong>问题（重投影误差小不小，输出每帧一个 $\mathbf{T}_{k}\in\mathbb{SE}(3)$）。混在一起会互相污染：位姿顺手决定「这帧还在不在交互里」，跟踪器一跟丢区间就被掐断；区间早一帧，跟踪器就要去跟还没被抓住的物体。分开之后，<strong>区间错了是区间的事，位姿错了是位姿的事</strong>。</p>
+  </div>
+
+  <div id="sec3" class="section-card">
+    <h2>3. 场景图初始化：把房间拆成可单独更新的节点</h2>
+    <p>先验图的定义很朴素：$G=(V,E)$，节点集加边集。论文明确说本文只做<strong>物体层与物体部件层</strong>，但定义与房间层、建筑层的分层图完全兼容。每个节点存两样东西：<strong>一个语义标签</strong>，和<strong>属于这个实例的那批点</strong>。</p>
+    <p>注意是「点」而不是「包围盒」——这是后面能做几何更新的前提：位姿一变，把这批点整体做一次刚体变换就完事，不需要重新拟合任何东西。</p>
+    <p>唯一的例外是抽屉。论文写：<em>「While other object-part nodes are possible, we focus on drawers, for which we additionally store a 3D bounding box for the volume of their contents.」</em>——抽屉节点除了标签和点，还多存一个<strong>三维包围盒，描述它内容物所占据的体积</strong>。</p>
+    <div class="callout callout-key">
+      <h4>🔑 为什么非要给抽屉开这个特例</h4>
+      <p>因为抽屉<strong>既像物体、又像容器</strong>，两种身份对表示的要求是矛盾的。当作物体，它需要位姿（能被拉开、关上）；当作容器，它需要一块「里面」的空间（内容物要挂账）。把抽屉和柜体揉成一个节点，「拉开抽屉」就等于「整个柜子动了」，内容物也没法单独记账；只当物体、不给盒子，「玩具还在不在抽屉里」就无从判断——你没有任何几何依据说它「在里面」。</p>
+      <p>给一个 3D 盒，等于给 contains 这条边一个<strong>可判定的几何谓词</strong>：质心在盒内就是在里面，出去了就是不在。一个盒子，把「包含」从语义直觉变成了坐标比较。</p>
+    </div>
+
+    <h3>3.1 初始化用的三件工具</h3>
+    <table>
+      <thead><tr><th>工具</th><th>在哪一步</th><th>做什么</th><th>为什么是它</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Mask3D</strong></td><td>初始静态点云</td><td>3D 实例分割：给每个点一个实例 mask 与语义标签</td><td>稀疏 3D 卷积 U-Net 编码 + transformer 解码器的实例 query 迭代精修，点云实例分割的 SOTA 路线（论文第 II 节）</td></tr>
+        <tr><td><strong>Spot-Compose</strong> 抽屉检测器</td><td>分割之后</td><td>把抽屉<strong>生成成独立节点</strong>并连到对应柜体</td><td>抽屉在点云里往往只是一道缝，通用实例分割切不出来</td></tr>
+        <tr><td>图像检测 → 点云</td><td>扫描轨迹的 RGB</td><td>把 RGB 里检出的物体提升到三维点云</td><td>论文点名为抓住「点云里很难捕获的东西」，例如<strong>海报</strong>——贴在墙上，厚度接近零</td></tr>
+      </tbody>
+    </table>
+    <p>第三件说明作者并不认为点云分割是唯一真理：凡点云几何上不占便宜的类别（薄、透、贴在别的表面上），就从图像那边补。</p>
+
+    <h3>3.2 三类边</h3>
+    <table>
+      <thead><tr><th>边</th><th>连什么</th><th>初始化怎么来</th><th>交互之后怎么变（第二讲细讲）</th></tr></thead>
+      <tbody>
+        <tr><td><strong>close to</strong></td><td>节点质心到它的最近邻</td><td>对每个节点做最近邻查询，建一条</td><td>在交互节点<strong>及其所有 close to 邻居</strong>上重跑最近邻</td></tr>
+        <tr><td><strong>part of</strong></td><td>物体部件 → 父物体（抽屉 → 柜体）</td><td>Spot-Compose 抽屉检测器给出</td><td>结构边，不重算</td></tr>
+        <tr><td><strong>contains</strong></td><td>抽屉里的物体 → 抽屉</td><td>质心落在抽屉 3D 盒内即建</td><td>质心移出盒 → 删边；移入最近抽屉的盒 → 加边</td></tr>
+      </tbody>
+    </table>
+    <p>三类边性质分得很清楚：close to 是<strong>空间关系</strong>（随位置变），part of 是<strong>结构关系</strong>（不随位置变），contains 是<strong>空间 + 结构</strong>（隶属不变，但在不在里面会变）。这决定了更新代价——只有 close to 要重算，且只在局部；part of 不用管；contains 只需一次坐标与盒的包含测试。</p>
+
+    <h3>3.3 存储：为什么「改一个物体」真的很便宜</h3>
+    <p>论文给的数据结构是三件套：<strong>索引化节点列表</strong>（按下标取）、<strong>邻接表</strong>（按边遍历）、<strong>质心的 k-d 树</strong>（按空间找）。三种结构对应三种访问模式。</p>
+    <p>于是更新路径短得惊人。论文原话：更新关系时「只需检查被搬运物体本身以及它最近邻的连接是否仍然正确」——对交互节点和所有与它有 close to 边的节点重跑一次最近邻；contains 则是质心移出抽屉盒就删、移进最近抽屉的盒就加。配合「移动一个物体只改几个属性和几条边」这句对 scene graph 的一般评价，整篇论文的经济学就出来了：<strong>昂贵的重建只做一次，廉价的更新做一辈子</strong>。它不是每一步都更省，而是<strong>把 N 次重建换成 1 次重建 + N 次局部更新</strong>。</p>
+
+    <div class="callout callout-note">
+      <h4>📝 现场口述与论文的一处口径差异</h4>
+      <p>报告人讲抽屉与玩具时说：玩具被拿走之后，「这个节点也会相应的被删除」。按论文 III-B 的写法，被删的是 <strong>contains 边</strong>，不是节点——节点（连同它的点与标签）还在图里，只是不再挂在抽屉下面。</p>
+      <p>这个区别不小：真把节点删了，这个物体就从地图上彻底消失，那才叫「丢了找不回来」；论文要的恰恰相反，是让它以「不在抽屉里」的状态继续存在，等着被重新观测。口头讲述里这类「节点 / 边」的混用很常见，不影响理解，但读论文时要按边的增删来理解。</p>
+    </div>
+  </div>
+
+  <div id="sec4" class="section-card">
+    <h2>4. 交互检测：哪只手，碰了哪个物体</h2>
+    <p>区间判定的输入是一个观测序列。论文把第 $k$ 个观测写成（III-D）：</p>
+    <div class="formula-box">
+      $$ y_{k}=\left(\mathbf{I}_{k},\,t_{k},\,p_{o,k},\,\vec{r}_{l,k},\,\vec{r}_{r,k}\right) $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">$\mathbf{I}_{k}$ 是 RGB 图，$t_{k}$ 是时间戳，$p_{o,k}$ 是这一帧的<strong>手–物接触概率</strong>，$\vec{r}_{l,k},\vec{r}_{r,k}\in\mathbb{R}^{3}$ 是左右手三维位置——<strong>只在手落在视野内时才有值</strong>。这个「有时没有」很关键，后面所有关于手的判据都要先确认手在画面里。</p>
+    </div>
+
+    <h3>4.1 第一层证据：二维接触概率</h3>
+    <p>接触检测用 Shan et al. 的预训练模型（<em>Understanding Human Hands in Contact at Internet Scale</em>, CVPR 2020），阈值 $\tau_{o}=0.5$：</p>
+    <div class="formula-box">
+      $$ y_{k}\;\text{is positive}\;\left(y_{k}^{+}\right)\quad\Longleftrightarrow\quad p_{o,k}>\tau_{o}=0.5 $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">论文对 positive observation 的定义。「is positive」是论文原话的缩写，不是公式的一部分。</p>
+    </div>
+    <p>现场对这一步的描述比论文细：检测器从<strong>单张图像</strong>给出「手的位置、物体位置、接触状态、接触对象的框」——但那是<strong>图像里的框</strong>，不是地图里的物体。</p>
+
+    <h3>4.2 第二层证据：用三维手位置去地图里找</h3>
+    <p>为什么不能只信二维？现场讲得很直白：<strong>二维会有遮挡、投影重叠</strong>。手挡住物体时，接触判定可能对、但「碰的是哪个」会错；两物体投影重叠时，框可能落在错的那个上。这是透视投影的固有病。</p>
+    <p>论文的解法是把问题搬回三维：用估计的<strong>三维手位置</strong>在先验图里找最近的物体，并要求距离低于 $\tau_{d}=10$ cm：</p>
+    <div class="formula-box">
+      $$ \left\|\vec{r}_{k,\{l,r\}}-\vec{c}_{O}\right\|<\tau_{d}=10\,\mathrm{cm} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">起点判据的第二个条件。$\vec{c}_{O}$ 是候选物体 $O$ 的质心——用质心粗糙但稳：不需要知道手抓的是哪个部位，只需知道「够近」。</p>
+    </div>
+    <p>这个 10 cm 有三个作用叠在一起：容忍手部跟踪误差、容忍质心到表面的距离（质心在物体内部、手在表面）、容忍「手还没完全贴上但已进入抓取姿态」的那几帧。它是一把<strong>粗筛的尺子</strong>，不是精确的接触判定。</p>
+
+    <h3>4.3 三层证据各管什么</h3>
+    <table>
+      <thead><tr><th>证据</th><th>从哪来</th><th>解决什么</th><th>单独用会怎么错</th></tr></thead>
+      <tbody>
+        <tr><td>2D 接触概率 $p_{o}$</td><td>单张 RGB，Shan et al. 检测器</td><td>这帧手是不是在碰东西</td><td>遮挡与投影重叠：手挡住物体、两物体投影重叠，框会对错</td></tr>
+        <tr><td>3D 手–物距离</td><td>Aria 手部三维位置 + 先验图里物体的点</td><td>碰的是<strong>哪一个</strong>物体（消歧）</td><td>只说明「近」，不说明「抓」——路过、指着、递东西都会近</td></tr>
+        <tr><td>时间一致性</td><td>$B$ 与 $H$ 共 16 帧的多数票</td><td>这是一次<strong>拾取事件</strong>，而非一帧误检</td><td>要等未来帧到达，因此引入延迟（第 5 节）</td></tr>
+      </tbody>
+    </table>
+    <p>三层是<strong>串联</strong>而非并联投票：第一层给「可能碰了」，第二层给「碰的是它」，第三层给「这次算数」，任一层否决事件就不成立。好处是每步都能单独调试，坏处是<strong>误差也会串联</strong>——论文 limitations 里「手物接触检测容易出错」说的就是第一层的错误会一路传到最后。</p>
+  </div>
+
+  <div id="sec5" class="section-card">
+    <h2>5. Look-ahead window：为什么必须晚 8 帧才敢判断</h2>
+    <p>到这里我们有了候选物体和候选时刻，但还不能宣布「交互开始了」。原因很硬：<strong>要判断一帧是不是「开始」，需要知道之后发生了什么</strong>。</p>
+    <p>想想人怎么判断别人在拿东西：你不会只看手碰到杯子的那一瞬，你会看他<strong>接下来有没有把杯子端走</strong>。碰一下又缩回去，那是「碰」不是「拿」。这个「接下来」是未来信息，在线系统拿不到——除非等。</p>
+
+    <h3>5.1 窗口的结构</h3>
+    <p>论文的做法是滑动窗口：存过去帧的 observation buffer $B$，朝前看的 look-ahead horizon $H$，两者长度都是 8。论文原话是，这个结构「对整体算法施加了 $|H|$ 帧的延迟」。</p>
+    <table>
+      <thead><tr><th>段</th><th>长度</th><th>内容</th><th>此刻能不能用于 $k$ 的决策</th></tr></thead>
+      <tbody>
+        <tr><td>$B$（observation buffer）</td><td>8</td><td>$k$ 之前的观测</td><td>能，已经在手</td></tr>
+        <tr><td>$k$</td><td>1</td><td>待判定的那一帧</td><td>能</td></tr>
+        <tr><td>$H$（look-ahead horizon）</td><td>8</td><td>$k$ 之后的观测</td><td><strong>不能</strong>，必须等它们到达</td></tr>
+      </tbody>
+    </table>
+    <p>顺带一提：2D 点跟踪用的 CoTracker2，窗口大小也是 8，与 $H$ 刻意对齐，所以某一帧被处理完时，物体位姿刚好也算完了（III-F）。</p>
+    <div class="callout callout-key">
+      <h4>🔑 $H$ 是延迟，不是预测</h4>
+      <p>这是现场专门澄清的一点，也最容易被误读：look-ahead horizon <strong>不是「预测还没发生的画面」</strong>，而是「<strong>等</strong>后面 8 个观测真的到达，再回过头判断 $k$」。系统没有预测未来的能力，它只是<strong>故意把自己的输出推迟</strong>。</p>
+      <p>现场主持人追问「那就可以理解成它是有延迟的是吗？」，报告人的回答是：「对，它是在延迟处理，也就是说，它<strong>故意制造这种延迟</strong>来帮助自己判断得更好。」延迟在这里不是缺陷，是<strong>被主动买来的信息</strong>。</p>
+      <p>延迟是<strong>确定的</strong>（8 帧就是 8 帧），预测是<strong>会错的</strong>——用一个确定的代价换掉一个不确定的猜测，是工程上很典型的取舍。</p>
+    </div>
+
+    <h3>5.2 那个 1.15 秒：一次数值反推</h3>
+    <p>论文给的数字是 $|B|=|H|=8$、整体延迟 <strong>1.15 s</strong>。若把「8 帧」理解成「8 个相机帧」，30 fps 下 $\Delta t_{8}=8/30\approx0.267$ s——不到 1.15 秒的四分之一。但论文说的是 1.15 s。反推：</p>
+    <div class="formula-box">
+      $$ \frac{1.15}{8}\approx0.144\,\mathrm{s}\quad\Longrightarrow\quad\frac{1}{0.144}\approx6.96\,\mathrm{Hz} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">观测 $y_{k}$ 的有效间隔约 <strong>144 ms</strong>，观测率约 <strong>7 Hz</strong>——不是相机帧率 30 Hz。</p>
+    </div>
+    <p>结论只能是：<strong>$y_{k}$ 并不是每个相机帧都产生</strong>（或窗口不逐帧滑动，而按更粗的时间步推进）。论文正文没写这个换算，现场也没展开——对复现的人这是个必须自己补的洞。</p>
+    <div class="callout callout-note">
+      <h4>📝 一个数值上的巧合（论文未明说）</h4>
+      <p>$1.15/8\approx6.96$ Hz，而第二讲要讲的吞吐是 <strong>6.95 FPS</strong>，两个数几乎相等。这很可能不是巧合：若单帧端到端处理恰好占满一个观测间隔，「吞吐」与「延迟预算」本来就是同一件事的两面。论文没把这层关系写出来，所以这里标为<strong>本课的观察</strong>，不作为结论。</p>
+    </div>
+
+    <p>为什么偏偏是 8？窗口长度是偏差–方差取舍：太短则证据不足，一帧误检就能开启假交互；太长则判定更稳但延迟线性增长，地图越来越落后于人。论文没做窗口长度的消融（Deck 的消融只做 hand anchor），8 是<strong>给定值</strong>。</p>
+  </div>
+
+  <div id="sec6" class="section-card">
+    <h2>6. 式 (1)：start、continuation 与 end</h2>
+    <p>有了窗口，判据就能写成一句话：<strong>在 $H$ 里数一数有多少个正观测，够不够票</strong>。论文式 (1)：</p>
+    <div class="formula-box">
+      $$ \sum_{k\in H}\mathbb{I}^{+}_{\{y_{k}\}}\;\ge\;\begin{cases}\theta_{\mathrm{high}}, & \text{if } |v_{\mathrm{prior}}-v_{\mathrm{post}}|>\delta_{\mathrm{diff}}\\[2pt] \theta_{\mathrm{reg}}, & \text{else}\end{cases} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">式 (1)。$\mathbb{I}^{+}_{\{y_{k}\}}\in\{0,1\}$ 是指示函数：该帧为 positive 取 1，否则取 0。左边是「$H$ 里正观测的个数」，右边按条件二选一。</p>
+    </div>
+    <p>两个速度的定义（III-D）：$v_{\mathrm{prior}}$ 是 $B$ 内相邻手位置的平均欧氏位移，$v_{\mathrm{post}}$ 是 $H$ 内相邻手位置的平均欧氏位移。</p>
+    <p>注意一个记号上的松动：论文把 $v$ 称为 velocity、把 $\delta_{\mathrm{diff}}$ 的单位写成 m/s，但文字定义是「相邻手位置的平均欧氏位移」——中间显然隐含按帧间隔归一化这一步，正文没写，现场也未展开。</p>
+
+    <h3>6.1 为什么手速能当证据</h3>
+    <p>论文的假设非常朴素：</p>
+    <ul>
+      <li><strong>放下</strong>一个东西 → 手会<strong>减速</strong>（$v_{\mathrm{post}}$ 明显小于 $v_{\mathrm{prior}}$）；</li>
+      <li><strong>取走</strong>一个东西 → 手会<strong>加速</strong>（$v_{\mathrm{post}}$ 明显大于 $v_{\mathrm{prior}}$）；</li>
+      <li><strong>搬运</strong>途中 → 速度<strong>大致恒定</strong>（两者接近）。</li>
+    </ul>
+    <p>所以「前后速度差很大」本身就是信号：<strong>这一帧正处在动作的转折点上</strong>。转折点上单帧接触证据最不可靠——手可能刚贴上还没抓稳，也可能刚松开但还挨着。这时候把票数门槛抬高，是合理的。</p>
+
+    <h3>6.2 三个阈值各在哪一层</h3>
+    <p>最容易混的地方，是把几个阈值当成同一层的东西。其实它们分属四层，管的事完全不同：</p>
+    <table>
+      <thead><tr><th>符号</th><th>值</th><th>作用层</th><th>管什么</th><th>调大 / 调小</th></tr></thead>
+      <tbody>
+        <tr><td>$\tau_{o}$</td><td>0.5</td><td>单帧</td><td>这一帧算不算「接触」</td><td>调大更保守、漏检增多；调小更激进、误检增多</td></tr>
+        <tr><td>$\tau_{d}$</td><td>10 cm</td><td>空间关联（仅 start）</td><td>手和最近物体够不够「贴上」</td><td>调松容易把路过当抓取；调紧手部误差就漏</td></tr>
+        <tr><td>$\delta_{\mathrm{diff}}$</td><td>0.025 m/s</td><td>情境判别</td><td>这次该用哪一把尺子</td><td>调大很少进入严格档、更宽松；调小长期严格、更易掐断</td></tr>
+        <tr><td>$\theta_{\mathrm{reg}}$</td><td>4（共 8）</td><td>决策</td><td>常规要几张票</td><td>调大更难开始、也更难维持</td></tr>
+        <tr><td>$\theta_{\mathrm{high}}$</td><td>6（共 8）</td><td>决策</td><td>速度突变时要几张票</td><td>调大则转折点几乎不可能通过</td></tr>
+      </tbody>
+    </table>
+    <p>换成一句话：<strong>$\tau_{o}$ 决定「这一帧算不算」，$\tau_{d}$ 决定「是不是这个物体」，$\delta_{\mathrm{diff}}$ 决定「用哪把尺子」，$\theta$ 决定「要多少票」</strong>。前两个是证据层，后两个是决策层。现场的解释是「速度差异大会加紧阈值，必须大于六个正观测才能开始」——正是 $\delta_{\mathrm{diff}}$ 与 $\theta_{\mathrm{high}}$ 的联动。</p>
+
+    <h3>6.3 start：四条，不是三条</h3>
+    <p>Deck 第 7 页把 start 写成三条，论文 III-D 正文其实有<strong>四个</strong>条件（第三条是式 (1)，第四条最容易漏）：</p>
+    <ol>
+      <li>$y_{k}$ 是正观测（$p_{o,k}>\tau_{o}$）；</li>
+      <li>手到最近物体 $O$ 的距离小于 $\tau_{d}=10$ cm；</li>
+      <li>$H$ 内的正观测数满足式 (1)——即 $\ge\theta_{\mathrm{reg}}$，或速度差超阈值时 $\ge\theta_{\mathrm{high}}$；</li>
+      <li><strong>$H$ 内<strong>所有</strong>手位置，都要比当前手位置离物体 $O$ 更远</strong>。</li>
+    </ol>
+    <p>第四条是整套判据里最巧的一笔。它在说：「<strong>现在最近，之后越来越远</strong>」——这正是「把东西拿起来带走」的运动学签名。如果手碰了一下又缩回同一位置（擦了擦桌面），或者越碰越近（在摸索），第四条就不成立，区间不会开启。<strong>第三条数的是「证据有多密」，第四条看的是「运动往哪个方向」</strong>：一个管数量，一个管形状。</p>
+    <div class="callout callout-note">
+      <h4>📝 为什么 end 没有对应的「距离」判据</h4>
+      <p>论文自己解释了：判断结束时间时<strong>物体的位置正在变</strong>，「手到物体的三维距离」这个度量<strong>失效了</strong>——拿什么当参照？用物体当前估计位置？那正是你要估的东西，循环依赖。用初始位置？物体早就走了。</p>
+      <p>所以 end 只能退回二维证据 + 手速。这不是设计者偏爱二维，是<strong>三维在那一步不可用</strong>。这个细节很能说明论文的诚实程度：它没假装自己有统一的三维判据，而是明说「我们缺这个度量，所以用速度来补」。</p>
+    </div>
+
+    <h3>6.4 continuation 与 end</h3>
+    <p>区间内部判据，论文写得很省：「同一条规则，除了距离阈值之外，适用于交互区间内的所有其他观测」。也就是说，<strong>continuation 用式 (1)，但去掉 $\tau_{d}$ 那一条</strong>。</p>
+    <div class="grid-3">
+      <div class="mini-card">
+        <h4>Start</h4>
+        <p>四条全过：正观测、三维距离 &lt; 10 cm、$H$ 内票数够（4 或 6）、未来手位置<strong>更远</strong>。四条是「与」的关系，缺一不开。</p>
+      </div>
+      <div class="mini-card">
+        <h4>Continuation</h4>
+        <p>只剩两条：正观测票数够（同样 4 / 6 分档）。不再看距离，因为物体在动、三维参照没了。票数不够就是「人已经松手了」。</p>
+      </div>
+      <div class="mini-card">
+        <h4>End</h4>
+        <p>continuation 失败即结束，<strong>保留对象最后更新的位置和朝向</strong>（现场原话）。结束不是独立判据，是「维持不下去」的自然结果。</p>
+      </div>
+    </div>
+    <p>这个三态结构值得玩味：<strong>start 比 continuation 严格得多</strong>。因为错误代价不对称——<strong>误开一个区间</strong>会让跟踪器去跟没被抓的物体，整段位姿全废；<strong>晚关一个区间</strong>只是多跟几帧静止物体。入口严、出口松，是按代价分配严格度。</p>
+
+  </div>
+
+  <div id="sec7" class="section-card">
+    <h2>7. 小结、现场问答与下一讲的钩子</h2>
+    <p>把这一讲压成一张表——五个决定，每个都在回答「不做会怎样」：</p>
+    <table>
+      <thead><tr><th>决定</th><th>做法</th><th>不做会怎样</th></tr></thead>
+      <tbody>
+        <tr><td>表示</td><td>节点存标签 + 点，三类边 close to / part of / contains</td><td>只能重建整张图，改一个物体等于重做整个房间</td></tr>
+        <tr><td>初始化</td><td>Mask3D + Spot-Compose 抽屉节点 + 抽屉内容物 3D 盒</td><td>抽屉切不出来，「在里面」无从判定，contains 边没有几何依据</td></tr>
+        <tr><td>物体是谁</td><td>2D 接触概率 + 3D 手位置找最近已建图物体（&lt; 10 cm）</td><td>遮挡与投影重叠会让「碰的是哪个」判错</td></tr>
+        <tr><td>何时</td><td>$B$ = 8 过去 + $H$ = 8 未来，延迟 1.15 s</td><td>单帧判据要么漏检、要么把路过当抓取</td></tr>
+        <tr><td>判定</td><td>式 (1)：多数票，速度突变时从 4 抬到 6</td><td>转折点上的模糊帧会被当成确认证据</td></tr>
+      </tbody>
+    </table>
+    <p>四个数字锚点先记住：<strong>$\tau_{o}=0.5$、$\tau_{d}=10$ cm、$\delta_{\mathrm{diff}}=0.025$ m/s</strong>，窗口 <strong>8 + 8</strong>、延迟 <strong>1.15 s</strong>。这是本讲的全部定量内容，第二讲在它们之上再叠位姿估计。</p>
+
+    <h3>7.1 现场问答三条</h3>
+    <div class="callout callout-note">
+      <h4>📝 Q1：场景是不是太局限？是不是把眼镜现成的功能拼起来？</h4>
+      <p><strong>提问</strong>（大意）：这篇文章做的场景非常局限，只做这样一个 lost and found 的问题；而且手、相机、识别都是眼镜配套的现成东西，作者并没有自己改。</p>
+      <p><strong>回答</strong>（现场）：是。作者主要做第一人称，直接用了这副眼镜的输出（手的三维位姿、半稠密点云、设备位姿），没有另外研究「手在哪」这件事。</p>
+
+    </div>
+    <div class="callout callout-note">
+      <h4>📝 Q2：手的位置是眼镜算的，作者没讲算法？</h4>
+      <p><strong>提问</strong>（大意）：它手的位置是靠那个眼镜的功能算的是吗？这个地方它是没有自己额外讲算法的。</p>
+      <p><strong>回答</strong>（现场）：对。整套手部状态都来自设备输出，论文没有额外讲这套估计怎么做；作者只需保证「手一直牢牢抓住物体」这个假设成立，再用手的位移去推物体的平移。</p>
+      <p><strong>本课补充（现场未展开）</strong>：这个假设就是第二讲的 <strong>hand anchor</strong>——手与物体的相对偏移在物体局部坐标系里不变，前提是「刚体 + 同一抓握点」，而这恰好是论文最后承认的局限之一。</p>
+    </div>
+    <div class="callout callout-note">
+      <h4>📝 Q3：真实验还是仿真？那个 1.25 m/s 是多少？</h4>
+      <p><strong>现场</strong>：问「是真实验还是仿真」，答「不是仿真——他们自己搭了一个真实场景（布置成起居室），人戴着眼镜真的去采数据」。随后主持人提到「手的速度好像在实验里是一点二五米每秒，那很快的」，紧接着说「具体这个值到时候再说」。</p>
+      <p><strong>本课核对</strong>：论文正文与三张表里<strong>没有出现 1.25 m/s</strong>，本讲的速度量只有 $\delta_{\mathrm{diff}}=0.025$ m/s 与 $v_{\mathrm{prior}},v_{\mathrm{post}}$，所以这个数<strong>不作为结论</strong>。另外 Vicon 动捕只用于<strong>评测</strong>，不作跟踪输入——第二讲看 Table I 时要注意。</p>
+    </div>
+
+    <h3>7.2 留给第二讲的三件事</h3>
+    <p>区间给了我们一个时间窗，窗内每帧都要回答：物体此刻的 6DoF 位姿 $\mathbf{T}_{k}=[\mathbf{R}_{k}\mid\vec{t}_{k}]\in\mathbb{SE}(3)$ 是多少？这正是本讲没碰的部分。下一讲按 Deck 第 8–18 页走完：</p>
+    <ol>
+      <li><strong>跟踪点从哪来</strong>：把属于物体的三维点投影到起始 RGB 帧，得到带三维身份的二维查询点；用半稠密 Aria 点云与实例 mask 做最近邻匹配来选点。</li>
+      <li><strong>怎么从二维回到六自由度</strong>：CoTracker2 跟踪二维位置与可见性，RANSAC-PnP 用 3D–2D 对应解旋转，hand anchor 提供平移，式 (2) 把旋转拼到世界系。</li>
+      <li><strong>准不准、多快、能干什么</strong>：Table I/II/III（6.02 cm / 7.79 度，ADD-S 88.10，6.95 FPS，hand anchor 消融），以及 Object Retrieval 与 Teach &amp; Repeat 两个机器人任务。</li>
+    </ol>
+    <p>最后留一句判断：最值得学的不是哪个检测器，而是它<strong>把「变化」压缩成一次局部的状态转移</strong>，并且<strong>愿意为一次可靠判断付 1.15 秒延迟</strong>。前者让它便宜，后者让它准。</p>
+  </div>
+
+  <div id="quiz" class="section-card exercise-box">
+    <h2>📝 练习与自测</h2>
+
+    <div class="exercise">
+      <h4>练习1（概念）：为什么「等未来」不等于「预测未来」</h4>
+      <p>(a) 式 (1) 的求和跑在 $H$ 上，而 $H$ 是 $k$ <strong>之后</strong>的观测。为什么这不违反因果性？(b) start 判据第四条要求「$H$ 内所有手位置都比当前手位置离物体更远」，它在排除哪两种误判？</p>
+      <details class="exercise-answer">
+        <summary>点击查看参考答案</summary>
+        <p>(a) 因为系统不预测、只<strong>等待</strong>：它在 $k$ 时刻不做决定，把输出推迟 $|H|=8$ 个观测，等 $k+1,\dots,k+8$ 真的到达后再回头判定 $k$。用的全是<strong>已经发生的</strong>观测，因果性没破——代价是输出延迟 1.15 s，而不是凭空知道未来。</p>
+        <p>(b) ① <strong>路过 / 擦碰</strong>：手碰一下又缩回同一位置（擦桌面），「之后更远」不成立；② <strong>摸索 / 越碰越近</strong>：手在物体附近反复试探，未来位置反而更近。前者是「碰了但没拿」，后者是「还没抓住」。第四条要求的「现在最近、之后单调远离」，正好是「拿起来带走」的形状。</p>
+
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习2（数值）：8 帧与 1.15 秒之间的隐含观测率</h4>
+      <p>论文给 $|B|=|H|=8$、整体延迟 1.15 s；Aria 相机 30 fps。(a) 若 $y_{k}$ 就是每个相机帧，8 帧延迟应是多少秒？(b) 由 1.15 s 反推观测间隔与观测率。(c) 两者差几倍，说明什么？(d) 这个观测率与第二讲的 6.95 FPS 有什么关系？</p>
+      <details class="exercise-answer">
+        <summary>点击查看参考答案</summary>
+        <p>(a) $8/30\approx\mathbf{0.267}$ <strong>秒</strong>。</p>
+        <p>(b) 间隔 $=1.15/8=\mathbf{0.14375}$ <strong>秒</strong>（约 144 ms）；观测率 $=1/0.14375\approx\mathbf{6.96}$ <strong>Hz</strong>。</p>
+        <p>(c) $1.15/0.267\approx\mathbf{4.3}$ <strong>倍</strong>：说明 $y_{k}$ <strong>不是每个相机帧都产生</strong>，有效观测率约 7 Hz 而非 30 Hz。论文没写这一步换算，复现时是必须自己补的洞。</p>
+        <p>(d) 二者几乎相等（6.96 Hz vs 6.95 FPS）。很可能的解释是单帧端到端处理约 144 ms，于是观测只能每 144 ms 产出一个——<strong>吞吐与延迟预算是同一件事的两面</strong>。论文没明说，本课标为观察。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习3（数值 + 判定）：用式 (1) 判两段交互</h4>
+      <p>设 $H$ 内共 8 个观测，$\delta_{\mathrm{diff}}=0.025$ m/s、$\theta_{\mathrm{reg}}=4$、$\theta_{\mathrm{high}}=6$。</p>
+      <p>(a) 某帧：$H$ 内 <strong>5</strong> 个正观测，$v_{\mathrm{prior}}=0.42$ m/s、$v_{\mathrm{post}}=0.38$ m/s。式 (1) 成立吗？判「继续」还是「结束」？</p>
+      <p>(b) 另一帧：<strong>4</strong> 个正观测，$v_{\mathrm{prior}}=0.15$、$v_{\mathrm{post}}=0.16$。结论是什么？</p>
+      <p>(c) 若 (a) 的 5 个正观测不变，但速度变成 $0.20$ 与 $0.19$，结论会不会翻转？为什么？</p>
+      <details class="exercise-answer">
+        <summary>点击查看参考答案</summary>
+        <p>(a) $|0.42-0.38|=\mathbf{0.04}$ m/s，$0.04>0.025=\delta_{\mathrm{diff}}$，走<strong>严格档</strong> $\theta_{\mathrm{high}}=6$。左式 $=5<6$，式 (1) <strong>不成立</strong> → continuation 失败 → <strong>区间结束</strong>，保留最后更新的位姿。</p>
+        <p>(b) $|0.15-0.16|=\mathbf{0.01}$ m/s，$0.01<0.025$，走<strong>常规档</strong> $\theta_{\mathrm{reg}}=4$。左式 $=4\ge4$，式 (1) <strong>成立</strong> → <strong>继续</strong>。</p>
+        <p>(c) <strong>会翻转</strong>：$|0.20-0.19|=0.01<0.025$，落回常规档 $\theta_{\mathrm{reg}}=4$，于是 $5\ge4$ 成立 → 继续。同样 5 张票，只因手速差从 0.04 掉到 0.01，就从「结束」变成「继续」：$\delta_{\mathrm{diff}}$ <strong>先决定用哪把尺子，再让票数说话</strong>，而两把尺子相差 2 票。</p>
+      </details>
+    </div>
+  </div>
+
+  <div class="nav-links">
+    <a href="0048-北理工分享-世界模型与RoboJEPA-2.html" class="prev">← 世界模型下的机器人操作(2/2)：动作条件化、MPC 规划与 RoboJEPA</a>
+    <a href="0050-组内分享-黄辖-动态场景图变化跟踪-2.html" class="next">动态场景图的变化跟踪(2/2)：点跟踪、PnP 与手锚位姿 →</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+  </div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 35 · 组内分享 · 黄辖（2026-11-07）</p>
+    <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px">内容来源：视频转写（Qwen3-ASR）+ Deck 版面文字（18 页）+ 论文原文（Behrens et al., IEEE RA-L 2025）</p>
+  </div>
+</div>
+<script src="assets/shiclass.js"></script>
+<script src="../shared/lesson-tools.js"></script>
+</body>
+</html>

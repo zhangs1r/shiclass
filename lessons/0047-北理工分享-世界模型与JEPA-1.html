@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>世界模型下的机器人操作(1/2)：从像素重建到 JEPA 表征学习 · 施老师大课堂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="assets/shiclass.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+</head>
+<body>
+<div class="page">
+
+  <div class="hero">
+    <div class="eyebrow">研讨会系列 · 系列34 · 北理工分享</div>
+    <h1>世界模型下的机器人操作(1/2)：从像素重建到 JEPA 表征学习</h1>
+    <p class="subtitle">策略回答"现在该做什么"，世界模型回答"做了会怎样"；像素重建把容量花在背景与光照上，表征预测只学"会变的那一部分"；I-JEPA 用遮挡预测学空间语义，V-JEPA 把 patch 拉成时空管，而两者都靠一个慢半拍的 EMA 目标编码器挡住表征坍塌</p>
+    <div class="hero-meta">
+      <span>📅 2026-11-01</span>
+      <span>🎙️ 曲家玉（北理工分享）</span>
+      <span>📚 讲座：世界模型下的机器人操作——从 I-JEPA 到 RoboJEPA</span>
+    </div>
+  </div>
+
+  <div class="lead-grid">
+    <div class="callout">
+      <h4>🎯 学完本节，你应能</h4>
+      <ul>
+        <li>用一句话分开<strong>策略</strong>与<strong>世界模型</strong>，并说清为什么"能预测未来"不等于"会控制"</li>
+        <li>画出五类现有架构的输入与输出，指出 DreamZero 与 Dreamer 各自把"想象"放在哪一层</li>
+        <li>复述三段链条（表征 → 动作条件动力学 → 目标驱动规划），并说出表征的三类读出</li>
+        <li>解释像素重建与表征预测的差别，用一张表对比生成式架构与 JEPA</li>
+        <li>用能量 $E(x,y)$ 给候选未来打分，说明"低能量 = 高兼容"是什么意思</li>
+        <li>写出 I-JEPA 的遮挡预测目标与平方 $L_{2}$ 损失，并讲透 EMA 为什么能防表征坍塌</li>
+        <li>算出 V-JEPA 的时空 token 数与 90% 遮挡后的可见 token 数，解释 Binary Mask $[T \times H \times W]$</li>
+      </ul>
+    </div>
+    <div class="callout">
+      <h4>🔑 核心思想</h4>
+      <p>JEPA 的赌注是一句反直觉的话：<strong>要预测未来，不必先把未来画出来</strong>。它把"预测"从像素空间搬到表征空间——只要求"预测向量"落在目标特征附近，不要求还原每一根纹理。这个选择带来两个技术后果，也是本讲的两条主线：</p>
+      <p><strong>① 任务从"重建"变成"填空"</strong>：把图像（或视频）的一大块遮掉，用可见部分去预测被遮部分的<em>表征</em>。遮挡制造了"必须理解物体与运动"的压力，却不逼模型去背背景。</p>
+      <p><strong>② 目标必须"慢半拍"</strong>：两路输出一旦可以同时冲向同一个常数，损失就会归零——这叫表征坍塌。I-JEPA 用 EMA 目标编码器把"裁判"固定成旧版本的自己，让"抄近路"当场被抓住。V-JEPA 只是把这套机制从二维 patch 推广到时空管，损失换成 $L_{1}$。</p>
+    </div>
+  </div>
+
+  <div class="toc">
+    <h3>📖 目录</h3>
+    <ul>
+      <li><a href="#sec1">1. 先把问题放回桌面：期望目标 vs 动作</a></li>
+      <li><a href="#sec2">2. 五类现有架构：从"条件反射"到"想象中训练"</a></li>
+      <li><a href="#sec3">3. 三段链条：表征 → 动作条件动力学 → 规划</a></li>
+      <li><a href="#sec4">4. 表征的三类读出：同一个 $z$，三种用法</a></li>
+      <li><a href="#sec5">5. 像素重建 vs 表征预测：容量到底花在哪</a></li>
+      <li><a href="#sec6">6. 生成式架构 vs JEPA：一张对比表</a></li>
+      <li><a href="#sec7">7. 能量视角：给"未来"打分</a></li>
+      <li><a href="#sec8">8. I-JEPA：遮挡预测与 EMA 防坍塌</a></li>
+      <li><a href="#sec9">9. V-JEPA：把时间维塞进 patch</a></li>
+      <li><a href="#sec10">10. 小结与下一讲地图</a></li>
+      <li><a href="#quiz">📝 练习与自测</a></li>
+    </ul>
+  </div>
+
+  <div id="sec1" class="section-card">
+    <h2>1. 先把问题放回桌面：期望目标 vs 动作</h2>
+    <p>报告的开场没有先讲网络，而是先讲一个具体到不能再具体的场景：<strong>夹爪和杯子还没有形成"目标关系"</strong>。桌上有一只杯子、几块积木、一条机械臂，光照从侧面打过来；目标照片告诉我们最后希望看到什么——杯子被夹住、被抬起。而当前观测里，夹爪还悬在杯子旁边。</p>
+    <p>于是机器人要做的事被拆成一串动作：<strong>移动 → 接近 → 闭合夹爪 → 抬起</strong>。关键在于：<em>动作会改变现实状态</em>，每一步之后观测都变了，机器人必须不断用新观测去逼近那张目标照片。这个"动作改变状态、状态又决定下一个动作"的回路，才是"操作"这两个字真正的含义。</p>
+
+    <h3>1.1 两个模型，两个问题</h3>
+    <p>在这个回路里，有两类完全不同的模型在回答两类完全不同的问题：</p>
+    <table>
+      <thead><tr><th>模型</th><th>它回答的问题</th><th>输入 → 输出</th><th>典型失败方式</th></tr></thead>
+      <tbody>
+        <tr><td><strong>策略模型</strong>（policy）</td><td>"我现在应该执行什么动作？"</td><td>观测 $o_{t}$ + 任务 $g$ → 控制量 $a_{t}$</td><td>遇到训练分布外的场景就乱给动作，因为它从没"想过"后果</td></tr>
+        <tr><td><strong>世界模型</strong>（world model）</td><td>"如果我做了这个动作，未来会怎么变？"</td><td>观测 $o_{t}$ + 动作 $a_{t}$ → 未来状态</td><td>预测得很像但没用；或者预测错了却照样拿去做规划</td></tr>
+      </tbody>
+    </table>
+    <div class="formula-box">
+      $$ a_{t} = \pi_{\theta}\left(o_{t}, g\right), \qquad \hat{z}_{t+1} = f_{\phi}\left(z_{t}, a_{t}\right) $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">左边是策略：观测加任务，直接吐动作。右边是世界模型：观测（或它的表征 $z_{t}$）加动作，吐"下一步会变成什么"。注意两边的输出根本不是一类东西——一个是<strong>要执行的动作</strong>，一个是<strong>对后果的描述</strong>。</p>
+    </div>
+
+    <h3>1.2 报告反复强调的一句限定</h3>
+    <p>现场有一句话值得单独拎出来：<span class="hl">目前的世界模型不等于动作预测，也不等于一个完整的控制器</span>。这句话在防一种很常见的误解——看到某个模型能生成漂亮的未来视频，就以为它"会操作"了。</p>
+    <p>为什么不是？因为世界模型只回答"后果"，它不知道<strong>你想要哪个后果</strong>。要把世界模型变成控制器，中间还缺两步：给候选未来<strong>按目标打分</strong>，以及在候选里<strong>选出最好的那个</strong>。打分的依据来自目标照片，选择的过程就是规划。所以本讲后面反复出现的三段链条（表征 → 动力学 → 规划），本质是在补这两步。</p>
+    <div class="callout callout-key">
+      <h4>🔑 一句话分工</h4>
+      <p><strong>策略是条件反射，世界模型是后果模拟器，规划器才是把两者接起来的搜索器。</strong>反应式策略把"想"这一步压进了网络权重里（快，但不可解释、难纠错）；世界模型把"想"显式地摊开成"预测 + 评分 + 搜索"（慢，但可以换目标、可以检查、可以在想象里试错）。这条"把想象显式化"的路，就是本讲的主线。</p>
+    </div>
+    <div class="callout callout-note">
+      <h4>📝 转写勘误与记法说明</h4>
+      <p>本课术语以 deck 版面文字与论文原文为准。视频转写里有几处稳定的误写，集中列在这里，正文不再重复：<em>AI JAPA</em>（不带 AI 前缀的同形写法也指 JEPA；带 AI 前缀的那个其实是 I-JEPA）、<em>JPA</em> 与 <em>J-A</em>（都指 JEPA）、<em>IJP</em>（应为 I-JEPA）；<em>VJR 二</em>（去掉"二"指 V-JEPA，带"二"指 V-JEPA 2，另有两字母的短写）；把 V-JEPA 说成 <em>ViT</em>（Vision Transformer）——两者不是一回事；<em>二点一</em>（应为 V-JEPA 2.1）；<em>WVM</em>（应为 WAM，World Action Models）；<em>T 式 forward</em>（应为 teacher forcing）；<em>raw loss</em>（应为 rollout loss）；<em>杨立昆</em>（即 LeCun，音译本身没问题）；<em>史林老师</em>（应为施凌老师）。此外 RoboJEPA 在转写里被念成"如果加帕"这类以"如果"开头的词，读到时按 RoboJEPA 理解即可。</p>
+      <p><strong>记法说明（重要）：</strong>deck 第 13 页把目标编码器的更新批注为 $\bar{\theta} \leftarrow \eta\theta + (1-\eta)\bar{\theta}$，也就是把 $\eta$ 乘在<em>当前编码器</em>的参数上。但 I-JEPA 原文与"慢更新"的语义用的是相反的顺序：$\eta$ 是<strong>保留旧目标</strong>的权重。本节统一采用后者，否则"$\eta$ 越大目标编码器越滞后"这句话不成立——练习里的数值也按后者计算，并在答案里给出两种顺序的对照。</p>
+    </div>
+  </div>
+
+  <div id="sec2" class="section-card">
+    <h2>2. 五类现有架构：从"条件反射"到"想象中训练"</h2>
+    <p>deck 第 3 页把现有做法排成五类。它们不是五个彼此替代的模型，而是一条<strong>光谱</strong>：越往右，"对未来显式建模"的成分越多，"在线搜索"的代价也越大。</p>
+    <table>
+      <thead><tr><th>路线</th><th>代表</th><th>输入 → 输出</th><th>本质</th><th>代价</th></tr></thead>
+      <tbody>
+        <tr><td>① 策略</td><td>OpenVLA</td><td>观测 + 指令 → 动作</td><td>把"看"和"做"焊成一个映射，单次前向</td><td>分布外就崩；无法解释为什么这么动</td></tr>
+        <tr><td>② 逆动力学</td><td>视频生成 + 逆动力学模型</td><td>未来视频 → 逆动力学 → 动作</td><td>先想清楚"画面该长什么样"，再反解动作</td><td>像素生成贵；视频错了动作必错</td></tr>
+        <tr><td>③ 联合建模</td><td>WAM（DreamZero）</td><td>观测 + 任务 → 未来视频 + 动作块</td><td>视频与动作<strong>一起</strong>被生成出来</td><td>模型重、推理贵</td></tr>
+        <tr><td>④ 想象中学习</td><td>Dreamer</td><td>潜变量 rollout → 回报 → 策略</td><td>把世界模型当仿真器，在潜空间做 RL</td><td>模型偏差会被策略利用（reward hacking）</td></tr>
+        <tr><td>⑤ 在线规划</td><td>RoboJEPA</td><td>动作条件预测 → 目标评分 → 搜索 → 计划</td><td>预测后果，按目标打分，搜出动作序列</td><td>每一步都要搜索，推理时算力换性能</td></tr>
+      </tbody>
+    </table>
+
+    <h3>2.1 ② 逆动力学：先画未来，再反解动作</h3>
+    <p>这条路的逻辑很符合直觉：既然目标是"到达某张照片"，那就先生成一段从当前画面走到目标画面的视频，再问"要做出这段视频里的运动，关节该怎样动"。报告的描述是<strong>对未来视频的像素做运动学规划，相当于直接做逆运动学（IK）</strong>。</p>
+    <p>它的脆弱点也很清楚：动作完全寄生在视频上。视频里杯子飘了一下，反解出来的动作就会去追那个不存在的位移；而像素级生成恰恰是最贵、最容易出细节错误的一步。</p>
+
+    <h3>2.2 ③ WAM 与 DreamZero：视频和动作一起"想"出来</h3>
+    <p>联合建模（World Action Models）把②里的两步合成一步：模型<strong>同时</strong>生成未来视频和机器人动作，而不是先生成再反解。DreamZero 是这类工作的代表——它以视频基础模型为骨架，外挂一个动作接口，用<strong>条件联合去噪</strong>让视频 latent 与动作块在同一条生成轨迹上被逐步去噪出来；训练目标是 flow matching，同时学视频和动作两路的速度场。</p>
+    <p>好处是动作与画面天然一致（它们本来就是同一次生成的两个头）；代价是整个模型被视频生成拖着走，推理时既要采样视频又要采样动作。</p>
+
+    <h3>2.3 ④ Dreamer：把世界模型当仿真器用</h3>
+    <p>Dreamer 走的是另一条极端：<strong>根本不生成像素</strong>。它用一个编码器把观测压成 latent，再用 RSSM（Recurrent State Space Model）把它拆成两部分——确定性的循环状态 $h_{t}$（记住历史）与随机潜变量 $z_{t}$（解释当前观测里的不确定性）：</p>
+    <div class="formula-box">
+      $$ h_{t} = f_{\phi}\left(h_{t-1}, z_{t-1}, a_{t-1}\right), \qquad z_{t} \sim q_{\phi}\left(z_{t} \mid h_{t}, o_{t}\right) $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">RSSM 的两半：$h_{t}$ 是"我记得发生过什么"，$z_{t}$ 是"这一步我看到的东西里有多少是新信息"。在世界模型内部，解码器只用来重建观测、预测奖励与继续概率——<strong>重建是训练时的辅助任务，不是推理时的产物</strong>。</p>
+    </div>
+    <p>学好像素无关的世界模型之后，Dreamer 在 latent 空间里 rollout 出大量"想象中的轨迹"，用回报去更新 Actor-Critic，Actor 输出的才是真动作。这条路把"试错"从现实搬进了想象，样本效率极高；风险是世界模型的偏差会被策略精准地利用——策略会找到"模型以为很好、现实很差"的角落。</p>
+    <div class="callout callout-note">
+      <h4>📝 五类之间不是互斥关系</h4>
+      <p>②③④ 都需要"预测未来"，差别只在两处：<strong>预测什么</strong>（像素 / latent / 表征）与<strong>拿预测干什么</strong>（反解动作 / 直接当策略的一部分 / 当仿真器做 RL）。本讲要讲的第⑤类再换一次：预测在<strong>表征</strong>空间做，预测完之后不训练策略、也不反解，而是<strong>现场搜索</strong>。</p>
+    </div>
+  </div>
+
+  <div id="sec3" class="section-card">
+    <h2>3. 三段链条：表征 → 动作条件动力学 → 规划</h2>
+    <p>报告把 JEPA 路线要做的事拆成三件，并且强调"要把这三件事连接起来"。这个拆法是整讲最有用的骨架，后面所有模型都可以往这三个格子里塞。</p>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>① 学视觉表征</h4>
+        <p>要知道图像里目标物体的<strong>高层语义</strong>是什么：杯子在哪、夹爪开口朝哪、两者是什么关系。做法是训练一个编码器，把像素图像映射成"真正合理"的表征，而不是一堆和任务无关的纹理。</p>
+      </div>
+      <div class="mini-card">
+        <h4>② 学动作条件动力学</h4>
+        <p>要有一个预测器，能回答"执行动作 $a_{t}$ 之后，我的<strong>表征</strong>会变成什么"。注意条件里必须有动作——没有动作条件的预测器只是视频预测，不是世界模型。</p>
+      </div>
+      <div class="mini-card">
+        <h4>③ 学目标驱动规划</h4>
+        <p>要有一个规划器，按"我想要的未来状态"去选择"我现在该执行的动作"。它把目标照片编码成目标表征，然后在候选动作序列里找那条最接近目标的轨迹。</p>
+      </div>
+      <div class="mini-card">
+        <h4>顺序不能反</h4>
+        <p>表征不好，动力学没有定义域；动力学不准，规划搜出来的最优解是模型的幻觉。三段链条是<strong>串联</strong>的，误差会一路传到最后一步。</p>
+      </div>
+    </div>
+    <div class="formula-box">
+      $$ z_{t} = f_{\theta}\left(o_{t}\right), \qquad \hat{z}_{t+1} = g_{\psi}\left(z_{t}, a_{t}\right), \qquad a^{\star}_{t:t+H} = \arg\min_{a_{t:t+H}} \left\| \hat{z}_{t+H} - z^{\star} \right\| $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">三段的接口全是表征：编码器 $f_{\theta}$ 出 $z$，预测器 $g_{\psi}$ 吃 $z$ 与 $a$ 吐下一个 $z$，规划器在 $z$ 空间里量距离。$z^{\star}$ 是目标照片的表征（编码一次，之后固定）。</p>
+    </div>
+    <div class="callout callout-key">
+      <h4>🔑 为什么第一段值得花一整讲</h4>
+      <p>因为<strong>三段链条的公共货币是表征</strong>。预测器在表征上定义、规划器在表征上量距离、目标也是表征——表征一旦学歪（比如只编码了背景的颜色），后面两段无论多精巧都在优化一个错的目标。这也解释了报告的讲述顺序：先"放下控制"，把"什么是好的视觉表征"讲清楚，再回来讲控制。</p>
+    </div>
+    <p>还有一个容易忽略的细节：<strong>目标照片只提供终态，不提供路径</strong>。照片里杯子已经抬起来了，但它没有告诉你"先向左再向上"还是"先向上再向左"。路径是规划器在候选动作序列里搜出来的——这正是第⑤类架构与①类策略最本质的差别：策略直接给动作，规划器给的是"在后果里挑出来的动作"。</p>
+  </div>
+
+  <div id="sec4" class="section-card">
+    <h2>4. 表征的三类读出：同一个 $z$，三种用法</h2>
+    <p>什么是"好的表征"？报告没有给定义，而是给了一张图和三条读出。图里同时有机械臂、杯子、积木、桌子，还有背景和光照。编码器要做的事，是把这张图映射成特征：</p>
+    <div class="formula-box">
+      $$ z = f_{\theta}\left(x\right), \qquad z \in \mathbb{R}^{d}, \qquad d \ll \left| x \right| $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">编码器是一个函数，把像素 $x$ 压成低维向量（或一串 token）$z$。维度远小于像素数，所以它<strong>必须选择</strong>记住什么、丢掉什么——"选择"就是表征学习的全部内容。</p>
+    </div>
+    <p>报告把这三条读出说成"三条大的特征"，并明确说这是模糊的理解：一条大致对应<strong>物体类别</strong>，一条对应<strong>状态的变化</strong>，一条对应<strong>目标状态</strong>。三类任务分别去读它们：</p>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>识别：读出"这是什么"</h4>
+        <p>给定 $z$，判断物体类别（杯子 / 积木 / 夹爪）。这一类读出对应分类任务，要求表征对<strong>外观 nuisance</strong>（背景、光照、视角）不变。</p>
+      </div>
+      <div class="mini-card">
+        <h4>预测：读出"它在怎么变"</h4>
+        <p>给定前后两个 $z$，判断状态如何变化（杯子在上升 / 夹爪在闭合）。这一类读出要求表征保留<strong>与运动有关的方向</strong>，而不是把它们当噪声抹掉。</p>
+      </div>
+      <div class="mini-card">
+        <h4>规划：读出"不同动作的不同结果"</h4>
+        <p>给定 $z$ 与不同候选动作，判断哪个结果更接近目标。这一类读出要求表征<strong>对动作敏感</strong>——同样的画面，配上不同动作，预测出的未来必须不同。</p>
+      </div>
+      <div class="mini-card">
+        <h4>三者的张力</h4>
+        <p>识别要"不变"，规划要"敏感"，这两个要求方向相反。表征学习真正难的地方，是找到一组既能忽略背景、又能保留动作后果的方向——这也是后面要用<strong>预测任务</strong>而不是<strong>重建任务</strong>来训练的原因。</p>
+      </div>
+    </div>
+    <div class="callout callout-note">
+      <h4>📝 "三条特征"是教学示意，不是网络结构</h4>
+      <p>报告自己也说这是"模糊的理解"。真实的表征是一个高维分布式向量，并没有三根物理通道；"读出"是靠 probe（线性头、attentive probe）或下游任务头实现的。把"三条"当<strong>三种可被解码的信息</strong>来理解，比当"三个模块"来理解更准确。表征学习的定义也因此很朴素：<span class="hl">让它真的知道图片里重要的地方在哪里</span>。</p>
+    </div>
+  </div>
+
+  <div id="sec5" class="section-card">
+    <h2>5. 像素重建 vs 表征预测：容量到底花在哪</h2>
+    <p>训练表征有两条经典路线。报告用"同一个杯子、不同背景与光照"这个例子把它们分开：杯子的像素几乎不变（可能只有细微改变），背景却剧烈变化。</p>
+    <h3>5.1 像素重建：把"预测得准"定义为"画得像"</h3>
+    <p>像素重建要求模型从（可能被遮挡、加噪、裁剪的）输入里<strong>还原出客观图像</strong>。于是它必须去拟合背景、光照、纹理、阴影——这些因素在像素上占的方差极大，对"抓住杯子"却几乎零信息。模型容量有限，花在背景上的每一分，都是从"物体与关系"那里挪走的。</p>
+    <div class="formula-box">
+      $$ \mathcal{L}_{\mathrm{rec}} = \left\| D_{\psi}\left(E_{\theta}(x)\right) - x \right\|_{2}^{2} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">重建损失：编码再解码，和原图逐像素比。它需要一个 decoder，而 decoder 的存在意味着"表征必须保留足够多的像素细节"——这恰恰是把容量往低层视觉上拽。</p>
+    </div>
+    <h3>5.2 表征预测：把"预测得准"定义为"落点对"</h3>
+    <p>表征预测不在像素空间做比较。它先把目标图像过一遍编码器，变成一串低维 token——这些 token 没有"肉眼可看"的像素形态，只有特征空间里的位置。然后模型要做的，是让自己的预测向量<strong>落到目标特征附近</strong>：</p>
+    <div class="formula-box">
+      $$ \mathcal{L}_{\mathrm{feat}} = \left\| \hat{s} - E_{\bar{\theta}}(y) \right\|_{2}^{2}, \qquad \hat{s} = P_{\phi}\left(E_{\theta}(x), z\right) $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">$x$ 是可见上下文，$y$ 是完整目标，$z$ 是条件（比如被遮的位置）。注意右边没有 decoder：<strong>预测的终点是一个特征向量，不是一张图</strong>。</p>
+    </div>
+    <div class="callout callout-key">
+      <h4>🔑 两种"准"的差别</h4>
+      <p>重建把"预测得准"定义为<strong>画得像</strong>：任何一个像素错了都要罚。表征预测把"预测得准"定义为<strong>在特征空间里落到同一个地方</strong>：背景换了、光照变了，只要语义位置没变，损失就很小。</p>
+      <p>这不是"偷懒"，而是<strong>明确声明了哪些因素不需要预测</strong>。世界模型的任务是支持决策，不是渲染；把不可控、不可预测、与任务无关的因素从预测目标里剔掉，剩下的容量才能用来学"动作会带来什么变化"。</p>
+    </div>
+    <p>当然要诚实：表征预测<strong>放弃了对细节的承诺</strong>。如果任务需要精确几何或纹理（精细装配、线缆穿孔），纯语义表征可能不够用——这正是后续工作要补"稠密特征"的原因，也是下一讲会碰到的线索。</p>
+  </div>
+
+  <div id="sec6" class="section-card">
+    <h2>6. 生成式架构 vs JEPA：一张对比表</h2>
+    <p>报告把 JEPA 放在两个"前朝架构"之间讲，这个位置很关键：它既不是纯对比学习，也不是生成模型，而是两者的<strong>折中</strong>。先把三者摆清楚。</p>
+    <h3>6.1 两个前朝：联合嵌入（JEA）与生成式</h3>
+    <p><strong>联合嵌入</strong>的做法是：把两个"兼容的输入"各自编码，然后让两路表征尽量一致。所谓兼容输入，是同一张图的不同处理——抠图、调亮度、裁剪、旋转。它学的是<strong>增强不变性</strong>：背景是黑是白，苹果的表征都该一样。</p>
+    <p><strong>生成式</strong>的做法是：编码器把输入压成 latent，decoder 再把它解码回目标图像，损失在<strong>像素空间</strong>算。注意一个细节——它的<em>比较</em>在像素空间，但<em>学习</em>（梯度回传）发生在隐空间，所以它同时背了"生成"和"表征"两个包袱。</p>
+    <div class="formula-box">
+      $$ \mathcal{L}_{\mathrm{JEA}} = \left\| E_{\theta}(x) - E_{\theta}(y) \right\|_{2}^{2}, \qquad \mathcal{L}_{\mathrm{JEPA}} = \left\| P_{\phi}\left(E_{\theta}(x), z\right) - E_{\bar{\theta}}(y) \right\|_{2}^{2} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">上：JEA 直接拉近两路表征，没有任何"预测"的动作。下：JEPA 多了一个预测器 $P_{\phi}$ 和一个条件 $z$，并且<strong>不要求</strong>两路表征完全一致——只要求"给定条件，预测能对上"。</p>
+    </div>
+    <h3>6.2 JEPA 多了什么：一个 predictor 和一个 $z$</h3>
+    <p>报告的原话是：JEA 和 JEPA 的区别就在于<strong>有一个 predictor，还有一个 $z$</strong>，而且它不强制增强图与原图的表征完全一致。这个改动看似很小，语义却变了：</p>
+    <ul>
+      <li><strong>JEA 学"不变"</strong>：不管我怎么变换输入，表征都该相同。目标是一个<strong>点</strong>。</li>
+      <li><strong>JEPA 学"可预测地变"</strong>：给定条件 $z$（比如"被遮的是这块位置"），我能算出表征该往哪走。目标是一个<strong>条件分布</strong>。</li>
+    </ul>
+    <p>这就是报告说的<strong>条件可预测性</strong>：有了外部条件，表征的变化不再被当成噪声抹掉，而是被显式地建模。这个性质正是"世界模型"需要的——动作就是一种条件。</p>
+    <h3>6.3 一张表说清代价</h3>
+    <table>
+      <thead><tr><th>维度</th><th>生成式架构</th><th>JEPA（联合嵌入预测）</th></tr></thead>
+      <tbody>
+        <tr><td>预测目标信号</td><td>目标 $y$ 本身（像素 / 视频帧）</td><td>目标的表征 $s_{y} = E_{\bar{\theta}}(y)$</td></tr>
+        <tr><td>预测损失</td><td>像素空间重建误差（$L_{2}$ / $L_{1}$），需要 decoder</td><td>特征空间回归（I-JEPA 用平方 $L_{2}$，V-JEPA 用 $L_{1}$）</td></tr>
+        <tr><td>是否产生像素</td><td>是，推理时也要 decoder</td><td>否，只有 encoder + predictor</td></tr>
+        <tr><td>容量花在哪</td><td>相当一部分花在不可预测的细节（纹理、光照、背景）</td><td>集中在可预测的高层语义与运动</td></tr>
+        <tr><td>主要风险</td><td>生成模糊、算力大；表征被生成任务带偏</td><td><strong>表征坍塌</strong>——两路一起输出常数，损失归零</td></tr>
+      </tbody>
+    </table>
+    <div class="callout callout-note">
+      <h4>📝 为什么 JEPA 的坍塌风险比 JEA 更高</h4>
+      <p>JEA 至少还有"两路必须一致"这个约束，而两路编码器共享参数（或其中一路是动量副本），坍塌要靠非对称结构去挡。JEPA 把约束放松成"预测对上就行"，自由度更大，也就更容易找到"两路都输出常数"这条退化解——所以它<strong>必须</strong>配一组防坍塌机制：stop-gradient、EMA 目标编码器、非对称的 predictor。下一节会看到这三件套怎么配合。</p>
+    </div>
+  </div>
+
+  <div id="sec7" class="section-card">
+    <h2>7. 能量视角：给"未来"打分</h2>
+    <p>在进入 I-JEPA 之前，报告插了一段"能量模型"，用来解释"学习表征"到底在优化什么。它的形式极简：定义一个标量函数 $E_{\theta}(x,y)$，给"上下文 $x$ + 候选未来 $y$"这一对打一个分。分数越低，说明这一对越兼容。</p>
+    <div class="formula-box">
+      $$ E_{\theta}: \mathcal{X} \times \mathcal{Y} \to \mathbb{R}, \qquad y^{\star} = \arg\min_{y \in \mathcal{Y}} E_{\theta}\left(x, y\right) $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">给定 $x$，在所有候选未来里找能量最低的那个。注意这里不需要概率、不需要归一化——只要会"打分"，就能"排序"，就能"选"。</p>
+    </div>
+    <h3>7.1 三个候选未来</h3>
+    <p>报告给的例子非常具体：固定上下文 $x$ = "夹爪已经夹住杯子并向上移动"，然后给三个候选未来打分。</p>
+    <table>
+      <thead><tr><th>候选未来 $y$</th><th>物理上是否可能</th><th>能量</th><th>为什么</th></tr></thead>
+      <tbody>
+        <tr><td>杯子随夹爪一起被抬起</td><td>合理，且训练数据里大量出现</td><td><strong>低</strong></td><td>与上下文高度兼容，是数据分布里的常见延续</td></tr>
+        <tr><td>杯子穿过桌面继续下沉</td><td>不可能（刚体不可穿透）</td><td><strong>高</strong></td><td>违反物理约束，模型必须学会给它高分</td></tr>
+        <tr><td>杯子凭空消失</td><td>不可能（物质不灭）</td><td><strong>高</strong></td><td>与上下文断了因果联系</td></tr>
+      </tbody>
+    </table>
+    <p>这段例子的说服力在于：<strong>低能量不是"画得像"，而是"说得通"</strong>。杯子被抬起这件事，模型不需要把杯子的高光、桌面反光都预测对，只需要判断"这个延续是合理的"。这正是表征空间里的"兼容性"，与像素级的"相似度"是两件事。</p>
+    <div class="callout callout-key">
+      <h4>🔑 能量视角把"预测"与"决策"缝在一起</h4>
+      <p>预测器给分，规划器找最低点——于是"学世界模型"和"做最优控制"变成同一个动作的两个面：<strong>学的是打分函数，用的是最小化</strong>。这也是为什么第⑤类架构（RoboJEPA）可以只用一个预测器加一个搜索器就完成操作：它不需要额外的策略网络，能量（或表征距离）本身就是策略。</p>
+      <p>报告提到了这个视角的出处——LeCun &amp; Huang 2005 年的能量模型框架。它在深度学习时代被重新捡起来，原因很实际：<strong>能量函数不需要归一化常数</strong>，而概率模型的那个配分函数几乎不可算。</p>
+    </div>
+    <div class="callout callout-note">
+      <h4>📝 一个必要的诚实边界</h4>
+      <p>严格说，I-JEPA / V-JEPA <strong>不是显式的能量模型</strong>：它们没有负样本、没有对比项、没有"把错误未来的能量推高"的显式损失，只做"把目标表征拉近"。所以这里的能量视角应当理解成<strong>讲直觉的类比</strong>（报告也是这么用的），而不是说 JEPA 的训练目标就是某个 $E_{\theta}$ 的对比损失。把它当"为什么'打分 + 取最小'这条路说得通"的动机，比当数学等价更准确。</p>
+    </div>
+  </div>
+
+  <div id="sec8" class="section-card">
+    <h2>8. I-JEPA：遮挡预测与 EMA 防坍塌</h2>
+    <p>I-JEPA 的 I 是 image。它把上一节的形式落到图像上：<strong>对图像做监督，学的是图像块（patch）的表征</strong>。整个想法可以用一句话说完——把图挖掉一大块，让模型看着剩下的部分，去<em>说出</em>被挖掉那块的表征。</p>
+
+    <h3>8.1 把"抠图"变成监督信号</h3>
+    <p>回到第 6 节的记号：$x$ 是增强后的输入，$y$ 是目标。在 I-JEPA 里，这个"增强"具体化为<strong>遮挡</strong>——$x$ 是把目标区域整块抠掉的图，所以 $x$ <em>看不到</em>目标区；而 $y$ 是完整图，它<strong>有</strong>这个区。模型要学的就是：拿抠掉一块的图，预测出那块位置的表征，再和完整图编码出的表征做回归。</p>
+    <p>更狠的一点是多块遮挡：同一张图采样<strong>多个</strong>目标块（报告说"同一张图生成不同的抠图位置，比如两种、三种"），然后把它们的掩码<strong>取并集</strong>，让上下文一次性抠掉所有空缺，模型必须<strong>联合预测</strong>所有空缺，而不是"抠哪儿补哪儿"。</p>
+    <div class="callout callout-key">
+      <h4>🔑 为什么要"并集"而不是"一块一块来"</h4>
+      <p>如果每次只遮一块、只补一块，模型可以靠"这块的四周纹理"做局部插值——学到的是纹理延续，不是物体概念。把多块同时遮掉、要求一次预测全部，模型就必须<strong>在块与块之间建立关系</strong>：知道这是杯子的把手，才能推断被遮住的杯身在哪。遮挡比例越大、块越分散，"靠上下文推理"的成分就越高。</p>
+    </div>
+
+    <h3>8.2 模型架构：三件套 + 一个位置提示</h3>
+    <p>架构上有三个网络，第一次看容易混，这里逐个说清它们的<strong>输入</strong>与<strong>是否收梯度</strong>：</p>
+    <table>
+      <thead><tr><th>模块</th><th>吃什么</th><th>吐什么</th><th>梯度</th></tr></thead>
+      <tbody>
+        <tr><td>上下文编码器 $E_{\theta}$</td><td>只有<strong>可见</strong>的 patch</td><td>可见区域的表征 $z_{c}$</td><td>收（要被训练）</td></tr>
+        <tr><td>预测器 $P_{\phi}$</td><td>$z_{c}$ + 目标区域的<strong>位置 token</strong></td><td>$|\mathcal{M}|$ 个预测向量 $\hat{s}_{j}$</td><td>收</td></tr>
+        <tr><td>目标编码器 $E_{\bar{\theta}}$</td><td><strong>完整</strong>图像（不遮）</td><td>目标块的表征 $z_{j}$</td><td><strong>不收</strong>，靠 EMA 更新</td></tr>
+      </tbody>
+    </table>
+    <p>预测器是一个<strong>窄</strong>的 Vision Transformer——它比编码器小得多，因为它只做"从上下文特征 + 位置提示到目标特征"的映射，不需要重新理解图像。位置 token 的作用是告诉它"我要的是哪一块"：同样一份上下文，配上不同的位置 token，就该吐出不同位置的预测。</p>
+    <div class="formula-box">
+      $$ z_{c} = E_{\theta}\left(\left\{ x_{i} \right\}_{i \in \mathcal{V}}\right), \qquad \hat{s}_{j} = P_{\phi}\left(z_{c}, \left\{ p_{j} \right\}_{j \in \mathcal{M}}\right), \qquad j \in \mathcal{M} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">$\mathcal{V}$ 是可见 patch 的集合，$\mathcal{M}$ 是被遮（目标）patch 的集合，$p_{j}$ 是第 $j$ 块的位置编码。注意 $z_{c}$ 里<strong>没有任何被遮块的信息</strong>——这是整个任务成立的前提。</p>
+    </div>
+
+    <h3>8.3 损失：只在被遮的位置上算平方 $L_{2}$</h3>
+    <p>损失函数非常朴素，就是预测向量与目标特征之间的<strong>平方 $L_{2}$</strong>，并且<strong>只对被遮的位置求和</strong>（可见位置不参与，因为它们的表征本来就算得出来）：</p>
+    <div class="formula-box">
+      $$ \mathcal{L}_{\mathrm{img}} = \frac{1}{\left| \mathcal{M} \right|} \sum_{j \in \mathcal{M}} \left\| \hat{s}_{j} - \mathrm{sg}\left( E_{\bar{\theta}}(y)_{j} \right) \right\|_{2}^{2} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">$\mathrm{sg}(\cdot)$ 是 stop-gradient：目标那一侧<strong>不回传梯度</strong>。这一项看着像实现细节，其实是防坍塌的第一道闸——没有它，模型可以让"目标"跟着"预测"一起跑，损失照样归零。</p>
+    </div>
+
+    <h3>8.4 表征坍塌：一条太舒服的捷径</h3>
+    <p>现在讲这一节最重要的问题。假设没有任何防护，模型会找到一条捷径：让上下文编码器对<strong>任何</strong>输入都输出同一个常数 $c$，预测器也输出 $c$，目标编码器同样输出 $c$。这时候不管输入是猫、狗还是篮球，两路都是 $c$，平方 $L_{2}$ 恒等于零——<strong>损失完美，表征全废</strong>。</p>
+    <p>报告把这个现象讲得很直白：<span class="hl">它走了这条捷径，最后算 $L_{2}$ 回归时 loss 都是零，它认为这种情况很好</span>。这就是表征坍塌（representation collapse）。注意它不是"训练崩了"（loss 爆炸），恰恰相反，它是<strong>loss 太好看</strong>——所以靠盯 loss 曲线发现不了，只能靠下游 probe 或特征方差去诊断。</p>
+
+    <h3>8.5 EMA：让裁判慢半拍</h3>
+    <p>I-JEPA 的对策是：目标编码器不跟着梯度走，而是做<strong>指数滑动平均（EMA）</strong>，慢速地追随上下文编码器。记上下文编码器参数为 $\theta$、目标编码器参数为 $\bar{\theta}$：</p>
+    <div class="formula-box">
+      $$ \bar{\theta}_{k+1} = \eta \bar{\theta}_{k} + (1-\eta) \theta_{k}, \qquad \eta \in \left[0, 1\right) $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">$\eta$ 是<strong>保留旧目标</strong>的权重。$\eta$ 越接近 1，目标编码器动得越少——它是"过去若干步 $\theta$ 的加权平均"，权重按 $\eta^{i}$ 指数衰减。</p>
+    </div>
+    <p>训练时，梯度只经过上下文编码器与预测器；目标编码器<strong>不参与反向传播</strong>，等 $\theta$ 更新完之后，再用上式把 $\bar{\theta}$ 往 $\theta$ 拉一点点。于是目标编码器永远是"<strong>一个略微过时的自己</strong>"。</p>
+    <p>为什么这样就能防坍塌？把因果链拆成三步：</p>
+    <ol>
+      <li><strong>想抄近路，得两边同时到常数。</strong>坍塌要求上下文侧（$E_{\theta}$ 与 $P_{\phi}$）和目标侧（$E_{\bar{\theta}}$）输出同一个常数，损失才会归零。</li>
+      <li><strong>目标侧不跟梯度，跟不上。</strong>假设上下文侧在几步之内冲向常数 $c$，目标编码器此时还是<strong>旧参数</strong>，输出还是旧特征 $b$（非退化、有结构）。于是 $\| c - b \|_{2}^{2} > 0$，损失<strong>当场变大</strong>。</li>
+      <li><strong>变大的损失把上下文侧拉回来。</strong>梯度顺着这个非零损失回传，把 $\theta$ 与 $\phi$ 从常数解上推开。等 $\bar{\theta}$ 慢慢也漂过去时，训练信号早已把"常数"这条路标成了高损失。</li>
+    </ol>
+    <p>换句话说：<strong>坍塌需要"两路合谋"，而 EMA 让"合谋"在时间上错开。</strong>裁判按上一秒的标准打分，选手没法靠"突然停下"来骗分。</p>
+    <div class="callout callout-key">
+      <h4>🔑 "慢"到底慢在哪：时间常数，不是单步幅度</h4>
+      <p>这里有个常见的误读：以为"$\eta$ 大 = 这一步几乎不动"。其实从单步看，$\bar{\theta}$ 朝 $\theta$ 走的比例是 $1-\eta$，只有 0.4%；但它<em>每一步</em>都在走。真正的"慢"体现在<strong>记忆长度</strong>：这是对过去 $\theta$ 的指数加权平均，权重衰减率 $\eta$，等效时间常数约</p>
+      <p style="text-align:center">$\tau_{\mathrm{eff}} \approx \frac{1}{1-\eta} = \frac{1}{0.004} = 250 \ \text{步}, \qquad \text{半衰期} = \frac{\ln 0.5}{\ln \eta} \approx 173 \ \text{步}$</p>
+      <p>所以它<strong>滤掉的是 $\theta$ 的高频抖动</strong>（包括坍塌这种"几步之内冲向常数"的剧烈动作），<strong>保留的是长期漂移</strong>（真正的表征进步）。$\eta \to 1$ 时目标几乎冻结，学不动、表征会陈旧；$\eta \to 0$ 时目标就是自己，退化成"自己预测自己"，坍塌风险立刻回来。实践中 $\eta$ 常从 0.996 起步再往 1 调（I-JEPA 原文就是这么做的），本质是在"稳定"与"可学"之间找平衡。</p>
+    </div>
+
+    <h3>8.6 把这套数算一遍</h3>
+    <p>取 $\eta = 0.996$，假设某一时刻目标编码器的某个参数 $\bar{\theta}_{k} = 0.40$，而上下文编码器对应参数已经被梯度推到 $\theta_{k} = 0.90$。按上式：</p>
+    <div class="formula-box">
+      $$ \bar{\theta}_{k+1} = 0.996 \times 0.40 + 0.004 \times 0.90 = 0.3984 + 0.0036 = 0.4020 $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">一步只挪了 0.002（相对于 0.5 的差距是 0.4%）。若 $\theta$ 此后一直停在 0.90，$\bar{\theta}$ 会按 $0.9 - 0.5 \times 0.996^{k}$ 慢慢逼近：第 50 步约 0.491，第 100 步约 0.565，第 173 步约 0.650（走完一半），第 250 步约 0.716。这条慢曲线，就是"防坍塌"的全部本钱。</p>
+    </div>
+    <div class="callout callout-note">
+      <h4>📝 如果你按 deck 批注的系数顺序代入</h4>
+      <p>同一组数会得到 $0.996 \times 0.90 + 0.004 \times 0.40 = 0.8980$——一步就贴到新值上，几乎不滞后。这恰好说明：<strong>那个写法与"慢更新"的语义是矛盾的</strong>（$\eta$ 越大反而越不滞后）。所以本节统一采用 $\eta$ 乘旧目标的形式，并在第 1 节的"记法说明"里做了交代。遇到别人的笔记里两种写法混用，先看 $\eta$ 乘的是谁，再谈"快慢"。</p>
+    </div>
+  </div>
+
+  <div id="sec9" class="section-card">
+    <h2>9. V-JEPA：把时间维塞进 patch</h2>
+    <p>V-JEPA 的 V 是 video。报告的说法很朴素：<strong>本质上就是图像多了一个维度——时间</strong>。但"多一维"带来的变化不止是数据变大，而是<strong>预测任务的性质变了</strong>：单帧里被遮住的东西可能永远推不出来，而视频里它可能在下一帧露出来。于是模型必须学"运动"，而不只是"外观"。</p>
+
+    <h3>9.1 从二维 patch 到时空 tubelet</h3>
+    <p>I-JEPA 把图切成 $16 \times 16$ 的 patch；V-JEPA 把 patch 沿时间<strong>拉成管</strong>（tubelet）：一个 token 覆盖 <strong>2 帧 $\times$ $16 \times 16$ 像素</strong>。于是 token 数变成三个方向的乘积：</p>
+    <div class="formula-box">
+      $$ N_{\mathrm{token}} = \frac{T}{2} \times \frac{H}{16} \times \frac{W}{16} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">分母的 2 是时间方向的管长（2 帧），16 是空间 patch 边长。举例：$T = 16$ 帧、$H = W = 64$ 的视频，token 数 $= 8 \times 4 \times 4 = 128$。同一个 $64 \times 64$ 的<strong>单张图</strong>只有 $4 \times 4 = 16$ 个 token——时间维把 token 数放大了 $T/2$ 倍。</p>
+    </div>
+    <p>展平（flatten）时按"先空间、后时间"的顺序排：先把 $t=1$ 那一帧的所有空间 token 排完，再进 $t=2$，一路排成一列。这个顺序很重要——它决定了后面位置编码怎么加、掩码怎么对齐。每个 token 再经过一个线性映射投到模型宽度（报告提到的 $1024$ / $2048$ 量级），才进入 Transformer。</p>
+
+    <h3>9.2 Binary Mask $[T \times H \times W]$：掩码是三维的</h3>
+    <p>图像时代的掩码是一张二维的 0/1 图；视频时代它变成<strong>三维张量</strong>，三个轴分别是时间 $T$、行 $H$、列 $W$。V-JEPA 的关键设计是：<span class="hl">同一个空间位置，在所有时间步上一起被遮</span>（tube masking）。</p>
+    <div class="callout callout-key">
+      <h4>🔑 为什么必须"跨时间一起遮"</h4>
+      <p>如果每一帧独立随机遮，被遮的块几乎总能在相邻帧的同一位置找到"替身"——模型只要学会<strong>抄邻帧</strong>，损失就降下去了，根本没学到运动。把同一空间位置沿时间整条遮掉，模型就无法靠"看一眼隔壁帧"作弊，只能靠<strong>其余可见区域 + 时间的因果方向</strong>去推断"这里发生了什么、往哪走"。这就是"时空 patch"真正的用意：<strong>它不是把二维任务复制 $T$ 遍，而是把"时间"变成不可回避的推理维度</strong>。</p>
+    </div>
+    <p>遮挡比例也远高于图像：V-JEPA 平均遮掉约 <strong>90%</strong> 的 token。以上面 128 个 token 为例，只有约 13 个可见（$128 \times 10\% = 12.8$），其余 115 个要靠预测填回来。这个比例听起来离谱，但正是它把任务从"插值"逼成了"理解"。</p>
+
+    <h3>9.3 架构与损失：和 I-JEPA 同构，只换了 $L_{1}$</h3>
+    <p>三件套完全照搬：上下文编码器只吃可见 token；预测器吃"上下文特征 + 被遮位置的位置编码"，输出被遮位置的预测；目标编码器吃<strong>完整视频</strong>、走 EMA、不收梯度。损失换成 <strong>$L_{1}$</strong>，仍然只对被遮位置求和：</p>
+    <div class="formula-box">
+      $$ \mathcal{L}_{\mathrm{vid}} = \frac{1}{\left| \mathcal{M} \right|} \sum_{(t,i,j) \in \mathcal{M}} \left\| \hat{s}_{tij} - \mathrm{sg}\left( E_{\bar{\theta}}(v)_{tij} \right) \right\|_{1} $$
+      <p style="text-align:center;font-size:0.85rem;color:var(--text-secondary);margin-top:6px">下标 $(t,i,j)$ 是时空坐标；$\| \cdot \|_{1}$ 是逐元素绝对值之和（对特征维度求平均后）。从平方 $L_{2}$ 换成 $L_{1}$，是 V-JEPA 相对 I-JEPA 的一个明确改动。</p>
+    </div>
+    <p>为什么换 $L_{1}$？报告的说法是"后面工作时逐渐改到用 $L_{1}$"。直觉上，特征维度很高、噪声重，平方损失会被少数<strong>离群维度</strong>主导（误差 10 的维度贡献 100），而 $L_{1}$ 只贡献 10，梯度更稳、更不容易被单个维度带偏。代价是 $L_{1}$ 在零点不可导，实现上要用次梯度或平滑版本。</p>
+
+    <h3>9.4 预训练规模与评估方式</h3>
+    <p>V-JEPA 在约 <strong>200 万段视频</strong>（VideoMix2M）上做时空遮挡预测，训练目标就是上面的 $L_{1}$ 特征回归，<strong>预训练阶段不含任何动作条件</strong>——它学的是"视频里什么会动、怎么动"，还不知道"我的动作"会怎样。</p>
+    <p>评估方式很关键：<strong>冻结编码器，只加一个 probe</strong>（attentive probe），去做动作识别等下游任务。冻结是刻意的——如果允许微调，就分不清"表征本身好"还是"下游头把它救回来了"。这也解释了为什么 JEPA 系列论文总在强调 linear probe / attentive probe 的数字：那是表征质量的<strong>纯净读数</strong>。</p>
+    <div class="callout callout-key">
+      <h4>🔑 到这里，链条只搭好了第一段</h4>
+      <p>回头看第 3 节的三段链条：I-JEPA 与 V-JEPA 解决的是<strong>第一段（表征）</strong>，而且是用"遮挡预测"这种自监督方式解决的。它们甚至还没碰第二段——因为预训练里没有动作。把动作条件塞进预测器、让模型回答"做了 $a$ 之后表征怎么变"，是下一讲的正题（V-JEPA 2 的动作条件后训练、在 latent 里做 MPC、以及 RoboJEPA 把单机器人扩到多本体）。这一讲先把"表征值多少钱"这件事说透，下一讲才好谈"动力学怎么学"。</p>
+    </div>
+  </div>
+
+  <div id="sec10" class="section-card">
+    <h2>10. 小结与下一讲地图</h2>
+    <p>把这一讲压成四句话：</p>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>① 策略 ≠ 世界模型</h4>
+        <p>策略回答"现在做什么"，世界模型回答"做了会怎样"。世界模型既不是动作预测器，也不是完整控制器——它只是后果模拟器，还需要目标与规划器才闭环。</p>
+      </div>
+      <div class="mini-card">
+        <h4>② 三段链条，货币是表征</h4>
+        <p>表征 → 动作条件动力学 → 目标驱动规划。三段串联，共享同一个 $z$；第一段歪了，后两段都在优化错的目标。</p>
+      </div>
+      <div class="mini-card">
+        <h4>③ 像素 vs 表征</h4>
+        <p>重建把容量花在背景、光照、纹理上；表征预测只承诺"落到同一个特征位置"。放弃细节换来的是：容量集中在与决策有关的语义与运动上。</p>
+      </div>
+      <div class="mini-card">
+        <h4>④ 遮挡 + EMA</h4>
+        <p>遮挡制造"必须理解"的压力，EMA 挡住"两路一起输出常数"的捷径。I-JEPA 用平方 $L_{2}$ 做空间块，V-JEPA 用 $L_{1}$ 做时空管，机制同构、维度升级。</p>
+      </div>
+    </div>
+    <p><strong>下一讲的地图（只指路，不展开）</strong>：先给预测器加上动作条件，用 teacher forcing 与 rollout 两条损失一起训练时间因果预测器；再把它当潜空间动力学，用 MPC 采样动作序列、按"终态与目标的表征距离"评分、筛精英样本、执行首步后重观测；最后把这些拼到 12 种本体、23 个数据集上，看预测误差怎么随算力下降。</p>
+    <p>一句话收尾：<span class="hl">这一讲学的不是某个网络，而是一种取舍——预测未来时，什么该预测、什么可以不管</span>。JEPA 的答案是把"像素"换成"表征"，把"重建"换成"填空"，把"对齐"换成"可预测"。后面所有模型，都是在这个取舍上做加法。</p>
+  </div>
+
+  <div id="quiz" class="section-card exercise-box">
+    <h2>📝 练习与自测</h2>
+
+    <div class="exercise">
+      <h4>练习1（概念）：策略、世界模型、控制器</h4>
+      <p>下面三句话分别描述的是哪一类模型？请指出每一句缺了什么，才能构成一个完整的操作回路。</p>
+      <p>(a) "输入当前画面和指令 pick up the cup，直接输出七个关节的目标位置。"<br>
+      (b) "输入当前画面和一个候选动作，输出执行该动作后 0.5 秒的画面表征。"<br>
+      (c) "输入当前画面和目标照片，输出一串动作。"</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>(a) 是<strong>策略</strong>（如 OpenVLA 一类）：观测 + 指令 → 动作，单次前向。它缺的是"后果"——没有任何环节检查这个动作会把世界带到哪里，所以分布外场景无法自查。</p>
+        <p>(b) 是<strong>世界模型</strong>：观测 + 动作 → 未来表征。<strong>它不是控制器</strong>：它只给"后果"，不回答"该选哪个动作"。要闭环，还需要一个目标表征与一个在候选动作上做最小化的规划器。</p>
+        <p>(c) 是<strong>完整的规划型控制器</strong>（第⑤类）：编码目标 → 用世界模型预测候选后果 → 按与目标的距离评分 → 选动作。它其实<strong>内含</strong>了 (b)，只是把"输出一串动作"拆成了"预测 + 评分 + 搜索"三步。</p>
+        <p>要点：三者的差别不在网络大小，而在<strong>"未来"有没有被显式写出来</strong>，以及<strong>"选择"发生在网络里还是搜索里</strong>。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习2（数值）：EMA 一步更新与"滞后"的含义</h4>
+      <p>目标编码器按 $\bar{\theta}_{k+1} = \eta \bar{\theta}_{k} + (1-\eta)\theta_{k}$ 更新，其中 $\eta = 0.996$。已知 $\bar{\theta}_{k} = 0.40$、$\theta_{k} = 0.90$。</p>
+      <p>(a) 求 $\bar{\theta}_{k+1}$。(b) 若 $\theta$ 此后一直保持在 0.90，大约多少步后 $\bar{\theta}$ 走完一半差距？(c) 解释"$\eta$ 越大，目标编码器越滞后"到底指什么——是指单步移动更小，还是别的？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>(a) $\bar{\theta}_{k+1} = 0.996 \times 0.40 + 0.004 \times 0.90 = 0.3984 + 0.0036 = \mathbf{0.4020}$。相对于 0.5 的差距，这一步只走了 $0.002 / 0.5 = 0.4\%$。</p>
+        <p>(b) 差距按 $0.996^{k}$ 衰减，解 $0.996^{k} = 0.5$ 得 $k = \ln 0.5 / \ln 0.996 \approx \mathbf{173}$ 步。等效时间常数 $1/(1-\eta) = 250$ 步。（数值序列：第 50 步 0.491、第 100 步 0.565、第 173 步 0.650、第 250 步 0.716。）</p>
+        <p>(c) "滞后"指<strong>记忆长度</strong>，不是单步幅度。$\bar{\theta}$ 是过去 $\theta$ 的指数加权平均，权重 $\eta^{i}$ 衰减，所以它能滤掉 $\theta$ 的高频抖动（例如几步之内冲向常数的坍塌动作），只跟随长期漂移。$\eta \to 1$ 时目标几乎冻结（学不动、表征陈旧）；$\eta \to 0$ 时目标等于自己，坍塌风险回来。</p>
+        <p><strong>提醒：</strong>若把系数顺序写反（$\eta$ 乘在 $\theta_{k}$ 上），同一组数会得到 $0.996 \times 0.90 + 0.004 \times 0.40 = 0.8980$——一步贴到新值，几乎不滞后。这也是判断"公式有没有写反"的一个快速自检：<strong>看 $\eta$ 乘的是旧目标还是新参数</strong>。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习3（计算）：V-JEPA 的 token 数与可见比例</h4>
+      <p>一段视频 $T = 32$ 帧、分辨率 $H = W = 128$，tubelet 为 2 帧 $\times$ $16 \times 16$。平均遮挡比例 90%。</p>
+      <p>(a) 求 token 总数。(b) 求可见 token 数与被遮 token 数。(c) 如果改成"每帧独立随机遮"而不是"同一位置跨时间一起遮"，模型会找到什么捷径？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>(a) $N = (T/2) \times (H/16) \times (W/16) = (32/2) \times (128/16) \times (128/16) = 16 \times 8 \times 8 = \mathbf{1024}$ 个 token。</p>
+        <p>(b) 可见 $= 1024 \times 10\% = \mathbf{102.4 \approx 102}$ 个，被遮 $= 1024 \times 90\% = \mathbf{921.6 \approx 922}$ 个（实现上按整数取整，两者相加为 1024）。也就是说，预测器要用一百来个 token 去填九百多个位置。</p>
+        <p>(c) 会学"<strong>抄邻帧</strong>"：被遮的块在同一位置的相邻帧里往往还可见，模型只要把邻帧特征搬过来，损失就降了，完全不需要理解运动。所以 V-JEPA 让同一空间位置沿时间<strong>整条一起遮</strong>（Binary Mask 在 $T$ 轴上贯通），强制模型用其余可见区域与时间因果去推断，而不是做帧间复制。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习4（概念）：为什么 JEPA 不需要 decoder</h4>
+      <p>请解释：像素重建与表征预测各自把"预测得准"定义成什么？去掉 decoder 之后，省下来的容量被用到了哪里？这种取舍在什么任务上会<strong>不划算</strong>？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>重建把"准"定义为<strong>画得像</strong>：逐像素比较，背景、光照、纹理的方差都要拟合。表征预测把"准"定义为<strong>在特征空间落到同一个地方</strong>：只要语义位置对，背景换了、光照变了都不罚。</p>
+        <p>省下来的容量（以及 decoder 这一整块参数与计算）被转移到<strong>与决策有关的方向</strong>上：物体身份、物体间关系、以及"动作会带来什么变化"。这就是 JEPA 敢在 90% 遮挡下训练的底气——它不需要还原细节，只需要"说到点上"。</p>
+        <p>不划算的场景：需要<strong>精确几何或纹理</strong>的任务。精细装配、线缆穿孔、透明物体抓取，都要求模型知道毫米级的形状与表面；纯语义表征会把这些信息当噪声丢掉。这也是后续工作要补"稠密特征 / 多层监督"的动机（下一讲会看到 V-JEPA 2.1 这条线）。</p>
+      </details>
+    </div>
+
+    <div class="exercise">
+      <h4>练习5（概念）：用能量给三个未来排序</h4>
+      <p>固定上下文 $x$ = "夹爪已夹住杯子并向上移动"。给三个候选未来按能量从低到高排序，并说明理由：(A) 杯子随夹爪抬起；(B) 杯子穿过桌面下沉；(C) 杯子凭空消失。再回答：这里的"低能量"是不是等于"像素上最像"？</p>
+      <details class="exercise-answer">
+        <summary>点击查看答案</summary>
+        <p>排序：<strong>(A) 最低 &lt; (B) 与 (C) 都高</strong>（B 与 C 之间一般不再细分，都属于"物理上不可能"）。</p>
+        <p>理由：能量衡量的是"与上下文的<strong>兼容性</strong>"，不是画面相似度。(A) 是训练数据里大量出现的常见延续，兼容性最高；(B) 违反刚体不可穿透；(C) 违反物质不灭与因果连续。模型必须学会给后两者高分，否则规划器会在候选里挑出一个"看起来平滑但物理上荒谬"的未来。</p>
+        <p><strong>不等于像素上最像。</strong>一张把杯子高光、桌面反光都渲染错的 (A)，在像素层面可能比一张渲染精美但杯子穿桌的 (B) 更"不像"；但能量只关心"这个延续说不说得通"。这正是表征空间打分与像素空间比较的分野——也是 JEPA 选择在特征空间做预测的核心理由。</p>
+      </details>
+    </div>
+  </div>
+
+  <div class="nav-links">
+    <a href="0046-组内分享-曾畅-随机事件触发估计-2.html" class="prev">← 随机事件触发估计(2/2)：三种工程约束与仿真验证</a>
+    <a href="0048-北理工分享-世界模型与RoboJEPA-2.html" class="next">世界模型下的机器人操作(2/2)：动作条件预测与潜在规划 →</a>
+    <a href="../index.html" class="home-link" style="text-align:center;display:block;margin-top:8px">🏠 返回课程馆</a>
+  </div>
+
+  <div class="foot-note">
+    <p>施老师大课堂 · 研讨会系列 34 · 北理工分享 · 曲家玉（2026-11-01）</p>
+    <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px">内容来源：视频转写 + deck 版面文字（33 页抽帧 OCR）+ 论文原文（I-JEPA, arXiv 2301.08243；V-JEPA, arXiv 2404.08471）</p>
+  </div>
+</div>
+<script src="assets/shiclass.js"></script>
+<script src="../shared/lesson-tools.js"></script>
+</body>
+</html>

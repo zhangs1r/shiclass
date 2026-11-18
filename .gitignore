@@ -52,6 +52,8 @@ papers/
 subtitles/*.txt
 subtitles/batch_asr.log
 subtitles/batch_asr*.sh
+# ASR 分片中间产物（*.chunks/c_*.txt|wav），只保留最终 .srt
+subtitles/*.chunks/
 
 # Course notes (personal notes, not part of website)
 course-notes/
